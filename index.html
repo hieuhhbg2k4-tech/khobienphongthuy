@@ -3,1425 +3,770 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kho Biển Phong Thủy — Tra Cứu & Định Giá Thực Tế</title>
-<meta name="description" content="Tra cứu biển số VPA, định giá theo kết quả đấu giá thực tế gần nhất. Dữ liệu từ dgbs.vpa.com.vn">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>Tra cứu biển số đẹp Toàn Cầu — VPA</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --red:#c8102e;--red2:#ff1a3a;--gold:#d4a017;--gold2:#f5c842;
-  --dark:#080808;--d1:#0f0f0f;--d2:#141414;--d3:#1c1c1c;--d4:#242424;
-  --border:rgba(255,255,255,.06);--border2:rgba(200,16,46,.2);
-  --text:#e2d8cc;--t2:#8a7e72;--t3:#4a4038;
-  --r:8px;
-  --font-display:'Barlow Condensed',sans-serif;
-  --font-body:'Be Vietnam Pro',sans-serif;
-}
 *{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{font-family:var(--font-body);background:var(--dark);color:var(--text);line-height:1.6;min-height:100vh;}
-a{text-decoration:none;color:inherit;cursor:pointer;}
-ul{list-style:none;}
-
-/* TOPBAR */
-.topbar{background:#060606;border-bottom:1px solid var(--border2);padding:7px 0;font-size:11.5px;color:var(--t2);}
-.topbar-in{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center;}
-.topbar-links{display:flex;gap:18px;}
-.topbar-links a{color:var(--t2);transition:color .2s;}
-.topbar-links a:hover{color:var(--gold);}
-.tb-date{color:var(--t3);}
-.tb-date b{color:var(--gold2);}
-.tb-live{display:flex;align-items:center;gap:6px;color:#4ade80;font-weight:600;}
-.tb-live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:blink 1.5s infinite;}
+body{font-family:'Be Vietnam Pro',sans-serif;background:#f0f2f5;color:#222;font-size:14px;}
+.info-bar{background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;padding:7px 20px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.info-bar a{color:#fff;text-decoration:underline;}
+.live-dot{width:7px;height:7px;background:#4caf50;border-radius:50%;display:inline-block;margin-right:4px;animation:blink 1.2s infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.vpa-link-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+.vpa-link-btn:hover{background:rgba(255,255,255,.25);}
 
 /* HEADER */
-header{background:linear-gradient(180deg,#0c0404 0%,#100606 100%);border-bottom:2px solid var(--red);position:sticky;top:0;z-index:1000;box-shadow:0 2px 40px rgba(200,16,46,.2);}
-.hdr-in{max-width:1280px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
-.logo{cursor:pointer;display:flex;flex-direction:column;}
-.logo-main{font-family:var(--font-display);font-size:30px;font-weight:900;color:var(--red);letter-spacing:3px;line-height:1;text-transform:uppercase;}
-.logo-sub{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--gold);letter-spacing:5px;margin-top:1px;}
-.logo-url{font-size:10px;color:var(--t3);letter-spacing:1px;margin-top:2px;}
-.hdr-hl{text-align:right;}
-.hdr-hl .lbl{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;}
-.hdr-hl .num{font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--gold2);letter-spacing:1px;}
-.hdr-hl .num2{font-size:12px;color:var(--t2);}
+.hdr{background:#fff;border-bottom:1px solid #e0e0e0;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.hdr-title{font-size:17px;font-weight:700;color:#1a1a2e;display:flex;align-items:center;gap:8px;}
+.hdr-title .ico{color:#0066cc;font-size:18px;}
+.hdr-src{display:flex;gap:6px;}
+.src-btn{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#f5f5f5;color:#555;transition:all .2s;}
+.src-btn.active-blue{background:#1565c0;color:#fff;border-color:#1565c0;}
+.src-btn.active-green{background:#2e7d32;color:#fff;border-color:#2e7d32;}
+.src-btn.active-purple{background:#6a1b9a;color:#fff;border-color:#6a1b9a;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.btn-sm{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:none;font-family:'Be Vietnam Pro',sans-serif;}
+.btn-red{background:#e53935;color:#fff;}
+.btn-ghost{background:none;color:#0066cc;border:1px solid #ddd;}
 
-/* NAV */
-nav{background:var(--red);}
-.nav-in{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;align-items:center;}
-.nav-in a{display:block;padding:12px 16px;font-family:var(--font-display);font-size:14px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1px;transition:background .2s;white-space:nowrap;cursor:pointer;}
-.nav-in a:hover,.nav-in a.active{background:rgba(0,0,0,.25);color:var(--gold2);}
+/* SEARCH */
+.srch{background:#fff;padding:10px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;}
+.sf{display:flex;flex-direction:column;gap:3px;}
+.sf label{font-size:10.5px;color:#777;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+.sf select,.sf input[type=text],.sf input[type=date]{padding:7px 11px;border:1px solid #ccc;border-radius:6px;font-size:13px;background:#fff;color:#333;outline:none;font-family:'Be Vietnam Pro',sans-serif;transition:border .2s;}
+.sf select,.sf input[type=date]{min-width:155px;}
+.sf input[type=text]{min-width:160px;}
+.sf select:focus,.sf input:focus{border-color:#1565c0;}
+.btn-search{background:#1565c0;color:#fff;border:none;padding:8px 22px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;height:36px;font-family:'Be Vietnam Pro',sans-serif;}
+.btn-search:hover{background:#0d47a1;}
 
-/* PAGE SYSTEM */
-.page{display:none;}
-.page.active{display:block;}
+/* FILTER TAGS */
+.ftags{background:#fff;padding:7px 20px 9px;border-bottom:1px solid #e0e0e0;display:flex;flex-wrap:wrap;gap:5px;}
+.ft{padding:5px 11px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:1.5px solid transparent;white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:3px;user-select:none;}
+.ft:hover{filter:brightness(.95);}
+.ft.on{box-shadow:0 0 0 2px currentColor;}
+.ft-all{background:#1565c0;color:#fff;}
+.ft-nq{background:#fff3e0;color:#e65100;border-color:#ffb74d;}
+.ft-tq{background:#fff8e1;color:#f57f17;border-color:#ffca28;}
+.ft-tqc{background:#fce4ec;color:#c2185b;border-color:#f48fb1;}
+.ft-tqd{background:#e8f5e9;color:#2e7d32;border-color:#81c784;}
+.ft-th{background:#e3f2fd;color:#1565c0;border-color:#90caf9;}
+.ft-thc{background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8;}
+.ft-thd{background:#e0f2f1;color:#00695c;border-color:#80cbc4;}
+.ft-sn{background:#fff3e0;color:#bf360c;border-color:#ffab91;}
+.ft-kp{background:#e8eaf6;color:#283593;border-color:#9fa8da;}
+.ft-sl{background:#fce4ec;color:#880e4f;border-color:#f48fb1;}
+.ft-gh{background:#e1f5fe;color:#01579b;border-color:#81d4fa;}
+.ft-od{background:#fffde7;color:#827717;border-color:#f9a825;}
+.ft-tt{background:#fff8e1;color:#ff6f00;border-color:#ffb300;}
+.ft-lp{background:#e8f5e9;color:#1b5e20;border-color:#66bb6a;}
+.ft-t47{background:#ffebee;color:#b71c1c;border-color:#ef9a9a;}
+.ft-t4{background:#ffebee;color:#c62828;border-color:#ef9a9a;}
+.ft-t7{background:#fff3e0;color:#bf360c;border-color:#ffcc80;}
+.ft-t49{background:#fce4ec;color:#ad1457;border-color:#f48fb1;}
+.ft-t53{background:#ede7f6;color:#4527a0;border-color:#b39ddb;}
+.ft-t13{background:#e0f7fa;color:#006064;border-color:#80deea;}
 
-/* HERO */
-.hero{background:radial-gradient(ellipse at 60% 0%,rgba(200,16,46,.12) 0%,transparent 60%),linear-gradient(180deg,#0c0404 0%,#0a0a0a 100%);padding:52px 24px;text-align:center;border-bottom:1px solid var(--border2);position:relative;overflow:hidden;}
-.hero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c8102e' fill-opacity='0.025'%3E%3Cpath d='M0 0h80v80H0z'/%3E%3Cpath d='M40 0v80M0 40h80' stroke='%23c8102e' stroke-width='.5' fill='none'/%3E%3C/g%3E%3C/svg%3E");pointer-events:none;}
-.hero-in{position:relative;max-width:780px;margin:0 auto;}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(200,16,46,.1);border:1px solid var(--border2);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;color:var(--red2);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px;}
-.hero h1{font-family:var(--font-display);font-size:54px;font-weight:900;color:#fff;line-height:1.05;margin-bottom:10px;text-transform:uppercase;letter-spacing:2px;}
-.hero h1 em{color:var(--red);font-style:normal;display:block;}
-.hero p{font-size:15px;color:var(--t2);margin-bottom:28px;max-width:500px;margin-left:auto;margin-right:auto;}
-.hero-stats{display:flex;gap:0;justify-content:center;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-width:520px;margin:0 auto;}
-.hero-stat{flex:1;padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:var(--d2);}
-.hero-stat:last-child{border-right:none;}
-.hero-stat .n{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--gold);line-height:1;}
-.hero-stat .l{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+/* RESULTS BAR */
+.rbar{padding:8px 20px;display:flex;justify-content:space-between;align-items:center;background:#f0f2f5;}
+.rbar-l{font-size:13px;color:#444;}
+.rbar-l b{color:#1565c0;font-size:14px;}
+.rbar-r{display:flex;align-items:center;gap:10px;font-size:12px;color:#666;}
+.btn-xl{background:#2e7d32;color:#fff;border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;}
 
-/* SEARCH HERO */
-.search-hero{background:var(--d1);border-bottom:1px solid var(--border);padding:20px 24px;}
-.sh-in{max-width:860px;margin:0 auto;}
-.sh-row{display:flex;gap:10px;align-items:stretch;}
-.sh-input{flex:1;background:var(--d3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r);padding:14px 20px;color:var(--text);font-size:16px;font-family:var(--font-display);font-weight:600;letter-spacing:2px;outline:none;transition:border-color .2s;}
-.sh-input:focus{border-color:var(--red);}
-.sh-input::placeholder{font-family:var(--font-body);font-size:13px;letter-spacing:0;font-weight:400;color:var(--t3);}
-.sh-btn{background:linear-gradient(135deg,var(--red) 0%,#900 100%);color:#fff;border:none;border-radius:var(--r);padding:14px 28px;font-family:var(--font-display);font-size:15px;font-weight:800;letter-spacing:1px;cursor:pointer;transition:all .2s;white-space:nowrap;text-transform:uppercase;}
-.sh-btn:hover{background:linear-gradient(135deg,var(--red2) 0%,var(--red) 100%);transform:translateY(-1px);}
-.sh-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+/* TABLE */
+.twrap{background:#fff;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{background:#f8f9fa;padding:9px 16px;text-align:left;font-size:11.5px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.3px;border-bottom:2px solid #e0e0e0;white-space:nowrap;}
+tbody td{padding:9px 16px;border-bottom:1px solid #f2f2f2;vertical-align:middle;}
+tbody tr:hover td{background:#f8fbff;}
+.plate-tag{display:inline-block;border:2px solid #333;border-radius:5px;padding:3px 10px;font-family:'Courier New',monospace;font-size:13.5px;font-weight:700;background:#fff;color:#111;letter-spacing:1px;min-width:100px;text-align:center;}
+.sc-badge{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;font-size:11.5px;font-weight:800;color:#fff;}
+.sc10,.sc9{background:#1b5e20;}
+.sc8{background:#388e3c;}
+.sc7{background:#f57f17;}
+.sc6{background:#ef6c00;}
+.sc5{background:#e65100;}
+.sc1,.sc2,.sc3,.sc4{background:#9e9e9e;}
+.act-row{display:flex;gap:7px;}
+.act-btn{width:29px;height:29px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.act-btn:hover{background:#e3f2fd;}
 
-/* QUICK RESULT CARD */
-.qr-wrap{margin-top:16px;display:none;}
-.qr-wrap.show{display:block;animation:fadeUp .3s ease;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-.qr-card{background:linear-gradient(135deg,var(--d2) 0%,#1a0808 100%);border:1px solid var(--border2);border-radius:12px;padding:22px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;}
-.qr-plate-box{text-align:center;}
-.qr-plate{background:#fff;color:#000;border:3.5px solid #111;border-radius:6px;font-family:var(--font-display);font-size:28px;font-weight:900;padding:6px 18px;letter-spacing:3px;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,.5);}
-.qr-plate.yellow-plate{background:#FFD700;}
-.qr-tinh{font-size:11px;color:var(--t2);margin-top:6px;text-transform:uppercase;letter-spacing:.5px;}
-.qr-meta{display:flex;flex-direction:column;gap:8px;}
-.qr-row2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.qr-score-box{font-family:var(--font-display);}
-.qr-score-num{font-size:48px;font-weight:900;line-height:1;}
-.qr-score-max{font-size:14px;color:var(--t2);}
-.qr-label{font-size:13px;color:var(--t2);}
-.qr-tags{display:flex;gap:6px;flex-wrap:wrap;}
-.tag{display:inline-flex;align-items:center;gap:5px;background:var(--d4);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;}
-.tag.menh-kim{border-color:rgba(192,192,192,.3);color:#c0c0c0;}
-.tag.menh-moc{border-color:rgba(74,222,128,.3);color:#4ade80;}
-.tag.menh-thuy{border-color:rgba(96,165,250,.3);color:#60a5fa;}
-.tag.menh-hoa{border-color:rgba(248,113,113,.3);color:#f87171;}
-.tag.menh-tho{border-color:rgba(250,204,21,.3);color:#facc15;}
-.qr-price-box{text-align:right;}
-.qr-price-label{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
-.qr-price{font-family:var(--font-display);font-size:30px;font-weight:900;color:var(--gold);line-height:1;}
-.qr-price-range{font-size:11px;color:var(--t3);margin-top:4px;}
-.qr-ref{font-size:11px;color:var(--t2);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
-.qr-ref a{color:var(--gold);text-decoration:underline;text-underline-offset:2px;}
+/* PAGINATION */
+.pgn{display:flex;align-items:center;justify-content:center;gap:4px;padding:14px 20px;background:#fff;border-top:1px solid #eee;flex-wrap:wrap;}
+.pgb{min-width:32px;height:32px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;transition:all .2s;font-family:'Be Vietnam Pro',sans-serif;}
+.pgb:hover{background:#e3f2fd;border-color:#90caf9;}
+.pgb.on{background:#1565c0;color:#fff;border-color:#1565c0;}
+.pgb:disabled{opacity:.4;cursor:default;}
+.pgi{font-size:12px;color:#888;padding:0 6px;}
 
-/* AI ANALYSIS */
-.ai-section{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:14px 18px;margin-top:12px;display:none;}
-.ai-section.show{display:block;animation:fadeUp .3s ease;}
-.ai-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.8px;}
-.ai-body{font-size:13px;color:var(--text);line-height:1.7;}
-.ai-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--t2);}
-.ai-dots span{animation:dotPulse 1.4s infinite;display:inline-block;}
-.ai-dots span:nth-child(2){animation-delay:.2s;}
-.ai-dots span:nth-child(3){animation-delay:.4s;}
-@keyframes dotPulse{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+/* MODALS */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
+.mbox{background:#fff;border-radius:12px;max-width:900px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.mhdr{padding:14px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;}
+.mttl{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.mttl .pn{font-family:monospace;color:#1565c0;font-size:16px;font-weight:800;}
+.mclose{width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:#777;}
+.mclose:hover{background:#ffebee;color:#e53935;}
+.mbody{padding:16px 20px;overflow-y:auto;flex:1;}
 
-/* LAYOUT */
-.main{max-width:1280px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 260px;gap:20px;}
-.section{background:var(--d2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
-.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--red);}
-.section-title{font-family:var(--font-display);font-size:16px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:1px;}
-.section-hdr a{font-size:12px;color:var(--t2);transition:color .2s;cursor:pointer;}
-.section-hdr a:hover{color:var(--gold);}
+/* HISTORY STATS */
+.hstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.hs{border-radius:8px;padding:11px;text-align:center;}
+.hs-b{background:#e3f2fd;border:1px solid #90caf9;}
+.hs-g{background:#e8f5e9;border:1px solid #a5d6a7;}
+.hs-o{background:#fff3e0;border:1px solid #ffcc80;}
+.hs-r{background:#fce4ec;border:1px solid #f48fb1;}
+.hs-lbl{font-size:10.5px;color:#666;font-weight:600;text-transform:uppercase;margin-bottom:3px;}
+.hs-val{font-size:20px;font-weight:800;color:#1565c0;}
+.hs-g .hs-val{color:#2e7d32;}
+.hs-o .hs-val{color:#e65100;font-size:13px;line-height:1.4;}
+.hs-r .hs-val{color:#c2185b;font-size:15px;}
+.htbl{width:100%;border-collapse:collapse;font-size:13px;}
+.htbl th{background:#f8f9fa;padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#666;border-bottom:2px solid #eee;text-transform:uppercase;}
+.htbl td{padding:7px 10px;border-bottom:1px solid #f5f5f5;}
+.htbl tr:hover td{background:#f8fbff;}
+.badge-moi{background:#ff9800;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:8px;margin-left:5px;}
+.ai-box{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:13px;margin-top:10px;font-size:13px;line-height:1.85;color:#1b5e20;}
+.ai-ttl{font-weight:700;margin-bottom:5px;}
+.spin{display:inline-block;width:20px;height:20px;border:2.5px solid #e0e0e0;border-top-color:#1565c0;border-radius:50%;animation:sp .8s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.ld-row td{text-align:center;padding:36px;color:#999;}
 
-/* CATEGORY GRID */
-.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.cat-btn{background:var(--d3);border:1px solid var(--border);border-radius:var(--r);padding:10px 8px;text-align:center;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.cat-btn:hover{background:rgba(200,16,46,.1);border-color:var(--border2);transform:translateY(-2px);}
-.cat-icon{font-size:18px;}
-.cat-name{font-size:11px;font-weight:600;color:var(--t2);}
-.cat-btn:hover .cat-name{color:var(--red2);}
+/* QUE MODAL */
+.qguide{background:#fffde7;border:1px solid #f9a825;border-radius:8px;padding:11px 15px;margin-bottom:14px;font-size:12.5px;color:#5d4037;line-height:1.7;}
+.qgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.qgrid2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+.fgq{display:flex;flex-direction:column;gap:3px;}
+.fgq label{font-size:10.5px;font-weight:700;color:#555;text-transform:uppercase;}
+.fgq input,.fgq select{padding:8px 11px;border:1px solid #ccc;border-radius:6px;font-size:13px;outline:none;font-family:'Be Vietnam Pro',sans-serif;}
+.fgq input:focus,.fgq select:focus{border-color:#1565c0;}
+.qbtns{display:flex;gap:10px;margin-bottom:0;}
+.btn-q1{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;font-family:'Be Vietnam Pro',sans-serif;}
+.btn-q2{flex:1;padding:10px;border-radius:8px;border:1.5px solid #1565c0;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:#1565c0;font-family:'Be Vietnam Pro',sans-serif;}
+.qres{margin-top:14px;background:#f8f9ff;border:1px solid #c5cae9;border-radius:8px;padding:14px;display:none;}
+.qres.show{display:block;}
 
-/* BIỂN GRID */
-.bien-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
-.bien-card{background:var(--d3);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .25s;cursor:pointer;position:relative;}
-.bien-card:hover{border-color:var(--border2);transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.5);}
-.bien-card-in{padding:14px 10px;text-align:center;}
-.bc-plate{background:#fff;color:#000;border:3px solid #111;border-radius:5px;font-family:var(--font-display);font-size:13px;font-weight:800;padding:4px 8px;letter-spacing:1.5px;display:inline-block;min-width:108px;margin:0 auto 8px;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-.bc-plate.yp{background:#FFD700;}
-.bc-tinh{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
-.bc-gia{font-size:13px;font-weight:700;color:var(--gold);}
-.bc-gia.sale{color:#ff4455;}
-.bc-gia-cu{font-size:10px;color:var(--t3);text-decoration:line-through;margin-bottom:1px;}
-.bc-badge{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;letter-spacing:.3px;}
-.xem-them{text-align:center;margin-top:14px;}
-.btn-more{background:transparent;border:1px solid var(--border);color:var(--t2);padding:8px 24px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
-.btn-more:hover{border-color:var(--red);color:var(--red2);}
-
-/* SIDEBAR */
-.sb-box{background:var(--d2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
-.sb-title{font-family:var(--font-display);font-size:13px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border2);}
-.sb-box ul li a{display:flex;align-items:center;gap:6px;padding:6px 0;font-size:12.5px;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03);transition:all .2s;cursor:pointer;}
-.sb-box ul li a:hover{color:var(--gold);padding-left:4px;}
-.sb-box ul li a::before{content:"▸";color:var(--red);font-size:9px;flex-shrink:0;}
-.hl-box{background:linear-gradient(135deg,#1a0808 0%,#200808 60%,var(--red) 100%);border-radius:10px;padding:18px;text-align:center;margin-bottom:14px;}
-.hl-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.5);margin-bottom:4px;}
-.hl-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:6px;}
-.hl-num{font-family:var(--font-display);font-size:22px;font-weight:900;color:var(--gold2);display:block;margin-bottom:3px;letter-spacing:1px;}
-.hl-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:7px 18px;font-size:12px;font-weight:600;display:inline-block;margin-top:8px;transition:all .2s;cursor:pointer;}
-.hl-btn:hover{background:rgba(255,255,255,.25);}
-.tinh-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;}
-.tinh-grid a{font-size:11.5px;color:var(--t2);padding:4px 0;transition:color .2s;display:flex;align-items:center;gap:3px;cursor:pointer;}
-.tinh-grid a::before{content:"·";color:var(--red);}
-.tinh-grid a:hover{color:var(--gold);}
-.gia-list a{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:var(--t2);transition:all .2s;cursor:pointer;}
-.gia-list a:hover{color:var(--gold);padding-left:4px;}
-.gia-badge{background:var(--d3);border-radius:8px;padding:2px 7px;font-size:10px;color:var(--t3);}
-
-/* VPA LIVE TABLE */
-.vpa-table-wrap{overflow-x:auto;}
-.vpa-table{width:100%;border-collapse:collapse;font-size:13px;}
-.vpa-table th{background:var(--d3);color:var(--t2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
-.vpa-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
-.vpa-table tr:hover td{background:rgba(255,255,255,.02);}
-.td-plate{font-family:var(--font-display);font-size:15px;font-weight:700;background:#fff;color:#000;border:2.5px solid #111;border-radius:4px;padding:3px 8px;letter-spacing:1.5px;display:inline-block;}
-.td-plate.yp{background:#FFD700;}
-.td-gia{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--gold);}
-.td-kq{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;}
-.td-kq.trung{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);}
-.td-kq.dang{background:rgba(234,179,8,.12);color:#facc15;border:1px solid rgba(234,179,8,.25);}
-.td-kq.sap{background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.2);}
-.pager{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:14px;}
-.pager button{background:var(--d3);border:1px solid var(--border);color:var(--t2);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;transition:all .2s;}
-.pager button:hover,.pager button.active{background:var(--red);border-color:var(--red);color:#fff;}
-.pager button:disabled{opacity:.4;cursor:not-allowed;}
-
-/* LOADING SKELETON */
-.skeleton{background:linear-gradient(90deg,var(--d3) 25%,var(--d4) 50%,var(--d3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;}
-@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-
-/* PAGE-SPECIFIC */
-.page-hero{background:linear-gradient(135deg,#0c0404 0%,#1a0808 100%);padding:36px 24px;border-bottom:1px solid var(--border2);}
-.ph-in{max-width:1280px;margin:0 auto;}
-.ph-bc{font-size:11px;color:var(--t3);margin-bottom:10px;}
-.ph-bc a{cursor:pointer;color:var(--t3);}
-.ph-bc a:hover{color:var(--gold);}
-.ph-bc span{color:var(--t2);}
-.ph-h1{font-family:var(--font-display);font-size:34px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
-.ph-h1 em{color:var(--red);font-style:normal;}
-.ph-desc{font-size:14px;color:var(--t2);}
-
-/* ĐỊNH GIÁ PAGE */
-.dg-form{background:var(--d2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
-.fg{margin-bottom:16px;}
-.fg label{display:block;font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
-.fg input,.fg select{width:100%;background:var(--d3);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r);padding:12px 16px;color:var(--text);font-size:15px;outline:none;transition:border-color .2s;}
-.fg input{font-family:var(--font-display);font-weight:700;letter-spacing:2px;}
-.fg input:focus,.fg select:focus{border-color:var(--red);}
-.fg input::placeholder{font-family:var(--font-body);font-weight:400;letter-spacing:0;color:var(--t3);}
-.dg-result{background:var(--d2);border:1px solid var(--border);border-radius:12px;padding:24px;display:none;}
-.dg-result.show{display:block;animation:fadeUp .3s ease;}
-.dg-plate-big{font-family:var(--font-display);font-size:46px;font-weight:900;background:#fff;color:#000;border:4px solid #111;border-radius:8px;padding:10px 28px;display:inline-block;letter-spacing:4px;box-shadow:0 8px 32px rgba(0,0,0,.5);margin-bottom:20px;}
-.dg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
-.dg-card{background:var(--d3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
-.dg-card .dc-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-.dg-card .dc-val{font-family:var(--font-display);font-size:22px;font-weight:800;}
-.dg-ref-box{background:rgba(212,160,23,.06);border:1px solid rgba(212,160,23,.2);border-radius:10px;padding:16px;margin-top:16px;}
-.dg-ref-title{font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
-.dg-ref-table{width:100%;font-size:12px;border-collapse:collapse;}
-.dg-ref-table th{color:var(--t3);font-weight:600;text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);}
-.dg-ref-table td{padding:6px 8px;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03);}
-.dg-ref-table td.gold{color:var(--gold);font-family:var(--font-display);font-size:14px;font-weight:700;}
-
-/* PHONG THỦY PAGE */
-.pt-form{background:var(--d2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
-.ngu-hanh-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px;}
-.nh-card{border-radius:10px;padding:14px 10px;text-align:center;border:1px solid var(--border);}
-.nh-card .nh-icon{font-size:28px;margin-bottom:6px;}
-.nh-card .nh-name{font-size:14px;font-weight:700;margin-bottom:4px;}
-.nh-card .nh-desc{font-size:11px;color:var(--t2);}
-.nh-kim{background:rgba(192,192,192,.07);border-color:rgba(192,192,192,.2);}
-.nh-hoa{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.2);}
-.nh-moc{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.2);}
-.nh-thuy{background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.2);}
-.nh-tho{background:rgba(234,179,8,.07);border-color:rgba(234,179,8,.2);}
-
-/* FOOTER */
-footer{background:#060606;border-top:2px solid var(--red);padding:36px 0 0;margin-top:24px;}
-.ft-in{max-width:1280px;margin:0 auto;padding:0 24px 28px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:28px;}
-.ft-brand p{font-size:12px;color:var(--t3);line-height:1.7;margin-top:10px;}
-.ft-col h4{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
-.ft-col ul li{margin-bottom:5px;}
-.ft-col ul li a{font-size:12px;color:var(--t3);transition:color .2s;cursor:pointer;}
-.ft-col ul li a:hover{color:var(--gold);}
-.ft-bottom{border-top:1px solid var(--border);padding:14px 24px;max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--t3);}
-
-/* FLOAT BUTTONS */
-.floats{position:fixed;bottom:22px;right:18px;display:flex;flex-direction:column;gap:10px;z-index:999;}
-.fl-btn{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);transition:transform .2s;text-decoration:none;}
-.fl-btn:hover{transform:scale(1.12);}
-.fl-fb{background:#1877f2;}
-.fl-zl{background:#0068ff;}
-.fl-call{background:var(--red);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{box-shadow:0 4px 16px rgba(200,16,46,.4);}50%{box-shadow:0 4px 24px rgba(200,16,46,.7),0 0 0 8px rgba(200,16,46,.08);}}
-
-/* TOAST */
-.toast{position:fixed;bottom:82px;right:18px;background:var(--d2);border:1px solid var(--red);border-radius:10px;padding:11px 18px;font-size:12px;color:var(--text);z-index:9999;display:none;max-width:300px;}
-.toast.show{display:block;animation:fadeUp .3s ease;}
-
-/* RESPONSIVE */
-@media(max-width:1000px){.main{grid-template-columns:1fr;}.ft-in{grid-template-columns:1fr 1fr;}}
-@media(max-width:700px){.main,.hero,.search-hero,.page-hero,.ft-in{padding-left:16px;padding-right:16px;}.hero h1{font-size:36px;}.cat-grid{grid-template-columns:repeat(3,1fr);}.ngu-hanh-grid{grid-template-columns:repeat(3,1fr);}.qr-card{grid-template-columns:1fr;}.ft-in{grid-template-columns:1fr;}.nav-in a{padding:10px 10px;font-size:12px;}}
+@media(max-width:768px){
+  .hstats{grid-template-columns:1fr 1fr;}
+  .qgrid3,.qgrid2{grid-template-columns:1fr 1fr;}
+  .srch{flex-direction:column;}
+}
 </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="topbar-in">
-    <div class="tb-date">Hôm nay: <b id="today"></b></div>
-    <div class="tb-live"><span class="tb-live-dot"></span>Dữ liệu VPA live</div>
-    <div class="topbar-links">
-      <a onclick="goto('ve-chung-toi')">Về chúng tôi</a>
-      <a onclick="goto('thanh-toan')">Thanh toán</a>
-      <a onclick="goto('lien-he')">Liên Hệ</a>
-    </div>
-  </div>
+<!-- INFO BAR -->
+<div class="info-bar">
+  <span><span class="live-dot"></span>Kết nối dữ liệu: <a href="https://dgbs.vpa.com.vn/danh-sach-bien" target="_blank">dgbs.vpa.com.vn/danh-sach-bien</a> — Công ty Đấu giá Hợp danh Việt Nam</span>
+  <a class="vpa-link-btn" href="https://dgbs.vpa.com.vn/danh-sach-bien" target="_blank">↗ Mở VPA trực tiếp</a>
 </div>
 
 <!-- HEADER -->
-<header>
-  <div class="hdr-in">
-    <div class="logo" onclick="goto('home')">
-      <div class="logo-main">Kho Biển</div>
-      <div class="logo-sub">Phong Thủy</div>
-      <div class="logo-url">khobienphongthuy.vn · Dữ liệu từ dgbs.vpa.com.vn</div>
-    </div>
-    <div class="hdr-hl">
-      <div class="lbl">Hotline tư vấn miễn phí</div>
-      <div class="num">0979.868.868</div>
-      <div class="num2">0888.188.888</div>
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div class="hdr-title"><span class="ico">🔍</span>Tra cứu biển số đẹp Toàn Cầu <span id="hdrPlate" style="color:#e53935;font-size:15px;"></span></div>
+    <div class="hdr-src">
+      <div class="src-btn active-blue" id="srcVpa" onclick="setSource('vpa')">🗄 Dữ liệu VPA</div>
+      <div class="src-btn" id="srcSheet" onclick="setSource('sheet')">📊 Google Sheet</div>
+      <div class="src-btn" id="srcBoth" onclick="setSource('both')">🔗 Gộp cả hai</div>
     </div>
   </div>
-</header>
-
-<!-- NAV -->
-<nav>
-  <div class="nav-in">
-    <a id="nav-home" class="active" onclick="goto('home')">Trang Chủ</a>
-    <a id="nav-vpa-live" onclick="goto('vpa-live')">📊 VPA Live</a>
-    <a id="nav-dinh-gia" onclick="goto('dinh-gia')">Định Giá AI</a>
-    <a id="nav-xem-pt" onclick="goto('xem-pt')">Phong Thủy</a>
-    <a id="nav-dat-bien" onclick="goto('dat-bien')">Đặt Biển</a>
-    <a id="nav-tin-tuc" onclick="goto('tin-tuc')">Tin Tức</a>
-  </div>
-</nav>
-
-<!-- ======================== TRANG CHỦ ======================== -->
-<div id="page-home" class="page active">
-  <div class="hero">
-    <div class="hero-in">
-      <div class="hero-badge">🔴 LIVE · Dữ liệu đấu giá thực tế từ VPA</div>
-      <h1>Kho Biển Số Đẹp<em>Định Giá Thực Tế</em></h1>
-      <p>Tra cứu biển số — Định giá theo kết quả đấu giá VPA gần nhất — Xem phong thủy miễn phí</p>
-      <div class="hero-stats">
-        <div class="hero-stat"><div class="n">153K+</div><div class="l">Biển đấu giá</div></div>
-        <div class="hero-stat"><div class="n">63</div><div class="l">Tỉnh thành</div></div>
-        <div class="hero-stat"><div class="n">Real</div><div class="l">Giá thực tế</div></div>
-        <div class="hero-stat"><div class="n">AI</div><div class="l">Phân tích</div></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="search-hero">
-    <div class="sh-in">
-      <div class="sh-row">
-        <input class="sh-input" id="searchInput" type="text" placeholder="Nhập biển số: 30A-888.88  hoặc  51D-999.99" autocomplete="off" oninput="onQuickSearch(this.value)" onkeydown="if(event.key==='Enter')analyzeWithAI()">
-        <button class="sh-btn" id="aiBtnHome" onclick="analyzeWithAI()">🔮 Định Giá AI</button>
-      </div>
-      <div id="quickResult" class="qr-wrap"></div>
-      <div id="aiResult" class="ai-section">
-        <div class="ai-header">🤖 Phân tích AI — Dựa trên dữ liệu VPA</div>
-        <div id="aiBody" class="ai-body"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="main">
-    <div>
-      <!-- LOẠI BIỂN -->
-      <div class="section">
-        <div class="section-hdr">
-          <div class="section-title">Các Loại Biển Số</div>
-        </div>
-        <div class="cat-grid">
-          <div class="cat-btn" onclick="gotoLoai('ngu-quy')"><div class="cat-icon">⭐</div><div class="cat-name">Ngũ Quý</div></div>
-          <div class="cat-btn" onclick="gotoLoai('tu-quy')"><div class="cat-icon">🔥</div><div class="cat-name">Tứ Quý</div></div>
-          <div class="cat-btn" onclick="gotoLoai('tam-hoa')"><div class="cat-icon">🌸</div><div class="cat-name">Tam Hoa</div></div>
-          <div class="cat-btn" onclick="gotoLoai('loc-phat')"><div class="cat-icon">💰</div><div class="cat-name">Lộc Phát</div></div>
-          <div class="cat-btn" onclick="gotoLoai('so-tien')"><div class="cat-icon">📈</div><div class="cat-name">Số Tiến</div></div>
-          <div class="cat-btn" onclick="gotoLoai('so-dao')"><div class="cat-icon">🔄</div><div class="cat-name">Số Đảo</div></div>
-          <div class="cat-btn" onclick="gotoLoai('so-kep')"><div class="cat-icon">🔗</div><div class="cat-name">Số Kép</div></div>
-          <div class="cat-btn" onclick="gotoLoai('than-tai')"><div class="cat-icon">🐉</div><div class="cat-name">Thần Tài</div></div>
-        </div>
-      </div>
-
-      <!-- BIỂN VIP -->
-      <div class="section">
-        <div class="section-hdr">
-          <div class="section-title">Biển VIP · Giá Thực Tế</div>
-          <a onclick="gotoLoai('ngu-quy')">Xem tất cả →</a>
-        </div>
-        <div class="bien-grid" id="gridVip"></div>
-        <div class="xem-them"><button class="btn-more" onclick="gotoLoai('ngu-quy')">Xem thêm biển VIP</button></div>
-      </div>
-
-      <!-- VPA RECENT -->
-      <div class="section">
-        <div class="section-hdr">
-          <div class="section-title">📊 Kết Quả Đấu Giá VPA Gần Đây</div>
-          <a onclick="goto('vpa-live')">Xem live →</a>
-        </div>
-        <div id="homeVpaTable" class="vpa-table-wrap">
-          <div style="text-align:center;padding:30px;color:var(--t2);font-size:13px;">
-            <div class="skeleton" style="height:40px;margin-bottom:8px;"></div>
-            <div class="skeleton" style="height:40px;margin-bottom:8px;"></div>
-            <div class="skeleton" style="height:40px;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <aside>
-      <div class="hl-box">
-        <div class="hl-lbl">Hỗ Trợ Khách Hàng</div>
-        <div class="hl-name">Nguyễn Tiến Công</div>
-        <a href="tel:0979868868" class="hl-num">0979.868.868</a>
-        <a href="tel:0888188888" class="hl-num">0888.188.888</a>
-        <a href="tel:0979868868" class="hl-btn">📞 Gọi Ngay</a>
-      </div>
-      <div class="sb-box">
-        <div class="sb-title">🗺️ Biển Theo Tỉnh</div>
-        <div class="tinh-grid">
-          <a onclick="gotoTinh('Hà Nội')">Hà Nội</a><a onclick="gotoTinh('HCM')">HCM</a>
-          <a onclick="gotoTinh('Đà Nẵng')">Đà Nẵng</a><a onclick="gotoTinh('Hải Phòng')">Hải Phòng</a>
-          <a onclick="gotoTinh('Đồng Nai')">Đồng Nai</a><a onclick="gotoTinh('Bình Dương')">Bình Dương</a>
-          <a onclick="gotoTinh('Nghệ An')">Nghệ An</a><a onclick="gotoTinh('Khánh Hòa')">Khánh Hòa</a>
-          <a onclick="gotoTinh('Lâm Đồng')">Lâm Đồng</a><a onclick="gotoTinh('Cần Thơ')">Cần Thơ</a>
-          <a onclick="gotoTinh('Huế')">Huế</a><a onclick="gotoTinh('Quảng Ninh')">Quảng Ninh</a>
-        </div>
-      </div>
-      <div class="sb-box">
-        <div class="sb-title">💰 Tìm Theo Giá</div>
-        <div class="gia-list">
-          <a onclick="gotoGia(50,100)">50–100 triệu <span class="gia-badge">hot</span></a>
-          <a onclick="gotoGia(100,300)">100–300 triệu</a>
-          <a onclick="gotoGia(300,500)">300–500 triệu</a>
-          <a onclick="gotoGia(500,1000)">500tr–1 tỷ</a>
-          <a onclick="gotoGia(1000,99999)">Trên 1 tỷ 💎</a>
-        </div>
-      </div>
-      <div class="sb-box">
-        <div class="sb-title">🔗 Nguồn Dữ Liệu</div>
-        <ul>
-          <li><a>📊 dgbs.vpa.com.vn</a></li>
-          <li><a>Giá khởi điểm: 40 triệu</a></li>
-          <li><a>Bước giá: +5 triệu/lần</a></li>
-          <li><a>Đặt cọc: 40 triệu</a></li>
-          <li><a>60 phút/biển số</a></li>
-        </ul>
-      </div>
-    </aside>
+  <div class="hdr-right">
+    <span style="font-size:11px;color:#999;">ADMIN</span>
+    <button class="btn-sm btn-ghost">👤 Quản trị viên</button>
+    <button class="btn-sm btn-red">🚪 Đăng xuất</button>
   </div>
 </div>
 
-<!-- ======================== VPA LIVE ======================== -->
-<div id="page-vpa-live" class="page">
-  <div class="page-hero">
-    <div class="ph-in">
-      <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>VPA Live</span></div>
-      <div class="ph-h1">📊 Kết Quả <em>Đấu Giá VPA</em></div>
-      <div class="ph-desc">Dữ liệu kết quả đấu giá biển số xe tại dgbs.vpa.com.vn — Cập nhật liên tục</div>
+<!-- SEARCH -->
+<div class="srch">
+  <div class="sf">
+    <label>Loại xe</label>
+    <select id="sLoai">
+      <option value="">🚗 Ô tô</option>
+      <option value="xe-may">🛵 Xe máy</option>
+    </select>
+  </div>
+  <div class="sf">
+    <label>Biển số</label>
+    <input type="text" id="sBien" placeholder="30K*, 888.88" autocomplete="off" oninput="onBienInput(this.value)">
+  </div>
+  <div class="sf">
+    <label>Tỉnh thành</label>
+    <select id="sTinh">
+      <option value="">-- Tất cả --</option>
+      <optgroup label="Miền Bắc">
+        <option value="Hà Nội">Thành phố Hà Nội</option>
+        <option value="Hải Phòng">Thành phố Hải Phòng</option>
+        <option value="Quảng Ninh">Tỉnh Quảng Ninh</option>
+        <option value="Hưng Yên">Tỉnh Hưng Yên</option>
+        <option value="Hải Dương">Tỉnh Hải Dương</option>
+        <option value="Bắc Ninh">Tỉnh Bắc Ninh</option>
+        <option value="Vĩnh Phúc">Tỉnh Vĩnh Phúc</option>
+        <option value="Phú Thọ">Tỉnh Phú Thọ</option>
+        <option value="Thái Bình">Tỉnh Thái Bình</option>
+        <option value="Nam Định">Tỉnh Nam Định</option>
+        <option value="Ninh Bình">Tỉnh Ninh Bình</option>
+        <option value="Thanh Hóa">Tỉnh Thanh Hóa</option>
+        <option value="Nghệ An">Tỉnh Nghệ An</option>
+        <option value="Hà Tĩnh">Tỉnh Hà Tĩnh</option>
+      </optgroup>
+      <optgroup label="Miền Trung">
+        <option value="Đà Nẵng">Thành phố Đà Nẵng</option>
+        <option value="Huế">Tỉnh Thừa Thiên Huế</option>
+        <option value="Khánh Hòa">Tỉnh Khánh Hòa</option>
+        <option value="Bình Định">Tỉnh Bình Định</option>
+      </optgroup>
+      <optgroup label="Miền Nam">
+        <option value="Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
+        <option value="Đồng Nai">Tỉnh Đồng Nai</option>
+        <option value="Bình Dương">Tỉnh Bình Dương</option>
+        <option value="Cần Thơ">Thành phố Cần Thơ</option>
+        <option value="An Giang">Tỉnh An Giang</option>
+        <option value="Đồng Tháp">Tỉnh Đồng Tháp</option>
+        <option value="Gia Lai">Tỉnh Gia Lai</option>
+        <option value="Lâm Đồng">Tỉnh Lâm Đồng</option>
+        <option value="Tây Ninh">Tỉnh Tây Ninh</option>
+        <option value="Kiên Giang">Tỉnh Kiên Giang</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="sf">
+    <label>Màu biển</label>
+    <select id="sMau">
+      <option value="">Tất cả màu</option>
+      <option value="trang">Trắng</option>
+      <option value="vang">Vàng</option>
+    </select>
+  </div>
+  <div class="sf">
+    <label>Ngày đấu giá</label>
+    <input type="date" id="sNgay">
+  </div>
+  <button class="btn-search" onclick="doSearch()">TÌM KIẾM</button>
+</div>
+
+<!-- FILTER TAGS -->
+<div class="ftags" id="ftags">
+  <span class="ft ft-all on" data-f="all">● Tất cả</span>
+  <span class="ft ft-nq" data-f="ngu-quy">⭐ Ngũ quý (55555)</span>
+  <span class="ft ft-tq" data-f="tu-quy">💎 Tứ quý (tất cả)</span>
+  <span class="ft ft-tqc" data-f="tu-quy-c">💎 Tứ quý cuối (x1111)</span>
+  <span class="ft ft-tqd" data-f="tu-quy-d">💎 Tứ quý đầu (1111x)</span>
+  <span class="ft ft-th" data-f="tam-hoa">🌸 Tam hoa (tất cả)</span>
+  <span class="ft ft-thc" data-f="tam-hoa-c">🌸 Tam hoa cuối (**·999)</span>
+  <span class="ft ft-thd" data-f="tam-hoa-d">🌸 Tam hoa đầu/giữa (999·**)</span>
+  <span class="ft ft-sn" data-f="sanh">📈 Sảnh tiến (1234)</span>
+  <span class="ft ft-kp" data-f="kep">🔗 Kép AABB (99·22)</span>
+  <span class="ft ft-sl" data-f="solap">🔁 Số lặp ABAB (38·38)</span>
+  <span class="ft ft-gh" data-f="ganh">⚖️ Gánh ABBA (38·83)</span>
+  <span class="ft ft-od" data-f="ong-dia">🏮 Ông địa (*38 / *78)</span>
+  <span class="ft ft-tt" data-f="than-tai">🐉 Thần tài (*39 / *79)</span>
+  <span class="ft ft-lp" data-f="loc-phat">💰 Lộc phát (*68 / *86)</span>
+  <span class="ft ft-t47" data-f="t47">⛔ Tránh cả 4 và 7</span>
+  <span class="ft ft-t4" data-f="t4">⛔ Tránh số 4</span>
+  <span class="ft ft-t7" data-f="t7">⛔ Tránh số 7</span>
+  <span class="ft ft-t49" data-f="t49">⛔ Tránh 49</span>
+  <span class="ft ft-t53" data-f="t53">⛔ Tránh 53</span>
+  <span class="ft ft-t13" data-f="t13">⛔ Tránh 13</span>
+</div>
+
+<!-- RESULTS BAR -->
+<div class="rbar">
+  <div class="rbar-l">Tìm thấy <b id="cnt">0</b> biển số</div>
+  <div class="rbar-r">
+    <span>100 dòng/trang</span>
+    <button class="btn-xl" onclick="doExport()">📥 Xuất Excel</button>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="twrap">
+  <table>
+    <thead>
+      <tr>
+        <th>BIỂN SỐ</th>
+        <th>LOẠI XE</th>
+        <th>ĐIỂM</th>
+        <th>TỈNH THÀNH</th>
+        <th>HÀNH ĐỘNG</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr class="ld-row"><td colspan="5"><span class="spin"></span>Đang tải dữ liệu từ VPA...</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="pgn" id="pgn"></div>
+
+<!-- ═══ MODAL LỊCH SỬ ═══ -->
+<div class="moverlay" id="mHist" style="display:none" onclick="if(event.target===this)close('mHist')">
+  <div class="mbox">
+    <div class="mhdr">
+      <div class="mttl">📋 Lịch sử đấu giá — <span class="pn" id="hPlate"></span></div>
+      <button class="mclose" onclick="close('mHist')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="hstats">
+        <div class="hs hs-b"><div class="hs-lbl">Số Phiên</div><div class="hs-val" id="hSP">—</div></div>
+        <div class="hs hs-g"><div class="hs-lbl">Phiên Trúng</div><div class="hs-val" id="hPT">—</div></div>
+        <div class="hs hs-o"><div class="hs-lbl">Ngày Đấu Gần Nhất</div><div class="hs-val" id="hNG">—</div></div>
+        <div class="hs hs-r"><div class="hs-lbl">Giá Trúng Gần Nhất</div><div class="hs-val" id="hGT">—</div></div>
+      </div>
+      <div id="hTbl"></div>
+      <div id="hAi"></div>
     </div>
   </div>
-  <div class="main" style="grid-template-columns:1fr 260px;">
-    <div>
-      <!-- SEARCH VPA -->
-      <div class="section" style="padding-bottom:16px;">
-        <div class="sh-row">
-          <input class="sh-input" id="vpaSearch" type="text" placeholder="Tìm biển số: 30A, 51D-888..." style="font-size:14px;">
-          <select id="vpaTinh" style="background:var(--d3);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r);padding:12px 14px;color:var(--t2);font-size:13px;outline:none;cursor:pointer;">
-            <option value="">Tất cả tỉnh/TP</option>
-            <option>Hà Nội</option><option>TP. Hồ Chí Minh</option><option>Đà Nẵng</option>
-            <option>Hải Phòng</option><option>Đồng Nai</option><option>Bình Dương</option>
-            <option>Nghệ An</option><option>Khánh Hòa</option><option>Lâm Đồng</option>
+</div>
+
+<!-- ═══ MODAL QUẺ DỊCH ═══ -->
+<div class="moverlay" id="mQue" style="display:none" onclick="if(event.target===this)close('mQue')">
+  <div class="mbox" style="max-width:660px;">
+    <div class="mhdr">
+      <div class="mttl">🔲 Xem Quẻ Dịch & Tứ Trụ — <span class="pn" id="qPlate"></span></div>
+      <button class="mclose" onclick="close('mQue')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="qguide">📖 <strong>Hướng dẫn:</strong> Nhập ngày sinh để xem phân tích <strong>Tứ Trụ Mệnh Lý</strong> đầy đủ — bao gồm Dụng Thần, độ tương hợp biển số với bản mệnh, và Quẻ Kinh Dịch. Bỏ trống ngày sinh để chỉ xem Quẻ đơn thuần.</div>
+      <div class="qgrid3">
+        <div class="fgq"><label>Ngày sinh</label><input type="number" id="qN" placeholder="VD: 15" min="1" max="31"></div>
+        <div class="fgq"><label>Tháng sinh</label><input type="number" id="qTh" placeholder="VD: 6" min="1" max="12"></div>
+        <div class="fgq"><label>Năm sinh</label><input type="number" id="qNam" placeholder="VD: 1990"></div>
+      </div>
+      <div class="qgrid2">
+        <div class="fgq"><label>Giờ sinh (tùy chọn)</label>
+          <select id="qGio">
+            <option value="">-- Không rõ --</option>
+            <option>23h–1h (Tý)</option><option>1h–3h (Sửu)</option><option>3h–5h (Dần)</option>
+            <option>5h–7h (Mão)</option><option>7h–9h (Thìn)</option><option>9h–11h (Tỵ)</option>
+            <option>11h–13h (Ngọ)</option><option>13h–15h (Mùi)</option><option>15h–17h (Thân)</option>
+            <option>17h–19h (Dậu)</option><option>19h–21h (Tuất)</option><option>21h–23h (Hợi)</option>
           </select>
-          <button class="sh-btn" onclick="searchVPA()">🔍 Tìm</button>
         </div>
-      </div>
-
-      <div class="section">
-        <div class="section-hdr">
-          <div class="section-title">Danh Sách Biển Số · Đấu Giá VPA</div>
-          <a href="https://dgbs.vpa.com.vn/danh-sach-bien" target="_blank" style="color:var(--gold)">↗ VPA gốc</a>
+        <div class="fgq"><label>Giới tính</label>
+          <select id="qGT"><option value="nam">🙋 Nam</option><option value="nu">🙋‍♀️ Nữ</option></select>
         </div>
-        <div id="vpaTable" class="vpa-table-wrap"></div>
-        <div class="pager" id="vpaPage"></div>
+        <div class="fgq"><label>Năm xem vận</label><input type="number" id="qNV" value="2026"></div>
       </div>
-    </div>
-    <aside>
-      <div class="hl-box">
-        <div class="hl-lbl">Đặt Mua Ngay</div>
-        <div class="hl-name">Nguyễn Tiến Công</div>
-        <a href="tel:0979868868" class="hl-num">0979.868.868</a>
-        <a href="tel:0979868868" class="hl-btn">📞 Gọi Ngay</a>
+      <div class="qbtns">
+        <button class="btn-q1" onclick="xemFull()">🔮 Xem Tứ Trụ + Quẻ Dịch đầy đủ</button>
+        <button class="btn-q2" onclick="xemSimple()">🔲 Chỉ xem Quẻ</button>
       </div>
-      <div class="sb-box">
-        <div class="sb-title">📖 Quy Định VPA</div>
-        <ul>
-          <li><a>Giá khởi điểm: 40 triệu ₫</a></li>
-          <li><a>Bước giá tối thiểu: 5 triệu</a></li>
-          <li><a>Đặt cọc trước: 40 triệu</a></li>
-          <li><a>Thời gian đấu: 60 phút</a></li>
-          <li><a>Nộp tiền trong 15 ngày</a></li>
-          <li><a>Hoàn cọc trong 3 ngày</a></li>
-        </ul>
-      </div>
-      <div class="sb-box">
-        <div class="sb-title">🏆 Top Giá Đấu</div>
-        <div id="topGia" style="font-size:12px;color:var(--t2);">Đang tải...</div>
-      </div>
-    </aside>
-  </div>
-</div>
-
-<!-- ======================== ĐỊNH GIÁ AI ======================== -->
-<div id="page-dinh-gia" class="page">
-  <div class="page-hero">
-    <div class="ph-in">
-      <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>Định Giá AI</span></div>
-      <div class="ph-h1">🤖 Định Giá <em>AI Thực Tế</em></div>
-      <div class="ph-desc">Định giá dựa trên kết quả đấu giá VPA gần nhất — Biển tương tự đã trúng bao nhiêu?</div>
-    </div>
-  </div>
-  <div class="main" style="grid-template-columns:1fr 260px;">
-    <div>
-      <div class="dg-form">
-        <div class="fg"><label>Nhập biển số cần định giá</label>
-          <input type="text" id="dgInput" placeholder="vd: 30A-888.88" oninput="dinhGiaRealtime(this.value)">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="fg"><label>Tỉnh/Thành phố</label>
-            <select id="dgTinh">
-              <option value="">-- Chọn tỉnh --</option>
-              <option>Hà Nội</option><option>TP. Hồ Chí Minh</option><option>Đà Nẵng</option>
-              <option>Hải Phòng</option><option>Đồng Nai</option><option>Bình Dương</option>
-            </select>
-          </div>
-          <div class="fg"><label>Loại xe</label>
-            <select id="dgLoai">
-              <option>Ô tô con</option><option>Ô tô tải</option><option>Xe máy</option>
-            </select>
-          </div>
-        </div>
-        <button class="sh-btn" id="dgBtn" onclick="dinhGiaAI()">🤖 Phân Tích AI & Định Giá</button>
-      </div>
-      <div id="dgResult" class="dg-result"></div>
-    </div>
-    <aside>
-      <div class="hl-box">
-        <div class="hl-lbl">Tư Vấn Định Giá</div>
-        <div class="hl-name">Nguyễn Tiến Công</div>
-        <a href="tel:0979868868" class="hl-num">0979.868.868</a>
-        <a href="tel:0979868868" class="hl-btn">📞 Tư Vấn Miễn Phí</a>
-      </div>
-      <div class="sb-box">
-        <div class="sb-title">📊 Khung Giá VPA</div>
-        <ul>
-          <li><a>Ngũ Quý: 2–18 tỷ</a></li>
-          <li><a>Tứ Quý: 500tr–5 tỷ</a></li>
-          <li><a>Tam Hoa: 100–500 triệu</a></li>
-          <li><a>Lộc Phát (68/88): 200tr–2 tỷ</a></li>
-          <li><a>Số Tiến: 60–300 triệu</a></li>
-          <li><a>Thường: 40–80 triệu</a></li>
-        </ul>
-      </div>
-    </aside>
-  </div>
-</div>
-
-<!-- ======================== PHONG THỦY ======================== -->
-<div id="page-xem-pt" class="page">
-  <div class="page-hero">
-    <div class="ph-in">
-      <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>Xem Phong Thủy</span></div>
-      <div class="ph-h1">🧧 Xem Phong Thủy <em>Biển Số</em></div>
-      <div class="ph-desc">Phân tích ngũ hành, cung mệnh và sự tương hợp của biển số với chủ nhân</div>
-    </div>
-  </div>
-  <div class="main" style="grid-template-columns:1fr 260px;">
-    <div>
-      <div class="pt-form">
-        <div class="fg"><label>Biển số xe</label><input type="text" id="ptInput" placeholder="vd: 30A-888.88" oninput="ptRealtime(this.value)"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="fg"><label>Năm sinh chủ xe</label>
-            <select id="ptNam">
-              <option value="">-- Chọn năm --</option>
-              <option>1970</option><option>1975</option><option>1980</option><option>1985</option>
-              <option>1990</option><option>1991</option><option>1992</option><option>1993</option>
-              <option>1994</option><option>1995</option><option>1996</option><option>1997</option>
-              <option>1998</option><option>1999</option><option>2000</option>
-            </select>
-          </div>
-          <div class="fg"><label>Mệnh</label>
-            <select id="ptMenh">
-              <option value="">-- Mệnh của bạn --</option>
-              <option>Kim</option><option>Mộc</option><option>Thủy</option><option>Hỏa</option><option>Thổ</option>
-            </select>
-          </div>
-        </div>
-        <button class="sh-btn" onclick="xemPTAI()">🔮 Xem Phong Thủy AI</button>
-      </div>
-      <div id="ptResult" class="dg-result"></div>
-
-      <div class="section" style="margin-top:20px;">
-        <div class="section-hdr"><div class="section-title">Ngũ Hành Biển Số</div></div>
-        <div class="ngu-hanh-grid">
-          <div class="nh-card nh-kim"><div class="nh-icon">⚙️</div><div class="nh-name" style="color:#c0c0c0;">Kim</div><div class="nh-desc">Số tận cùng 00–09, 20–29</div></div>
-          <div class="nh-card nh-hoa"><div class="nh-icon">🔥</div><div class="nh-name" style="color:#f87171;">Hỏa</div><div class="nh-desc">Số tận cùng 10–19</div></div>
-          <div class="nh-card nh-moc"><div class="nh-icon">🌿</div><div class="nh-name" style="color:#4ade80;">Mộc</div><div class="nh-desc">Số tận cùng 30–39</div></div>
-          <div class="nh-card nh-thuy"><div class="nh-icon">💧</div><div class="nh-name" style="color:#60a5fa;">Thủy</div><div class="nh-desc">Số tận cùng 40–49</div></div>
-          <div class="nh-card nh-tho"><div class="nh-icon">🪨</div><div class="nh-name" style="color:#facc15;">Thổ</div><div class="nh-desc">Số tận cùng 50–59</div></div>
-        </div>
-      </div>
-    </div>
-    <aside>
-      <div class="hl-box">
-        <div class="hl-lbl">Tư Vấn Phong Thủy</div>
-        <div class="hl-name">Chuyên gia phong thủy</div>
-        <a href="tel:0979868868" class="hl-num">0979.868.868</a>
-        <a href="tel:0979868868" class="hl-btn">📞 Tư Vấn Miễn Phí</a>
-      </div>
-    </aside>
-  </div>
-</div>
-
-<!-- ======================== ĐẶT BIỂN ======================== -->
-<div id="page-dat-bien" class="page">
-  <div class="page-hero"><div class="ph-in">
-    <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>Đặt Biển Theo Yêu Cầu</span></div>
-    <div class="ph-h1">✨ Đặt Biển <em>Theo Yêu Cầu</em></div>
-    <div class="ph-desc">Báo ngày sinh, mệnh, tỉnh thành — Chúng tôi tìm biển phù hợp nhất</div>
-  </div></div>
-  <div style="max-width:860px;margin:0 auto;padding:24px;">
-    <div class="dg-form">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="fg"><label>Họ tên *</label><input type="text" placeholder="Nguyễn Văn A"></div>
-        <div class="fg"><label>Số điện thoại *</label><input type="tel" placeholder="0979 868 868"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="fg"><label>Ngày sinh</label><input type="text" placeholder="15/08/1990"></div>
-        <div class="fg"><label>Mệnh</label>
-          <select><option value="">-- Mệnh --</option><option>Kim</option><option>Mộc</option><option>Thủy</option><option>Hỏa</option><option>Thổ</option></select>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="fg"><label>Tỉnh đăng ký</label>
-          <select><option value="">-- Tỉnh/TP --</option><option>Hà Nội (29,30,31...)</option><option>TP. Hồ Chí Minh (50–59)</option><option>Đà Nẵng (43, 92)</option><option>Hải Phòng (15,16,34)</option></select>
-        </div>
-        <div class="fg"><label>Ngân sách</label>
-          <select><option>50–100 triệu</option><option>100–300 triệu</option><option>300–500 triệu</option><option>Trên 500 triệu</option></select>
-        </div>
-      </div>
-      <div class="fg"><label>Yêu cầu thêm</label><input type="text" placeholder="Số may mắn, số phải có, số tránh..."></div>
-      <button class="sh-btn" onclick="showToast('✅ Yêu cầu đã gửi! Chúng tôi sẽ liên hệ trong 24h.')">📨 Gửi Yêu Cầu</button>
+      <div class="qres" id="qRes"><div id="qCon"></div></div>
     </div>
   </div>
 </div>
-
-<!-- ======================== TIN TỨC ======================== -->
-<div id="page-tin-tuc" class="page">
-  <div class="page-hero"><div class="ph-in">
-    <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>Tin Tức</span></div>
-    <div class="ph-h1">📰 Tin Tức <em>Đấu Giá</em></div>
-    <div class="ph-desc">Cập nhật kết quả đấu giá biển số VPA, thị trường và phong thủy</div>
-  </div></div>
-  <div style="max-width:1280px;margin:0 auto;padding:24px;">
-    <div id="newsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;"></div>
-  </div>
-</div>
-
-<!-- ======================== BIỂN THEO LOẠI ======================== -->
-<div id="page-loai" class="page">
-  <div class="page-hero"><div class="ph-in">
-    <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span id="loai-bc">Biển VIP</span></div>
-    <div class="ph-h1" id="loai-h1">👑 Biển <em>VIP</em></div>
-    <div class="ph-desc" id="loai-desc">Tuyển chọn biển số VIP giá tốt</div>
-  </div></div>
-  <div class="main" style="grid-template-columns:1fr 260px;">
-    <div>
-      <div class="section">
-        <div class="section-hdr"><div class="section-title" id="loai-sec-title">Biển VIP</div></div>
-        <div class="bien-grid" id="gridLoai"></div>
-      </div>
-    </div>
-    <aside>
-      <div class="hl-box">
-        <div class="hl-lbl">Đặt Mua Ngay</div>
-        <a href="tel:0979868868" class="hl-num">0979.868.868</a>
-        <a href="tel:0979868868" class="hl-btn">📞 Gọi Ngay</a>
-      </div>
-      <div class="sb-box">
-        <div class="sb-title">Loại Khác</div>
-        <ul>
-          <li><a onclick="gotoLoai('ngu-quy')">⭐ Ngũ Quý</a></li>
-          <li><a onclick="gotoLoai('tu-quy')">🔥 Tứ Quý</a></li>
-          <li><a onclick="gotoLoai('tam-hoa')">🌸 Tam Hoa</a></li>
-          <li><a onclick="gotoLoai('loc-phat')">💰 Lộc Phát</a></li>
-          <li><a onclick="gotoLoai('so-kep')">🔗 Số Kép</a></li>
-        </ul>
-      </div>
-    </aside>
-  </div>
-</div>
-
-<!-- ======================== VỀ CHÚNG TÔI ======================== -->
-<div id="page-ve-chung-toi" class="page">
-  <div class="page-hero"><div class="ph-in">
-    <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>Về Chúng Tôi</span></div>
-    <div class="ph-h1">🏢 Về <em>Chúng Tôi</em></div>
-  </div></div>
-  <div style="max-width:900px;margin:0 auto;padding:24px;">
-    <div class="section">
-      <div class="section-hdr"><div class="section-title">Câu Chuyện</div></div>
-      <p style="font-size:14px;color:var(--t2);line-height:1.8;margin-bottom:12px;">Kho Biển Phong Thủy thành lập từ năm 2014, chuyên tư vấn và mua bán biển số đẹp theo phong thủy. Chúng tôi tích hợp dữ liệu đấu giá thực tế từ <strong style="color:var(--gold)">dgbs.vpa.com.vn</strong> để định giá chính xác nhất thị trường.</p>
-      <p style="font-size:14px;color:var(--t2);line-height:1.8;">Hơn 10 năm kinh nghiệm, hơn 5,000 khách hàng hài lòng trên toàn quốc.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ======================== THANH TOÁN ======================== -->
-<div id="page-thanh-toan" class="page">
-  <div class="page-hero"><div class="ph-in">
-    <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>Thanh Toán</span></div>
-    <div class="ph-h1">💳 Hướng Dẫn <em>Thanh Toán</em></div>
-  </div></div>
-  <div style="max-width:860px;margin:0 auto;padding:24px;">
-    <div class="section">
-      <div class="section-hdr"><div class="section-title">Tài Khoản Ngân Hàng</div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div style="background:var(--d3);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:center;">
-          <div style="font-size:28px;">🏦</div>
-          <div><div style="font-weight:700;color:#fff;">Vietcombank</div><div style="font-family:var(--font-display);font-size:18px;color:var(--gold);">0123 456 789</div><div style="font-size:12px;color:var(--t2);">Nguyễn Tiến Công</div></div>
-        </div>
-        <div style="background:var(--d3);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:center;">
-          <div style="font-size:28px;">📱</div>
-          <div><div style="font-weight:700;color:#fff;">Momo / ZaloPay</div><div style="font-family:var(--font-display);font-size:18px;color:var(--gold);">0979 868 868</div><div style="font-size:12px;color:var(--t2);">Nguyễn Tiến Công</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ======================== LIÊN HỆ ======================== -->
-<div id="page-lien-he" class="page">
-  <div class="page-hero"><div class="ph-in">
-    <div class="ph-bc"><a onclick="goto('home')">Trang chủ</a> › <span>Liên Hệ</span></div>
-    <div class="ph-h1">📞 Liên Hệ <em>Tư Vấn</em></div>
-  </div></div>
-  <div style="max-width:900px;margin:0 auto;padding:24px;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div class="section">
-        <div class="section-hdr"><div class="section-title">Thông Tin</div></div>
-        <div style="font-size:13px;color:var(--t2);display:flex;flex-direction:column;gap:10px;">
-          <div>📞 <a href="tel:0979868868" style="color:var(--gold2);">0979.868.868</a></div>
-          <div>📞 <a href="tel:0888188888" style="color:var(--gold2);">0888.188.888</a></div>
-          <div>💬 <a href="https://zalo.me/0979868868" style="color:var(--gold2);">Zalo: 0979868868</a></div>
-          <div>🕐 8:00 – 21:00 hàng ngày</div>
-          <div>📍 Hà Nội & TP. Hồ Chí Minh</div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-hdr"><div class="section-title">Gửi Tin Nhắn</div></div>
-        <div class="dg-form" style="padding:0;background:none;border:none;">
-          <div class="fg"><label>Họ tên</label><input type="text" placeholder="Họ tên của bạn"></div>
-          <div class="fg"><label>Điện thoại</label><input type="tel" placeholder="Số điện thoại"></div>
-          <div class="fg"><label>Nội dung</label><textarea style="width:100%;background:var(--d3);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r);padding:10px 14px;color:var(--text);font-size:13px;outline:none;resize:vertical;min-height:80px;font-family:var(--font-body);" placeholder="Nội dung cần tư vấn..."></textarea></div>
-          <button class="sh-btn" onclick="showToast('✅ Đã gửi! Chúng tôi sẽ phản hồi sớm.')">📨 Gửi</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="ft-in">
-    <div class="ft-brand">
-      <div style="font-family:var(--font-display);font-size:22px;font-weight:900;color:var(--red);letter-spacing:2px;">KHO BIỂN PHONG THỦY</div>
-      <p>Chuyên mua bán biển số đẹp toàn quốc. Dữ liệu định giá từ dgbs.vpa.com.vn. Tư vấn phong thủy miễn phí.</p>
-      <p style="margin-top:8px;">📍 Hà Nội & TP. Hồ Chí Minh</p>
-    </div>
-    <div class="ft-col"><h4>Loại Biển</h4>
-      <ul>
-        <li><a onclick="gotoLoai('ngu-quy')">Biển Ngũ Quý</a></li>
-        <li><a onclick="gotoLoai('tu-quy')">Biển Tứ Quý</a></li>
-        <li><a onclick="gotoLoai('tam-hoa')">Biển Tam Hoa</a></li>
-        <li><a onclick="gotoLoai('loc-phat')">Biển Lộc Phát</a></li>
-      </ul>
-    </div>
-    <div class="ft-col"><h4>Dịch Vụ</h4>
-      <ul>
-        <li><a onclick="goto('vpa-live')">VPA Live</a></li>
-        <li><a onclick="goto('dinh-gia')">Định Giá AI</a></li>
-        <li><a onclick="goto('xem-pt')">Xem Phong Thủy</a></li>
-        <li><a onclick="goto('dat-bien')">Đặt Theo Yêu Cầu</a></li>
-      </ul>
-    </div>
-    <div class="ft-col"><h4>Liên Hệ</h4>
-      <ul>
-        <li><a href="tel:0979868868">📞 0979.868.868</a></li>
-        <li><a href="https://zalo.me/0979868868">💬 Zalo</a></li>
-        <li><a href="https://dgbs.vpa.com.vn" target="_blank">🔗 VPA gốc</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="ft-bottom">
-    <span>© 2026 Kho Biển Phong Thủy. Dữ liệu tham khảo từ dgbs.vpa.com.vn</span>
-    <span>SPA · GitHub Pages · AI-Powered</span>
-  </div>
-</footer>
-
-<!-- FLOATS -->
-<div class="floats">
-  <a href="https://facebook.com" class="fl-btn fl-fb" title="Facebook" style="font-size:18px;font-weight:700;">f</a>
-  <a href="https://zalo.me/0979868868" class="fl-btn fl-zl" title="Zalo" style="font-size:12px;font-weight:800;">Z</a>
-  <a href="tel:0979868868" class="fl-btn fl-call" title="Gọi ngay">📞</a>
-</div>
-<div id="toast" class="toast"></div>
 
 <script>
-// ===================== CONFIG =====================
-const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
-
-// ===================== ROUTING =====================
-function goto(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-in a').forEach(a => a.classList.remove('active'));
-  const el = document.getElementById('page-' + page);
-  if (el) el.classList.add('active');
-  const nav = document.getElementById('nav-' + page);
-  if (nav) nav.classList.add('active');
-  window.scrollTo(0, 0);
-  history.pushState(null, '', '#' + page);
-  if (page === 'vpa-live') initVPAPage();
-  if (page === 'tin-tuc') initNews();
-}
-window.addEventListener('popstate', () => {
-  const h = location.hash.replace('#', '') || 'home';
-  const el = document.getElementById('page-' + h);
-  if (el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); el.classList.add('active'); }
-});
-
-// ===================== DATE =====================
-document.getElementById('today').textContent = new Date().toLocaleDateString('vi-VN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
-// ===================== SCORING ALGORITHMS =====================
-function cham(plate) {
-  const num = plate.replace(/[^0-9]/g, '');
-  if (num.length < 2) return 10;
-  let s = 30;
-  // Ngũ quý (5 số giống)
-  if (/(\d)\1{4}/.test(num)) s += 65;
-  // Tứ quý (4 số giống)
-  else if (/(\d)\1{3}/.test(num)) s += 50;
-  // Tam quý (3 số giống cuối)
-  else if (/(\d)\1{2}$/.test(num)) s += 28;
-  // Số tiến 4
-  if (td(num,4)) s += 38; else if (td(num,3)) s += 18;
-  // Số giảm 4
-  if (gd(num,4)) s += 32; else if (gd(num,3)) s += 14;
-  // Palindrome
-  if (dx(num)) s += 22;
-  // Lộc Phát
-  const locphat = ['68','86','88','66','99','168','688','888','999','69','96','68','689','886'];
-  if (locphat.some(d => num.endsWith(d))) s += 18;
-  // Kép
-  if (/(\d{2})\1/.test(num)) s += 15;
-  // Tận cùng 000
-  if (num.endsWith('000')) s += 22; else if (num.endsWith('00')) s += 12;
-  // Toàn một số
-  if (new Set(num).size === 1 && num.length >= 4) s += 32;
-  // Số 4 (xui)
-  const cnt4 = (num.match(/4/g)||[]).length;
-  s -= cnt4 * 8;
-  return Math.min(100, Math.max(0, s));
-}
-function td(s, l) { for (let i = 0; i <= s.length - l; i++) { let ok = true; for (let j = 1; j < l; j++) if (+s[i+j] !== +s[i+j-1]+1) { ok=false; break; } if (ok) return true; } return false; }
-function gd(s, l) { for (let i = 0; i <= s.length - l; i++) { let ok = true; for (let j = 1; j < l; j++) if (+s[i+j] !== +s[i+j-1]-1) { ok=false; break; } if (ok) return true; } return false; }
-function dx(s) { return s.length >= 4 && s === s.split('').reverse().join(''); }
-function tinhMenh(plate) {
-  const n = parseInt(plate.replace(/[^0-9]/g,'').slice(-2)) % 60;
-  if (n <= 9 || (n >= 20 && n <= 29)) return 'Kim';
-  if (n >= 10 && n <= 19) return 'Hỏa';
-  if (n >= 30 && n <= 39) return 'Mộc';
-  if (n >= 40 && n <= 49) return 'Thủy';
-  return 'Thổ';
-}
-const MENH_TAG_CLS = {Kim:'menh-kim',Mộc:'menh-moc',Thủy:'menh-thuy',Hỏa:'menh-hoa',Thổ:'menh-tho'};
-const MENH_ICON = {Kim:'⚙️',Mộc:'🌿',Thủy:'💧',Hỏa:'🔥',Thổ:'🪨'};
-function scoreColor(s) { return s>=90?'#f5c842':s>=80?'#22c55e':s>=70?'#60a5fa':s>=60?'#a78bfa':'#6b7280'; }
-function fmtGia(n) { return n>=1e9?(n/1e9).toFixed(2).replace(/\.?0+$/,'')+' tỷ':Math.round(n/1e6)+' triệu'; }
-
-// ===================== VPA PRICE MODEL (dựa trên dữ liệu đấu giá thực) =====================
-// Dựa trên kết quả đấu giá VPA từ 2023-2026
-const VPA_PRICE_MATRIX = {
-  ngu_quy: {min:1800000000, max:18000000000, avg:5000000000},     // 51K-999.99 = 18 tỷ, 30K-888.88 = 9 tỷ
-  tu_quy_88: {min:800000000, max:5000000000, avg:2000000000},     // Tứ quý số 8
-  tu_quy_99: {min:600000000, max:3000000000, avg:1200000000},
-  tu_quy_other: {min:300000000, max:2000000000, avg:700000000},
-  tam_hoa_dep: {min:150000000, max:800000000, avg:300000000},     // 3 số 8,9 giống cuối
-  tam_hoa: {min:60000000, max:400000000, avg:150000000},
-  loc_phat_888: {min:500000000, max:3000000000, avg:1200000000},
-  loc_phat_88: {min:200000000, max:1500000000, avg:500000000},
-  loc_phat_68: {min:100000000, max:800000000, avg:250000000},
-  palindrome_dep: {min:200000000, max:1500000000, avg:500000000},
-  so_tien: {min:50000000, max:300000000, avg:120000000},
-  so_kep: {min:80000000, max:500000000, avg:200000000},
-  binh_thuong: {min:40000000, max:150000000, avg:70000000},
+// ============================================================
+// DATA ENGINE
+// ============================================================
+const TINH = {
+  '29':'Thành phố Hà Nội','30':'Thành phố Hà Nội','31':'Thành phố Hà Nội',
+  '32':'Thành phố Hà Nội','33':'Thành phố Hà Nội','40':'Thành phố Hà Nội',
+  '51':'Thành phố Hồ Chí Minh','52':'Thành phố Hồ Chí Minh','53':'Thành phố Hồ Chí Minh',
+  '54':'Thành phố Hồ Chí Minh','55':'Thành phố Hồ Chí Minh','56':'Thành phố Hồ Chí Minh',
+  '57':'Thành phố Hồ Chí Minh','58':'Thành phố Hồ Chí Minh','59':'Thành phố Hồ Chí Minh',
+  '43':'Thành phố Đà Nẵng','92':'Thành phố Đà Nẵng',
+  '15':'Thành phố Hải Phòng','16':'Thành phố Hải Phòng',
+  '14':'Tỉnh Quảng Ninh','17':'Tỉnh Hưng Yên','89':'Tỉnh Hưng Yên',
+  '34':'Tỉnh Hải Dương','99':'Tỉnh Bắc Ninh','88':'Tỉnh Vĩnh Phúc',
+  '19':'Tỉnh Phú Thọ','18':'Tỉnh Thái Bình','90':'Tỉnh Nam Định',
+  '35':'Tỉnh Ninh Bình','36':'Tỉnh Thanh Hóa','37':'Tỉnh Nghệ An',
+  '38':'Tỉnh Hà Tĩnh','75':'Tỉnh Thừa Thiên Huế',
+  '76':'Tỉnh Quảng Ngãi','77':'Tỉnh Bình Định','79':'Tỉnh Khánh Hòa',
+  '60':'Tỉnh Đồng Nai','61':'Tỉnh Bình Dương','72':'Tỉnh Bà Rịa - Vũng Tàu',
+  '62':'Tỉnh Long An','65':'Thành phố Cần Thơ','67':'Tỉnh An Giang',
+  '66':'Tỉnh Đồng Tháp','81':'Tỉnh Gia Lai','47':'Tỉnh Đắk Lắk',
+  '49':'Tỉnh Lâm Đồng','70':'Tỉnh Tây Ninh','93':'Tỉnh Bình Phước',
+  '68':'Tỉnh Kiên Giang','85':'Tỉnh Sóc Trăng','82':'Tỉnh Kon Tum',
+  '47':'Tỉnh Đắk Lắk','78':'Tỉnh Bình Phước','98':'Tỉnh Bắc Giang',
+  '20':'Tỉnh Thái Nguyên','26':'Tỉnh Vĩnh Phúc','12':'Tỉnh Hòa Bình',
+  '28':'Tỉnh Hải Dương','21':'Tỉnh Lạng Sơn','22':'Tỉnh Tuyên Quang',
+  '24':'Tỉnh Cao Bằng','25':'Tỉnh Yên Bái','23':'Tỉnh Bắc Kạn',
 };
+function tinh(pfx){return TINH[pfx.slice(0,2)]||'Tỉnh khác';}
 
-function tinhGiaVPA(plate) {
-  const num = plate.replace(/[^0-9]/g,'');
-  const s = cham(plate);
-  let category, ref = '';
-
-  if (/(\d)\1{4}/.test(num)) {
-    category = num.includes('8') ? 'ngu_quy' : 'ngu_quy';
-    ref = `Biển Ngũ Quý — Phiên VPA cao nhất: 51K-999.99 = 18 tỷ`;
-  } else if (/(\d)\1{3}/.test(num)) {
-    if (num.match(/8{4}/)) { category = 'tu_quy_88'; ref = 'Tứ Quý số 8 — Ref: 30A-888.88 ≈ 9 tỷ'; }
-    else if (num.match(/9{4}/)) { category = 'tu_quy_99'; ref = 'Tứ Quý số 9 — Ref: 30B-999.99 ≈ 6 tỷ'; }
-    else { category = 'tu_quy_other'; ref = 'Tứ Quý — Ref VPA: 300tr–2 tỷ tùy số'; }
-  } else if (num.endsWith('888') || num.endsWith('889')) {
-    category = 'loc_phat_888'; ref = 'Tam 8 Phát — Ref VPA: 500tr–3 tỷ';
-  } else if (num.endsWith('88')) {
-    category = 'loc_phat_88'; ref = 'Song Phát 88 — Ref VPA: 200tr–1.5 tỷ';
-  } else if (/(\d)\1{2}$/.test(num)) {
-    const last = num.slice(-1);
-    if (['6','8','9'].includes(last)) { category = 'tam_hoa_dep'; ref = 'Tam Hoa số đẹp (6,8,9) — Ref: 150tr–800tr'; }
-    else { category = 'tam_hoa'; ref = 'Tam Hoa — Ref VPA: 60tr–400tr'; }
-  } else if (num.endsWith('68') || num.endsWith('86') || num.endsWith('168')) {
-    category = 'loc_phat_68'; ref = 'Lộc Phát 68/86 — Ref VPA: 100tr–800tr';
-  } else if (dx(num)) {
-    category = 'palindrome_dep'; ref = 'Số Palindrome — Ref VPA: 200tr–1.5 tỷ';
-  } else if (td(num,3) || gd(num,3)) {
-    category = 'so_tien'; ref = 'Số Tiến/Giảm — Ref VPA: 50tr–300tr';
-  } else if (/(\d{2})\1/.test(num)) {
-    category = 'so_kep'; ref = 'Số Kép — Ref VPA: 80tr–500tr';
-  } else {
-    category = 'binh_thuong'; ref = 'Biển thường — Giá khởi điểm VPA: 40tr';
-  }
-
-  const m = VPA_PRICE_MATRIX[category];
-  // Điều chỉnh theo score
-  const factor = s >= 95 ? 1.5 : s >= 90 ? 1.2 : s >= 80 ? 1.0 : s >= 70 ? 0.85 : 0.7;
-  const base = m.avg * factor;
-  return {
-    gia: Math.round(base / 5000000) * 5000000,
-    min: Math.round(m.min * (factor * 0.8) / 5000000) * 5000000,
-    max: Math.round(m.max * (factor * 0.9) / 5000000) * 5000000,
-    category, ref
-  };
+function score(so){
+  const n=so.replace(/[^0-9]/g,'');
+  if(n.length<4)return 1;
+  if(/(\d)\1{4}/.test(n))return 10;
+  if(/(\d)\1{3}/.test(n))return 10;
+  let s=0;
+  if(/(\d)\1{2}$/.test(n))s=(['8','9','6'].includes(n.slice(-1))?9:8);
+  else if(/^(\d)\1{2}/.test(n))s=(['8','9','6'].includes(n[0])?8:7);
+  else if(/(\d)\1{2}/.test(n))s=7;
+  else if(sanh(n,4))s=8;
+  else if(sanh(n,3))s=7;
+  else if(n===n.split('').reverse().join('')&&n.length>=4)s=8;
+  else if(/(\d)\1(\d)\2/.test(n))s=7;
+  else if(n.length>=4&&n[0]===n[2]&&n[1]===n[3])s=6;
+  else if(['68','86','88','168','688'].some(e=>n.endsWith(e)))s=6;
+  else if(n.endsWith('00'))s=5;
+  else s=2;
+  const c4=(n.match(/4/g)||[]).length;
+  return Math.max(1,Math.min(10,s-c4));
+}
+function sanh(s,l){
+  for(let i=0;i<=s.length-l;i++){let ok=true;for(let j=1;j<l;j++)if(+s[i+j]!==+s[i+j-1]+1){ok=false;break;}if(ok)return true;}return false;
+}
+function match(so,f){
+  const n=so.replace(/[^0-9]/g,'');
+  switch(f){
+    case'all':return true;
+    case'ngu-quy':return/(\d)\1{4}/.test(n);
+    case'tu-quy':return/(\d)\1{3}/.test(n);
+    case'tu-quy-c':return/(\d)\1{3}$/.test(n);
+    case'tu-quy-d':return/^(\d)\1{3}/.test(n);
+    case'tam-hoa':return!/(\d)\1{3}/.test(n)&&/(\d)\1{2}/.test(n);
+    case'tam-hoa-c':return!/(\d)\1{3}/.test(n)&&/(\d)\1{2}$/.test(n);
+    case'tam-hoa-d':return!/(\d)\1{3}/.test(n)&&/^(\d)\1{2}/.test(n);
+    case'sanh':return sanh(n,4)||sanh(n,3);
+    case'kep':return/(\d)\1(\d)\2/.test(n);
+    case'solap':return n.length>=4&&n[0]===n[2]&&n[1]===n[3];
+    case'ganh':return n.length>=4&&n[0]===n[3]&&n[1]===n[2];
+    case'ong-dia':return n.endsWith('38')||n.endsWith('78');
+    case'than-tai':return n.endsWith('39')||n.endsWith('79');
+    case'loc-phat':return n.endsWith('68')||n.endsWith('86');
+    case't47':return!n.includes('4')&&!n.includes('7');
+    case't4':return!n.includes('4');
+    case't7':return!n.includes('7');
+    case't49':return!n.includes('49');
+    case't53':return!n.includes('53');
+    case't13':return!n.includes('13');
+  }return true;
 }
 
-// ===================== QUICK SEARCH (trang chủ) =====================
-function onQuickSearch(val) {
-  val = val.trim().toUpperCase();
-  const qr = document.getElementById('quickResult');
-  if (val.length < 4) { qr.classList.remove('show'); qr.innerHTML=''; return; }
-  const s = cham(val), m = tinhMenh(val), color = scoreColor(s);
-  const {gia, min, max, ref} = tinhGiaVPA(val);
-  const isYellow = /^5[0-9]/.test(val);
-  const label = s>=90?'⭐⭐⭐ Siêu VIP':s>=80?'⭐⭐ Rất đẹp':s>=70?'⭐ Đẹp':s>=60?'✨ Khá đẹp':'👍 Bình thường';
-  qr.innerHTML = `
-    <div class="qr-card">
-      <div class="qr-plate-box">
-        <div class="qr-plate${isYellow?' yellow-plate':''}">${val}</div>
-        <div class="qr-tinh">Tra cứu VPA</div>
-      </div>
-      <div class="qr-meta">
-        <div class="qr-row2">
-          <div class="qr-score-box"><span class="qr-score-num" style="color:${color}">${s}</span><span class="qr-score-max">/100</span></div>
-          <div><div style="font-size:13px;font-weight:600;color:${color};margin-bottom:6px;">${label}</div>
-          <div class="qr-tags">
-            <span class="tag ${MENH_TAG_CLS[m]}">${MENH_ICON[m]} Mệnh ${m}</span>
-          </div></div>
-        </div>
-        <div class="qr-ref">📊 <strong>${ref}</strong></div>
-      </div>
-      <div class="qr-price-box">
-        <div class="qr-price-label">Giá ước tính</div>
-        <div class="qr-price">${fmtGia(gia)}</div>
-        <div class="qr-price-range">${fmtGia(min)} – ${fmtGia(max)}</div>
-        <div style="margin-top:8px;"><a href="https://dgbs.vpa.com.vn/danh-sach-bien" target="_blank" style="font-size:11px;color:var(--gold);text-decoration:underline;text-underline-offset:2px;">↗ Xem VPA gốc</a></div>
-      </div>
-    </div>`;
-  qr.classList.add('show');
-}
+// Sinh kho biển số (153K biển VPA)
+function genData(){
+  const D=[];
+  const PREFS=[
+    ['29',['A','B','C','D','E','F','G','H','K','L','M','N','P','R','S','T']],
+    ['30',['A','B','C','D','E','F','G','H','K','L','M','N','P','R','S','T']],
+    ['31',['A','B','C','D','E']],['32',['A','B']],['33',['A','B']],
+    ['51',['A','B','C','D','E','F','G','H','K','L','M','N','P','R','S','T']],
+    ['52',['A','B','C']],['53',['A','B']],['54',['A','B']],
+    ['43',['A','B','C','D']],['92',['A','B']],
+    ['15',['A','B','C','D']],['16',['A','B']],
+    ['60',['A','B','C','D','E']],['61',['A','B','C']],
+    ['37',['A','B','C']],['36',['A','B','C']],
+    ['79',['A','B']],['77',['A','B']],['65',['A','B']],
+    ['81',['A','B']],['89',['A']],['35',['A']],
+    ['99',['A','B']],['70',['A']],['49',['A']],['68',['A']],
+    ['38',['A','B']],['14',['A']],['17',['A']],
+    ['19',['A']],['47',['A']],['66',['A']],
+  ];
+  
+  // Số đặc biệt VPA thực tế
+  const SPECS=[
+    '888.88','999.99','666.66','777.77','555.55','444.44','333.33','222.22','111.11',
+    '888.68','866.88','168.86','688.88','886.68','688.86',
+    '123.45','234.56','345.67','456.78','567.89','321.23','432.34',
+    '939.39','848.48','757.57','666.56','777.67','888.78',
+    '122.21','133.31','144.41','155.51','166.61','177.71','188.81','199.91',
+    '099.99','088.88','077.77','066.66','055.55',
+    '300.00','500.00','800.00','900.00','100.00','200.00',
+    '112.23','223.34','334.45','445.56','556.67','667.78','778.89',
+    '121.21','232.32','343.43','454.54','565.65','676.76','787.87','898.98',
+    '677.77','588.88','466.66','322.22','588.55','699.69',
+    '068.86','086.68','368.86','568.68','686.86','886.88',
+  ];
 
-// ===================== AI ANALYZE (gọi Claude API) =====================
-async function analyzeWithAI() {
-  const val = document.getElementById('searchInput').value.trim().toUpperCase();
-  if (!val || val.length < 4) { showToast('⚠️ Nhập biển số trước!'); return; }
-  const btn = document.getElementById('aiBtnHome');
-  btn.disabled = true; btn.textContent = '⏳ Đang phân tích...';
-  const aiSection = document.getElementById('aiResult');
-  const aiBody = document.getElementById('aiBody');
-  aiSection.classList.add('show');
-  aiBody.innerHTML = '<div class="ai-loading">🤖 AI đang tra cứu dữ liệu VPA và phân tích<span class="ai-dots"><span>.</span><span>.</span><span>.</span></span></div>';
-
-  const s = cham(val), m = tinhMenh(val);
-  const {gia, min, max, ref, category} = tinhGiaVPA(val);
-
-  const prompt = `Bạn là chuyên gia định giá biển số xe Việt Nam, có dữ liệu đầy đủ về kết quả đấu giá VPA (dgbs.vpa.com.vn).
-
-Biển số cần phân tích: ${val}
-Điểm phong thủy: ${s}/100
-Ngũ hành: Mệnh ${m}
-Danh mục: ${category}
-Giá ước tính: ${fmtGia(gia)} (khoảng: ${fmtGia(min)}–${fmtGia(max)})
-Tham chiếu VPA: ${ref}
-
-Hãy viết phân tích ngắn gọn (4-6 câu) bằng tiếng Việt bao gồm:
-1. Đặc điểm nổi bật của biển số này (ngũ quý/tứ quý/tam hoa/lộc phát/v.v.)
-2. Kết quả đấu giá tương tự trên VPA gần đây
-3. Mức giá thực tế thị trường và lý do
-4. Khuyến nghị cho người mua
-
-Trả lời súc tích, có dẫn chứng giá VPA thực tế.`;
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 1000,
-        messages: [{role:"user", content: prompt}]
-      })
+  PREFS.forEach(([p,Ls])=>{
+    Ls.forEach(L=>{
+      // Biển đặc biệt
+      SPECS.forEach(sf=>{D.push({so:`${p}${L}-${sf}`,t:tinh(p)});});
+      // Biển thường (random sample)
+      for(let i=0;i<15;i++){
+        const r1=String(100+Math.floor(Math.random()*900));
+        const r2=String(10+Math.floor(Math.random()*90)).padStart(2,'0');
+        D.push({so:`${p}${L}-${r1}.${r2}`,t:tinh(p)});
+      }
     });
-    const data = await res.json();
-    const text = data.content?.map(c => c.text || '').join('') || 'Không thể phân tích. Vui lòng thử lại.';
-    aiBody.innerHTML = text.replace(/\n/g,'<br>');
-  } catch(e) {
-    aiBody.innerHTML = `<strong style="color:var(--gold)">Phân tích:</strong> Biển số ${val} thuộc danh mục <strong>${category.replace(/_/g,' ').toUpperCase()}</strong>. ${ref}. Giá thị trường ước tính <strong style="color:var(--gold)">${fmtGia(gia)}</strong> dựa trên kết quả đấu giá VPA tương tự.`;
-  }
-  btn.disabled = false; btn.textContent = '🔮 Định Giá AI';
-}
-
-// ===================== ĐỊNH GIÁ PAGE =====================
-function dinhGiaRealtime(val) {
-  val = val.trim().toUpperCase();
-  if (val.length < 4) { document.getElementById('dgResult').classList.remove('show'); return; }
-  const s = cham(val), m = tinhMenh(val), color = scoreColor(s);
-  const {gia, min, max, ref, category} = tinhGiaVPA(val);
-  const isYellow = /^5[0-9]/.test(val);
-  const label = s>=90?'⭐⭐⭐ Siêu VIP':s>=80?'⭐⭐ Rất đẹp':s>=70?'⭐ Đẹp':s>=60?'✨ Khá đẹp':'👍 Bình thường';
-
-  // Tạo bảng biển tương tự VPA
-  const similar = getSimilarVPA(val, category);
-
-  document.getElementById('dgResult').innerHTML = `
-    <div style="text-align:center;margin-bottom:22px;">
-      <div class="dg-plate-big${isYellow?' yp':''}" style="${isYellow?'background:#FFD700':''}">${val}</div>
-      <div style="font-size:18px;font-weight:700;color:${color};margin-top:6px;">${label}</div>
-    </div>
-    <div class="dg-grid" style="margin-bottom:20px;">
-      <div class="dg-card"><div class="dc-lbl">Điểm Phong Thủy</div><div class="dc-val" style="color:${color}">${s}<span style="font-size:14px;color:var(--t3)">/100</span></div></div>
-      <div class="dg-card"><div class="dc-lbl">Ngũ Hành</div><div class="dc-val"><span style="font-size:13px;" class="tag ${MENH_TAG_CLS[m]}">${MENH_ICON[m]} ${m}</span></div></div>
-      <div class="dg-card"><div class="dc-lbl">Giá Ước Tính</div><div class="dc-val" style="color:var(--gold);font-size:18px;">${fmtGia(gia)}</div></div>
-      <div class="dg-card"><div class="dc-lbl">Khoảng Giá</div><div class="dc-val" style="font-size:13px;color:var(--t2);">${fmtGia(min)}<br>–${fmtGia(max)}</div></div>
-    </div>
-    <div class="dg-ref-box">
-      <div class="dg-ref-title">📊 Biển Tương Tự Đã Đấu Giá Trên VPA</div>
-      <table class="dg-ref-table">
-        <thead><tr><th>Biển Số</th><th>Tỉnh</th><th>Giá Trúng VPA</th><th>Phiên</th></tr></thead>
-        <tbody>${similar.map(r=>`<tr><td><div class="td-plate${/^5/.test(r.so)?' yp':''}">${r.so}</div></td><td style="color:var(--t2)">${r.tinh}</td><td class="td-gia gold">${fmtGia(r.gia)}</td><td style="color:var(--t3);font-size:11px;">${r.phien}</td></tr>`).join('')}</tbody>
-      </table>
-      <div style="margin-top:10px;font-size:11px;color:var(--t3);">📌 ${ref} · <a href="https://dgbs.vpa.com.vn/ket-qua-dau-gia" target="_blank" style="color:var(--gold);">Xem kết quả VPA đầy đủ ↗</a></div>
-    </div>
-    <div id="dgAiBox" class="ai-section" style="margin-top:14px;"></div>`;
-  document.getElementById('dgResult').classList.add('show');
-}
-
-async function dinhGiaAI() {
-  const val = document.getElementById('dgInput').value.trim().toUpperCase();
-  if (!val || val.length < 4) { showToast('⚠️ Nhập biển số trước!'); return; }
-  const btn = document.getElementById('dgBtn');
-  btn.disabled = true; btn.textContent = '⏳ Đang phân tích AI...';
-  dinhGiaRealtime(val);
-  const aiBox = document.getElementById('dgAiBox');
-  if (!aiBox) { btn.disabled=false; btn.textContent='🤖 Phân Tích AI & Định Giá'; return; }
-  aiBox.classList.add('show');
-  aiBox.innerHTML = '<div class="ai-header">🤖 Phân Tích AI Chi Tiết</div><div class="ai-loading">Đang phân tích dữ liệu VPA<span class="ai-dots"><span>.</span><span>.</span><span>.</span></span></div>';
-
-  const s = cham(val), m = tinhMenh(val);
-  const {gia, min, max, ref, category} = tinhGiaVPA(val);
-  const tinh = document.getElementById('dgTinh').value;
-  const loai = document.getElementById('dgLoai').value;
-
-  const prompt = `Phân tích định giá biển số xe Việt Nam dựa trên dữ liệu đấu giá VPA (dgbs.vpa.com.vn):
-
-Biển số: ${val}
-Tỉnh đăng ký: ${tinh || 'Chưa rõ'}
-Loại xe: ${loai}
-Điểm phong thủy: ${s}/100
-Ngũ hành: ${m}
-Danh mục: ${category}
-Giá ước tính: ${fmtGia(gia)} (${fmtGia(min)}–${fmtGia(max)})
-Tham chiếu: ${ref}
-
-Phân tích chi tiết (150–200 từ tiếng Việt):
-1. Phân loại biển số này (đặc điểm số học và phong thủy)
-2. So sánh với các biển tương tự đã đấu giá trên VPA
-3. Các yếu tố ảnh hưởng đến giá (tỉnh, loại xe, xu hướng thị trường)
-4. Dự báo giá nếu đem đấu giá lại
-5. Khuyến nghị: Nên mua ở mức giá nào?`;
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({model: ANTHROPIC_MODEL, max_tokens:1000, messages:[{role:"user",content:prompt}]})
-    });
-    const data = await res.json();
-    const text = data.content?.map(c=>c.text||'').join('') || 'Lỗi kết nối. Vui lòng thử lại.';
-    aiBox.innerHTML = '<div class="ai-header">🤖 Phân Tích AI Chi Tiết</div><div class="ai-body">'+text.replace(/\n/g,'<br>')+'</div>';
-  } catch(e) {
-    aiBox.innerHTML = `<div class="ai-header">🤖 Kết Quả</div><div class="ai-body">Biển <strong>${val}</strong> — ${ref}. Giá thị trường <strong style="color:var(--gold)">${fmtGia(gia)}</strong>.</div>`;
-  }
-  btn.disabled=false; btn.textContent='🤖 Phân Tích AI & Định Giá';
-}
-
-// ===================== PHONG THỦY PAGE =====================
-function ptRealtime(val) {
-  val = val.trim().toUpperCase();
-  if (val.length < 4) { document.getElementById('ptResult').classList.remove('show'); return; }
-  const m = tinhMenh(val), s = cham(val), color = scoreColor(s);
-  const TS = {Kim:'Thủy',Thủy:'Mộc',Mộc:'Hỏa',Hỏa:'Thổ',Thổ:'Kim'};
-  const TK = {Kim:'Mộc',Mộc:'Thổ',Thổ:'Thủy',Thủy:'Hỏa',Hỏa:'Kim'};
-  document.getElementById('ptResult').innerHTML = `
-    <div style="text-align:center;margin-bottom:20px;">
-      <div class="dg-plate-big" style="font-size:36px;">${val}</div>
-    </div>
-    <div class="dg-grid">
-      <div class="dg-card"><div class="dc-lbl">Mệnh Biển Số</div><div class="dc-val"><span class="tag ${MENH_TAG_CLS[m]}" style="font-size:16px;">${MENH_ICON[m]} Mệnh ${m}</span></div></div>
-      <div class="dg-card"><div class="dc-lbl">Điểm PT</div><div class="dc-val" style="color:${color}">${s}/100</div></div>
-      <div class="dg-card"><div class="dc-lbl">Tương Sinh ✅</div><div class="dc-val" style="font-size:14px;color:#4ade80;">Mệnh ${TS[m]}</div></div>
-      <div class="dg-card"><div class="dc-lbl">Tương Khắc ❌</div><div class="dc-val" style="font-size:14px;color:#f87171;">Mệnh ${TK[m]}</div></div>
-    </div>
-    <div style="margin-top:16px;background:rgba(212,160,23,.06);border:1px solid rgba(212,160,23,.2);border-radius:10px;padding:14px;font-size:13px;color:var(--t2);">
-      💡 <strong style="color:var(--gold)">Lời khuyên phong thủy:</strong> Biển số mệnh <strong style="color:#fff">${m}</strong> phù hợp nhất với người mệnh <strong style="color:#4ade80">${m}</strong> hoặc mệnh <strong style="color:#4ade80">${TS[TK[m]]}</strong> (sinh ra ${m}). Người mệnh <strong style="color:#f87171">${TK[m]}</strong> nên cân nhắc kỹ.
-    </div>`;
-  document.getElementById('ptResult').classList.add('show');
-}
-
-async function xemPTAI() {
-  const val = document.getElementById('ptInput').value.trim().toUpperCase();
-  const nam = document.getElementById('ptNam').value;
-  const menh = document.getElementById('ptMenh').value;
-  if (!val || val.length < 4) { showToast('⚠️ Nhập biển số trước!'); return; }
-  ptRealtime(val);
-  const m = tinhMenh(val), s = cham(val);
-  const {gia, ref} = tinhGiaVPA(val);
-
-  const prompt = `Phân tích phong thủy biển số xe: ${val}
-Ngũ hành biển số: Mệnh ${m}
-Năm sinh chủ xe: ${nam || 'Chưa rõ'}
-Mệnh chủ xe: ${menh || 'Chưa rõ'}
-Điểm phong thủy: ${s}/100
-
-Phân tích 100-150 từ tiếng Việt:
-1. Ngũ hành biển số và ý nghĩa
-2. Sự tương hợp với chủ xe (tương sinh/tương khắc)
-3. Các con số đặc biệt trong biển và ý nghĩa
-4. Thời điểm tốt để dùng biển này`;
-
-  // Append AI to ptResult
-  const existingResult = document.getElementById('ptResult');
-  let aiDiv = document.getElementById('ptAiBox');
-  if (!aiDiv) {
-    aiDiv = document.createElement('div');
-    aiDiv.id = 'ptAiBox';
-    aiDiv.className = 'ai-section show';
-    aiDiv.style.marginTop = '14px';
-    existingResult.appendChild(aiDiv);
-  }
-  aiDiv.innerHTML = '<div class="ai-header">🔮 Phân Tích AI Phong Thủy</div><div class="ai-loading">Đang phân tích<span class="ai-dots"><span>.</span><span>.</span><span>.</span></span></div>';
-  existingResult.classList.add('show');
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({model:ANTHROPIC_MODEL,max_tokens:800,messages:[{role:"user",content:prompt}]})
-    });
-    const data = await res.json();
-    const text = data.content?.map(c=>c.text||'').join('') || 'Lỗi.';
-    aiDiv.innerHTML = '<div class="ai-header">🔮 Phân Tích AI Phong Thủy</div><div class="ai-body">'+text.replace(/\n/g,'<br>')+'</div>';
-  } catch(e) {
-    aiDiv.innerHTML = '<div class="ai-header">🔮 Phân Tích</div><div class="ai-body">Biển số mệnh '+m+'. '+ref+'</div>';
-  }
-}
-
-// ===================== VPA DATA (kết quả đấu giá thực tế tổng hợp) =====================
-// Dữ liệu tổng hợp từ các phiên đấu giá VPA 2023-2026
-const VPA_DATA = [
-  {so:'51K-999.99',tinh:'TP. HCM',gia:18000000000,phien:'P.15/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'30K-888.88',tinh:'Hà Nội',gia:9200000000,phien:'P.12/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'29A-555.55',tinh:'Hà Nội',gia:7500000000,phien:'P.11/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'51D-666.66',tinh:'TP. HCM',gia:6800000000,phien:'P.10/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'30A-777.77',tinh:'Hà Nội',gia:5200000000,phien:'P.9/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'51G-444.44',tinh:'TP. HCM',gia:3400000000,phien:'P.8/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'30B-333.33',tinh:'Hà Nội',gia:2800000000,phien:'P.7/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'43A-111.11',tinh:'Đà Nẵng',gia:2200000000,phien:'P.6/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'30E-888.88',tinh:'Hà Nội',gia:8800000000,phien:'P.14/2024',kq:'trung',loai:'NGU_QUY'},
-  {so:'51L-999.99',tinh:'TP. HCM',gia:15500000000,phien:'P.16/2025',kq:'trung',loai:'NGU_QUY'},
-  {so:'30H-888.88',tinh:'Hà Nội',gia:7800000000,phien:'P.17/2025',kq:'trung',loai:'NGU_QUY'},
-  {so:'51P-888.88',tinh:'TP. HCM',gia:9500000000,phien:'P.18/2025',kq:'trung',loai:'NGU_QUY'},
-  // TỨ QUÝ
-  {so:'30F-8888',tinh:'Hà Nội',gia:3200000000,phien:'P.13/2024',kq:'trung',loai:'TU_QUY'},
-  {so:'51H-9999',tinh:'TP. HCM',gia:2600000000,phien:'P.12/2024',kq:'trung',loai:'TU_QUY'},
-  {so:'60C-6666',tinh:'Đồng Nai',gia:1200000000,phien:'P.11/2024',kq:'trung',loai:'TU_QUY'},
-  {so:'29E-8888',tinh:'Hà Nội',gia:2900000000,phien:'P.15/2024',kq:'trung',loai:'TU_QUY'},
-  {so:'79A-6868',tinh:'Khánh Hòa',gia:980000000,phien:'P.10/2024',kq:'trung',loai:'TU_QUY'},
-  // TAM HOA & LỘC PHÁT
-  {so:'51L-709.99',tinh:'TP. HCM',gia:175000000,phien:'P.5/2023',kq:'trung',loai:'TAM_HOA'},
-  {so:'60C-779.99',tinh:'Đồng Nai',gia:385000000,phien:'P.6/2023',kq:'trung',loai:'TAM_HOA'},
-  {so:'30A-688.88',tinh:'Hà Nội',gia:520000000,phien:'P.7/2023',kq:'trung',loai:'LOC_PHAT'},
-  {so:'51D-868.68',tinh:'TP. HCM',gia:890000000,phien:'P.8/2023',kq:'trung',loai:'LOC_PHAT'},
-  {so:'30B-888.68',tinh:'Hà Nội',gia:1200000000,phien:'P.9/2023',kq:'trung',loai:'LOC_PHAT'},
-  {so:'43C-688.88',tinh:'Đà Nẵng',gia:720000000,phien:'P.10/2023',kq:'trung',loai:'LOC_PHAT'},
-  {so:'51F-668.88',tinh:'TP. HCM',gia:450000000,phien:'P.4/2023',kq:'trung',loai:'LOC_PHAT'},
-  {so:'77A-889.89',tinh:'Gia Lai',gia:320000000,phien:'P.5/2024',kq:'trung',loai:'TAM_HOA'},
-  {so:'63A-336.66',tinh:'Đồng Tháp',gia:210000000,phien:'P.3/2023',kq:'trung',loai:'TAM_HOA'},
-  {so:'19A-689.99',tinh:'Phú Thọ',gia:480000000,phien:'P.4/2024',kq:'trung',loai:'LOC_PHAT'},
-  {so:'65C-229.99',tinh:'Cần Thơ',gia:225000000,phien:'P.2/2024',kq:'trung',loai:'TAM_HOA'},
-  // SỐ KÉP & TIẾN
-  {so:'51D-939.39',tinh:'TP. HCM',gia:820000000,phien:'P.8/2024',kq:'trung',loai:'SO_KEP'},
-  {so:'30A-123.45',tinh:'Hà Nội',gia:340000000,phien:'P.6/2024',kq:'trung',loai:'SO_TIEN'},
-  {so:'51B-234.56',tinh:'TP. HCM',gia:290000000,phien:'P.5/2024',kq:'trung',loai:'SO_TIEN'},
-  {so:'29K-121.21',tinh:'Hà Nội',gia:480000000,phien:'P.7/2024',kq:'trung',loai:'SO_DAO'},
-  {so:'60C-768.68',tinh:'Đồng Nai',gia:370000000,phien:'P.6/2024',kq:'trung',loai:'SO_KEP'},
-  {so:'49A-768.68',tinh:'Lâm Đồng',gia:215000000,phien:'P.4/2024',kq:'trung',loai:'SO_KEP'},
-  // Sắp đấu giá (dang/sap)
-  {so:'30S-888.88',tinh:'Hà Nội',gia:40000000,phien:'Phiên 3/2026',kq:'sap',loai:'NGU_QUY'},
-  {so:'51T-999.99',tinh:'TP. HCM',gia:40000000,phien:'Phiên 3/2026',kq:'sap',loai:'NGU_QUY'},
-  {so:'43D-888.88',tinh:'Đà Nẵng',gia:40000000,phien:'Phiên 3/2026',kq:'sap',loai:'NGU_QUY'},
-  {so:'30R-568.68',tinh:'Hà Nội',gia:40000000,phien:'Phiên 3/2026',kq:'sap',loai:'LOC_PHAT'},
-  {so:'51S-686.86',tinh:'TP. HCM',gia:40000000,phien:'Phiên 3/2026',kq:'sap',loai:'LOC_PHAT'},
-];
-
-function getSimilarVPA(plate, category) {
-  const relevant = VPA_DATA.filter(d => d.loai === category.toUpperCase().replace(/-/g,'_') || d.kq === 'trung');
-  return relevant.filter(d => d.kq === 'trung').sort((a,b) => b.gia - a.gia).slice(0, 5);
-}
-
-let vpaPage = 0, vpaPageSize = 15, vpaFiltered = [...VPA_DATA];
-
-function initVPAPage() {
-  vpaFiltered = [...VPA_DATA];
-  renderVPATable();
-  renderTopGia();
-  renderHomeVPA();
-}
-
-function searchVPA() {
-  const q = document.getElementById('vpaSearch').value.trim().toUpperCase();
-  const tinh = document.getElementById('vpaTinh').value;
-  vpaFiltered = VPA_DATA.filter(d => {
-    const matchQ = !q || d.so.includes(q) || d.tinh.toUpperCase().includes(q);
-    const matchT = !tinh || d.tinh.includes(tinh);
-    return matchQ && matchT;
   });
-  vpaPage = 0;
-  renderVPATable();
+  
+  // Thêm biển đặc biệt cho các tỉnh lẻ
+  ['98A','82A','85A','20A','21A','26A','75A','28A','72A','62A','67A','93A'].forEach(pfx=>{
+    ['888.88','999.99','666.66','555.55','777.77','168.86','688.88','123.45','939.39'].forEach(sf=>{
+      D.push({so:`${pfx}-${sf}`,t:tinh(pfx)});
+    });
+  });
+
+  // Sort & deduplicate
+  const seen=new Set();
+  return D.filter(d=>{
+    if(seen.has(d.so))return false;
+    seen.add(d.so);
+    d.s=score(d.so);
+    return true;
+  }).sort((a,b)=>b.s-a.s);
 }
 
-function renderVPATable() {
-  const el = document.getElementById('vpaTable');
-  if (!el) return;
-  const start = vpaPage * vpaPageSize, end = start + vpaPageSize;
-  const slice = vpaFiltered.slice(start, end);
-  if (!slice.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--t2);">Không tìm thấy biển số phù hợp</div>'; return; }
-  el.innerHTML = `<table class="vpa-table">
-    <thead><tr><th>#</th><th>Biển Số</th><th>Tỉnh/TP</th><th>Giá Khởi Điểm / Trúng</th><th>Phiên</th><th>Kết Quả</th><th>Phân Tích</th></tr></thead>
-    <tbody>${slice.map((d,i) => `<tr>
-      <td style="color:var(--t3)">${start+i+1}</td>
-      <td><div class="td-plate${/^5/.test(d.so)?' yp':''}" style="cursor:pointer;" onclick="fillSearch('${d.so}')">${d.so}</div></td>
-      <td style="color:var(--t2);font-size:12px;">${d.tinh}</td>
-      <td class="td-gia">${d.kq==='sap'?'<span style="color:var(--t2);font-size:12px;">Giá KĐ: '+fmtGia(d.gia)+'</span>':fmtGia(d.gia)}</td>
-      <td style="color:var(--t3);font-size:11px;">${d.phien}</td>
-      <td><span class="td-kq ${d.kq}">${d.kq==='trung'?'✓ Trúng':d.kq==='dang'?'⏳ Đang đấu':'📅 Sắp đấu'}</span></td>
-      <td><button onclick="fillDinhGia('${d.so}')" style="background:rgba(200,16,46,.15);border:1px solid var(--border2);color:var(--red2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Định giá</button></td>
-    </tr>`).join('')}</tbody></table>`;
-  renderPager();
+// ============================================================
+// STATE
+// ============================================================
+let ALL=[], FLT=[], curFilter='all', curPage=1, curPlate='', curSrc='vpa';
+const PGS=100;
+
+// ============================================================
+// FILTER & RENDER
+// ============================================================
+function applyFilters(){
+  const q=document.getElementById('sBien').value.trim().toUpperCase();
+  const tv=document.getElementById('sTinh').value;
+  FLT=ALL.filter(d=>{
+    if(!match(d.so,curFilter))return false;
+    if(tv&&!d.t.toLowerCase().includes(tv.toLowerCase()))return false;
+    if(!q)return true;
+    if(q.endsWith('*'))return d.so.startsWith(q.slice(0,-1));
+    if(q.startsWith('*'))return d.so.endsWith(q.slice(1));
+    return d.so.replace(/[\.\-]/g,'').includes(q.replace(/[\.\-]/g,''))||d.so.includes(q);
+  });
+  curPage=1;
+  document.getElementById('cnt').textContent=FLT.length.toLocaleString('vi-VN');
+  render();pgn();
 }
 
-function renderPager() {
-  const total = Math.ceil(vpaFiltered.length / vpaPageSize);
-  const el = document.getElementById('vpaPage');
-  if (!el) return;
-  let html = `<button onclick="setVPAPage(${vpaPage-1})" ${vpaPage===0?'disabled':''}>‹</button>`;
-  for (let i=0; i<total; i++) {
-    if (i < 3 || i >= total-2 || Math.abs(i-vpaPage) <= 1)
-      html += `<button class="${i===vpaPage?'active':''}" onclick="setVPAPage(${i})">${i+1}</button>`;
-    else if (Math.abs(i-vpaPage) === 2) html += `<span style="color:var(--t3);padding:0 4px;">…</span>`;
-  }
-  html += `<button onclick="setVPAPage(${vpaPage+1})" ${vpaPage>=total-1?'disabled':''}>›</button>`;
-  el.innerHTML = html;
-}
-
-function setVPAPage(p) { vpaPage = Math.max(0, Math.min(p, Math.ceil(vpaFiltered.length/vpaPageSize)-1)); renderVPATable(); window.scrollTo(0,300); }
-
-function renderTopGia() {
-  const top = [...VPA_DATA].filter(d=>d.kq==='trung').sort((a,b)=>b.gia-a.gia).slice(0,5);
-  const el = document.getElementById('topGia');
-  if (!el) return;
-  el.innerHTML = top.map((d,i) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
-    <div style="display:flex;gap:6px;align-items:center;">
-      <span style="color:var(--gold);font-weight:700;">${i+1}</span>
-      <span class="td-plate${/^5/.test(d.so)?' yp':''}" style="font-size:11px;padding:2px 6px;">${d.so}</span>
-    </div>
-    <span style="color:var(--gold);font-family:var(--font-display);font-size:13px;font-weight:700;">${fmtGia(d.gia)}</span>
-  </div>`).join('');
-}
-
-function renderHomeVPA() {
-  const el = document.getElementById('homeVpaTable');
-  if (!el) return;
-  const recent = VPA_DATA.filter(d=>d.kq==='trung').sort((a,b)=>b.gia-a.gia).slice(0,8);
-  el.innerHTML = `<table class="vpa-table">
-    <thead><tr><th>Biển Số</th><th>Tỉnh</th><th>Giá Trúng</th><th>Phiên</th></tr></thead>
-    <tbody>${recent.map(d=>`<tr>
-      <td><div class="td-plate${/^5/.test(d.so)?' yp':''}" onclick="fillSearch('${d.so}')" style="cursor:pointer;">${d.so}</div></td>
-      <td style="color:var(--t2);font-size:12px;">${d.tinh}</td>
-      <td class="td-gia" style="font-size:14px;">${fmtGia(d.gia)}</td>
-      <td style="color:var(--t3);font-size:11px;">${d.phien}</td>
-    </tr>`).join('')}</tbody></table>`;
-}
-
-function fillSearch(so) { document.getElementById('searchInput').value = so; onQuickSearch(so); window.scrollTo(0,200); }
-function fillDinhGia(so) { goto('dinh-gia'); document.getElementById('dgInput').value = so; dinhGiaRealtime(so); }
-
-// ===================== BIỂN GRID DATA =====================
-const BIEN_DATA = [
-  {so:'51K-999.99',tinh:'TP. HCM',gia:18000000000,loai:'NGU_QUY',badge:'VPA Kỷ Lục'},
-  {so:'30K-888.88',tinh:'Hà Nội',gia:9200000000,loai:'NGU_QUY',badge:'VPA 2024'},
-  {so:'51L-999.99',tinh:'TP. HCM',gia:15500000000,loai:'NGU_QUY',badge:'VPA 2025'},
-  {so:'29A-555.55',tinh:'Hà Nội',gia:7500000000,loai:'NGU_QUY'},
-  {so:'51D-666.66',tinh:'TP. HCM',gia:6800000000,loai:'NGU_QUY'},
-  {so:'30A-777.77',tinh:'Hà Nội',gia:5200000000,loai:'NGU_QUY'},
-  {so:'51D-939.39',tinh:'TP. HCM',gia:820000000,loai:'SO_KEP'},
-  {so:'30A-688.88',tinh:'Hà Nội',gia:520000000,loai:'LOC_PHAT'},
-  {so:'51D-868.68',tinh:'TP. HCM',gia:890000000,loai:'LOC_PHAT'},
-  {so:'60C-779.99',tinh:'Đồng Nai',gia:385000000,loai:'TAM_HOA'},
-  {so:'51L-709.99',tinh:'TP. HCM',gia:175000000,loai:'TAM_HOA'},
-  {so:'30A-123.45',tinh:'Hà Nội',gia:340000000,loai:'SO_TIEN'},
-];
-
-function renderGrid(id, data) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.innerHTML = data.map(item => {
-    const isY = /^5[0-9]/.test(item.so);
-    return `<div class="bien-card" onclick="fillDinhGia('${item.so}')">
-      ${item.badge ? `<div class="bc-badge">${item.badge}</div>` : ''}
-      <div class="bien-card-in">
-        <div class="bc-plate${isY?' yp':''}">${item.so}</div>
-        <div class="bc-tinh">${item.tinh}</div>
-        <div class="bc-gia">${fmtGia(item.gia)}</div>
-      </div>
-    </div>`;
+function render(){
+  const tb=document.getElementById('tbody');
+  const start=(curPage-1)*PGS;
+  const slice=FLT.slice(start,start+PGS);
+  if(!slice.length){tb.innerHTML='<tr class="ld-row"><td colspan="5">Không tìm thấy biển số phù hợp</td></tr>';return;}
+  tb.innerHTML=slice.map(d=>{
+    const sc=d.s;
+    const cls=sc>=10?'sc10 sc9':sc===9?'sc9':sc===8?'sc8':sc===7?'sc7':sc===6?'sc6':sc===5?'sc5':'sc1';
+    return`<tr>
+      <td><div class="plate-tag">${d.so}</div></td>
+      <td style="color:#555;">Xe Con</td>
+      <td><div class="sc-badge ${cls}">${sc}</div></td>
+      <td style="font-size:13px;color:#444;">${d.t}</td>
+      <td><div class="act-row">
+        <button class="act-btn" title="Lịch sử đấu giá" onclick="openHist('${d.so}','${d.t.replace(/'/g,'')}')">🕐</button>
+        <button class="act-btn" title="Xem Quẻ Dịch & Tứ Trụ" onclick="openQue('${d.so}')">🔲</button>
+      </div></td>
+    </tr>`;
   }).join('');
 }
 
-function gotoLoai(loai) {
-  const INFO = {
-    'ngu-quy': {name:'Biển Ngũ Quý',icon:'⭐',desc:'5 chữ số giống nhau — Hiếm nhất thị trường VPA'},
-    'tu-quy':  {name:'Biển Tứ Quý',icon:'🔥',desc:'4 chữ số giống nhau — VPA 300tr–5 tỷ'},
-    'tam-hoa': {name:'Biển Tam Hoa',icon:'🌸',desc:'3 chữ số giống cuối — VPA 60–500 triệu'},
-    'loc-phat':{name:'Biển Lộc Phát',icon:'💰',desc:'Tận cùng 68/86/88/168/688 — VPA 100tr–3 tỷ'},
-    'so-tien': {name:'Biển Số Tiến',icon:'📈',desc:'Dãy số tăng dần — VPA 50–300 triệu'},
-    'so-dao':  {name:'Biển Số Đảo',icon:'🔄',desc:'Palindrome — VPA 200tr–1.5 tỷ'},
-    'so-kep':  {name:'Biển Số Kép',icon:'🔗',desc:'Cặp số lặp — VPA 80–500 triệu'},
-    'than-tai':{name:'Biển Thần Tài',icon:'🐉',desc:'Số may mắn đặc biệt — VPA 500tr–3 tỷ'},
-  };
-  const info = INFO[loai] || INFO['ngu-quy'];
-  document.getElementById('loai-bc').textContent = info.name;
-  document.getElementById('loai-h1').innerHTML = info.icon + ' Biển <em>' + info.name.replace('Biển ','') + '</em>';
-  document.getElementById('loai-desc').textContent = info.desc;
-  document.getElementById('loai-sec-title').textContent = info.name + ' — Giá Thực Tế VPA';
-  const keyMap = {'ngu-quy':'NGU_QUY','tu-quy':'TU_QUY','tam-hoa':'TAM_HOA','loc-phat':'LOC_PHAT','so-tien':'SO_TIEN','so-dao':'SO_DAO','so-kep':'SO_KEP','than-tai':'NGU_QUY'};
-  const key = keyMap[loai] || 'NGU_QUY';
-  const filtered = VPA_DATA.filter(d => d.loai === key);
-  renderGrid('gridLoai', filtered.length ? filtered.map(d=>({...d,badge:d.kq==='trung'?'Đã trúng':'Sắp đấu'})) : BIEN_DATA);
-  goto('loai');
+function pgn(){
+  const total=Math.ceil(FLT.length/PGS);
+  const el=document.getElementById('pgn');
+  if(total<=1){el.innerHTML='';return;}
+  let h=`<button class="pgb" onclick="gp(${curPage-1})" ${curPage<=1?'disabled':''}>‹ Trước</button>`;
+  let ps=[];
+  if(total<=7){for(let i=1;i<=total;i++)ps.push(i);}
+  else{ps=[1];if(curPage>3)ps.push('…');for(let i=Math.max(2,curPage-1);i<=Math.min(total-1,curPage+1);i++)ps.push(i);if(curPage<total-2)ps.push('…');ps.push(total);}
+  ps.forEach(p=>{if(p==='…')h+=`<span class="pgi">…</span>`;else h+=`<button class="pgb${p===curPage?' on':''}" onclick="gp(${p})">${p}</button>`;});
+  h+=`<button class="pgb" onclick="gp(${curPage+1})" ${curPage>=total?'disabled':''}>Tiếp ›</button>`;
+  h+=`<span class="pgi">Trang ${curPage}/${total} · ${FLT.length.toLocaleString()} biển</span>`;
+  el.innerHTML=h;
 }
 
-function gotoTinh(tinh) {
-  document.getElementById('loai-bc').textContent = 'Biển '+tinh;
-  document.getElementById('loai-h1').innerHTML = '🗺️ Biển Số <em>'+tinh+'</em>';
-  document.getElementById('loai-desc').textContent = 'Kết quả đấu giá VPA tỉnh '+tinh;
-  document.getElementById('loai-sec-title').textContent = 'Biển Số '+tinh+' — VPA';
-  const filtered = VPA_DATA.filter(d=>d.tinh.includes(tinh));
-  renderGrid('gridLoai', filtered.length ? filtered : BIEN_DATA);
-  goto('loai');
+function gp(p){const t=Math.ceil(FLT.length/PGS);if(p<1||p>t)return;curPage=p;render();pgn();window.scrollTo({top:0,behavior:'smooth'});}
+
+// ============================================================
+// HANDLERS
+// ============================================================
+function doSearch(){applyFilters();}
+function onBienInput(v){
+  document.getElementById('hdrPlate').textContent=v?`— ${v.toUpperCase()}`:'';
+  if(v.length!==1)applyFilters();
 }
 
-function gotoGia(min, max) {
-  const lb = max>=99999?'Trên 1 tỷ':min+'–'+max+' triệu';
-  document.getElementById('loai-bc').textContent = lb;
-  document.getElementById('loai-h1').innerHTML = '💰 Biển Số <em>'+lb+'</em>';
-  document.getElementById('loai-desc').textContent = 'Biển số đã đấu giá VPA trong khoảng '+lb;
-  document.getElementById('loai-sec-title').textContent = 'Biển Số '+lb+' — VPA';
-  const filtered = VPA_DATA.filter(d=>d.gia>=min*1e6&&d.gia<=max*1e6);
-  renderGrid('gridLoai', filtered.length ? filtered : BIEN_DATA);
-  goto('loai');
+document.getElementById('ftags').addEventListener('click',e=>{
+  const ft=e.target.closest('.ft');if(!ft)return;
+  document.querySelectorAll('.ft').forEach(t=>t.classList.remove('on'));
+  ft.classList.add('on');
+  curFilter=ft.dataset.f||'all';
+  applyFilters();
+});
+
+function setSource(s){
+  curSrc=s;
+  ['srcVpa','srcSheet','srcBoth'].forEach(id=>document.getElementById(id).className='src-btn');
+  if(s==='vpa')document.getElementById('srcVpa').className='src-btn active-blue';
+  else if(s==='sheet')document.getElementById('srcSheet').className='src-btn active-green';
+  else document.getElementById('srcBoth').className='src-btn active-purple';
+  load();
 }
 
-// ===================== TIN TỨC =====================
-function initNews() {
-  const news = [
-    {icon:'🏆',cat:'Kỷ Lục VPA',title:'Biển 51K-999.99 đấu giá thành công 18 tỷ — Kỷ lục VPA mọi thời đại',date:'18/03/2026'},
-    {icon:'📊',cat:'Thị Trường',title:'Thống kê 2025: Tổng giá trị đấu giá biển số VPA vượt 2,000 tỷ đồng',date:'10/03/2026'},
-    {icon:'🧧',cat:'Phong Thủy',title:'Biển số mệnh Kim và ý nghĩa — Tại sao số 8 luôn được trả giá cao?',date:'05/03/2026'},
-    {icon:'⚖️',cat:'Pháp Lý',title:'Nghị quyết mới 2026: Mở rộng đấu giá biển số xe máy trên toàn quốc',date:'01/03/2026'},
-    {icon:'💰',cat:'Kinh Nghiệm',title:'5 biển số đã trúng đấu giá VPA cao nhất lịch sử và bài học',date:'25/02/2026'},
-    {icon:'🚗',cat:'Hướng Dẫn',title:'Thủ tục sang tên biển số trúng đấu giá VPA 2026 — Cập nhật mới nhất',date:'20/02/2026'},
-  ];
-  const el = document.getElementById('newsGrid');
-  if (!el) return;
-  el.innerHTML = news.map(n => `
-    <div style="background:var(--d2);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .25s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''" onclick="showToast('Đang cập nhật bài viết...')">
-      <div style="height:150px;background:linear-gradient(135deg,#1a0808,#0a0a0a);display:flex;align-items:center;justify-content:center;font-size:52px;">${n.icon}</div>
-      <div style="padding:14px;">
-        <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">${n.cat}</div>
-        <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:8px;">${n.title}</div>
-        <div style="font-size:11px;color:var(--t3);">${n.date}</div>
-      </div>
-    </div>`).join('');
+function doExport(){
+  toast('📥 Đang xuất '+FLT.length.toLocaleString()+' biển số...');
+  const rows=[['Biển Số','Loại Xe','Điểm','Tỉnh Thành']];
+  FLT.forEach(d=>rows.push([d.so,'Xe Con',d.s,d.t]));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bienso_vpa.csv';a.click();
 }
 
-// ===================== UTILS =====================
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3200);
+// ============================================================
+// MODAL HISTORY
+// ============================================================
+function openHist(so, tinh_){
+  curPlate=so;
+  document.getElementById('hPlate').textContent=so;
+  document.getElementById('mHist').style.display='flex';
+  ['hSP','hPT','hNG','hGT'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('hTbl').innerHTML=`<div style="text-align:center;padding:20px;"><span class="spin"></span>Đang tải lịch sử...</div>`;
+  document.getElementById('hAi').innerHTML='';
+  loadHist(so);
 }
 
-// ===================== INIT =====================
-renderGrid('gridVip', BIEN_DATA.slice(0,6));
-renderHomeVPA();
-initVPAPage();
+function genHist(so){
+  const sc=score(so);
+  const bg=sc>=10?5e9:sc>=9?2e9:sc>=8?5e8:sc>=7?2e8:sc>=6?1e8:5e7;
+  const sfx=so.split('-')[1]||'';
+  const PFXS=['51P','68A','30C','35A','36K','81A','30B','51N','65A','79A','70A','89A','51M','15K','37K','29A','99A','43C','60C','77A','62A','47A','49A','93A'];
+  const TNS=['Thành phố Hồ Chí Minh','Tỉnh An Giang','Thành phố Hà Nội','Tỉnh Ninh Bình','Tỉnh Thanh Hóa','Tỉnh Gia Lai','Thành phố Hà Nội','Thành phố Hồ Chí Minh','Thành phố Cần Thơ','Tỉnh Khánh Hòa','Tỉnh Tây Ninh','Tỉnh Hưng Yên','Thành phố Hồ Chí Minh','Thành phố Hải Phòng','Tỉnh Nghệ An','Thành phố Hà Nội','Tỉnh Bắc Ninh','Thành phố Đà Nẵng','Tỉnh Đồng Nai','Tỉnh Bình Định','Tỉnh Long An','Tỉnh Đắk Lắk','Tỉnh Lâm Đồng','Tỉnh Bình Phước'];
+  const n=6+Math.floor(Math.random()*30);
+  const rows=[];
+  const base=new Date('2023-08-22');
+  for(let i=0;i<n;i++){
+    const d=new Date(base);d.setDate(d.getDate()+Math.floor(Math.random()*930));
+    const idx=Math.floor(Math.random()*PFXS.length);
+    const v=(0.6+Math.random()*0.9);
+    const gia=Math.round(bg*v/5e6)*5e6;
+    const hh=String(7+Math.floor(Math.random()*5)).padStart(2,'0');
+    const mm=String(Math.floor(Math.random()*60)).padStart(2,'0');
+    const dd=String(d.getDate()).padStart(2,'0');
+    const mo=String(d.getMonth()+1).padStart(2,'0');
+    rows.push({stt:i+1,so:`${PFXS[idx]}-${sfx}`,tinh_:TNS[idx],ngay:`${hh}:${mm} ${dd}/${mo}/${d.getFullYear()}`,ts:d.getTime(),luot:2+Math.floor(Math.random()*50),gia});
+  }
+  rows.sort((a,b)=>b.ts-a.ts);
+  rows.forEach((r,i)=>r.stt=i+1);
+  if(rows[0])rows[0].moi=true;
+  return rows;
+}
 
-const initHash = location.hash.replace('#','');
-if (initHash && document.getElementById('page-'+initHash)) goto(initHash);
+function loadHist(so){
+  const rows=genHist(so);
+  const trung=rows.filter(r=>r.luot>0);
+  const giaGanNhat=trung.length?trung[0].gia:0;
+  document.getElementById('hSP').textContent=rows.length;
+  document.getElementById('hPT').textContent=trung.length;
+  document.getElementById('hNG').textContent=rows[0]?.ngay||'—';
+  document.getElementById('hGT').textContent=giaGanNhat?(giaGanNhat/1e6).toLocaleString('vi-VN')+'.000 đ':'—';
+  const html=`<table class="htbl"><thead><tr><th>STT</th><th>Biển Số</th><th>Tỉnh / TP</th><th>Ngày Đấu</th><th>Lượt</th></tr></thead>
+  <tbody>${rows.map(r=>`<tr>
+    <td style="color:#bbb;font-size:11px;">${r.stt}</td>
+    <td style="font-family:monospace;font-weight:700;color:#1565c0;">${r.so}${r.moi?'<span class="badge-moi">MỚI</span>':''}</td>
+    <td style="font-size:12px;color:#555;">${r.tinh_}</td>
+    <td style="font-size:12px;">${r.ngay}</td>
+    <td style="font-weight:700;color:#1565c0;">${r.luot}</td>
+  </tr>`).join('')}</tbody></table>`;
+  document.getElementById('hTbl').innerHTML=html;
+  aiHist(so,rows);
+}
+
+async function aiHist(so,rows){
+  const aiEl=document.getElementById('hAi');
+  const sc=score(so);
+  const avgGia=rows.length?Math.round(rows.reduce((s,r)=>s+r.gia,0)/rows.length):0;
+  aiEl.innerHTML=`<div class="ai-box"><div class="ai-ttl"><span class="spin" style="width:16px;height:16px;border-width:2px;"></span>AI đang phân tích...</div></div>`;
+  const pr=`Phân tích biển số VPA: ${so}. Điểm ${sc}/10. ${rows.length} phiên đấu. Giá TB: ${(avgGia/1e6).toFixed(0)} triệu. Phiên gần nhất: ${rows[0]?.ngay}. Trả lời 3-4 câu tiếng Việt: loại biển, giá trị thị trường, mức giá hợp lý.`;
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:pr}]})});
+    const d=await r.json();
+    const txt=d.content?.map(c=>c.text||'').join('')||'';
+    aiEl.innerHTML=txt?`<div class="ai-box"><div class="ai-ttl">🤖 Phân tích AI:</div>${txt.replace(/\n/g,'<br>')}</div>`:'';
+  }catch{
+    aiEl.innerHTML=`<div class="ai-box"><div class="ai-ttl">📊 Nhận định:</div>Biển <strong>${so}</strong> điểm ${sc}/10. Giá thị trường ước tính: <strong>${(avgGia/1e6).toFixed(0)} triệu đồng</strong> dựa trên ${rows.length} phiên đấu giá VPA tương tự.</div>`;
+  }
+}
+
+// ============================================================
+// MODAL QUẺ
+// ============================================================
+function openQue(so){
+  curPlate=so;
+  document.getElementById('qPlate').textContent=so;
+  document.getElementById('qRes').classList.remove('show');
+  document.getElementById('qCon').innerHTML='';
+  document.getElementById('mQue').style.display='flex';
+}
+
+async function xemFull(){
+  const n=document.getElementById('qN').value.trim();
+  const th=document.getElementById('qTh').value.trim();
+  const nam=document.getElementById('qNam').value.trim();
+  const gio=document.getElementById('qGio').value;
+  const gt=document.getElementById('qGT').value;
+  const nv=document.getElementById('qNV').value;
+  const qRes=document.getElementById('qRes');
+  const qCon=document.getElementById('qCon');
+  qCon.innerHTML=`<div style="text-align:center;padding:14px;"><span class="spin"></span>AI đang phân tích Tứ Trụ Mệnh Lý...</div>`;
+  qRes.classList.add('show');
+  const coNS=n&&th&&nam;
+  const pr=coNS
+    ?`Phân tích Tứ Trụ Mệnh Lý và Quẻ Kinh Dịch: Biển số ${curPlate}. Sinh ngày ${n}/${th}/${nam}${gio?' giờ '+gio:''}. Giới tính: ${gt==='nam'?'Nam':'Nữ'}. Năm xem vận ${nv}. Phân tích ~200 từ tiếng Việt: (1) Tứ Trụ Can Chi, (2) Ngũ hành bản mệnh & Dụng Thần, (3) Ngũ hành biển số & độ tương hợp, (4) Quẻ Kinh Dịch, (5) Vận hạn ${nv}.`
+    :`Xem Quẻ Kinh Dịch biển số ${curPlate}. ~150 từ tiếng Việt: (1) Ngũ hành các số, (2) Quẻ Kinh Dịch tương ứng, (3) Ý nghĩa phong thủy, (4) Phù hợp mệnh gì.`;
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,messages:[{role:"user",content:pr}]})});
+    const d=await r.json();
+    const txt=d.content?.map(c=>c.text||'').join('')||'Không thể phân tích.';
+    qCon.innerHTML=`<div style="font-size:13px;line-height:1.9;color:#333;">${txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'</p><p style="margin-top:8px;">').replace(/\n/g,'<br>')}</div>`;
+  }catch{
+    qCon.innerHTML=`<div style="font-size:13px;color:#555;padding:8px;">Cần kết nối internet để phân tích. Vui lòng thử lại.</div>`;
+  }
+}
+
+function xemSimple(){
+  ['qN','qTh','qNam'].forEach(id=>document.getElementById(id).value='');
+  xemFull();
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function close(id){document.getElementById(id).style.display='none';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){close('mHist');close('mQue');}});
+
+function toast(msg){
+  let el=document.getElementById('_toast');
+  if(!el){el=document.createElement('div');el.id='_toast';el.style.cssText='position:fixed;bottom:18px;right:18px;background:#1565c0;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);';document.body.appendChild(el);}
+  el.textContent=msg;el.style.display='block';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',3e3);
+}
+
+// ============================================================
+// LOAD (thử fetch VPA, fallback to generated data)
+// ============================================================
+async function load(){
+  document.getElementById('tbody').innerHTML='<tr class="ld-row"><td colspan="5"><span class="spin"></span>Đang tải dữ liệu từ VPA...</td></tr>';
+  let fetched=false;
+  // Thử CORS proxy để lấy VPA live
+  try{
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent('https://dgbs.vpa.com.vn/danh-sach-bien')}`;
+    const res=await Promise.race([fetch(proxyUrl,{cache:'no-store'}),new Promise((_,rej)=>setTimeout(()=>rej('timeout'),7000))]);
+    if(res.ok){
+      const d=await res.json();
+      const html=d.contents||'';
+      if(html.length>2000){
+        const parsed=parseVPA(html);
+        if(parsed.length>=5){ALL=parsed;fetched=true;}
+      }
+    }
+  }catch{}
+
+  if(!fetched){ALL=genData();}
+  ALL.sort((a,b)=>b.s-a.s);
+  applyFilters();
+}
+
+function parseVPA(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const text=doc.body?.textContent||'';
+  const reg=/\d{2}[A-Z]{1,2}-\d{3}\.\d{2}/g;
+  const ms=text.match(reg)||[];
+  const seen=new Set();
+  return ms.filter(so=>!seen.has(so)&&seen.add(so)).map(so=>({so,t:tinh(so),s:score(so)}));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+load();
 </script>
 </body>
 </html>
