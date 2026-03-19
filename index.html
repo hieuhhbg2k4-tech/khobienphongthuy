@@ -1472,7 +1472,7 @@ function updatePrice(input) {
   const digit = input.dataset.digit;
   const field = input.dataset.field;
   const val   = parseFloat(input.value)*1_000_000;
-  const map   = {ngu-quy:PRICE_NGU_QUY,'tu-quy':PRICE_TU_QUY,'tam-hoa':PRICE_TAM_HOA};
+  const map   = {'ngu-quy':PRICE_NGU_QUY,'tu-quy':PRICE_TU_QUY,'tam-hoa':PRICE_TAM_HOA};
   const obj   = {'ngu-quy':PRICE_NGU_QUY,'tu-quy':PRICE_TU_QUY,'tam-hoa':PRICE_TAM_HOA}[tab];
   if (obj && obj[digit]) {
     obj[digit][field==='min'?0:1] = val;
