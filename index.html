@@ -443,7 +443,7 @@ tr.row-vip:hover td{background:#fff8d6;}
       </tr>
     </thead>
     <tbody id="tbody">
-      <tr class="ld-row"><td colspan="7"><span class="spin"></span>Đang tải dữ liệu từ VPA...</td></tr>
+      <tr class="ld-row"><td colspan="7"><span class="spin"></span>Đang tải dữ liệu...</td></tr>
     </tbody>
   </table>
 </div>
@@ -1573,99 +1573,43 @@ const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS0ZzXFEYZszi
 async function loadData() {
   document.getElementById('tbody').innerHTML=
     '<tr class="ld-row"><td colspan="7"><span class="spin"></span>Đang tải dữ liệu...</td></tr>';
-
   try {
-    let csvText = '';
-    const timeout = ms => new Promise((_,rej) => setTimeout(()=>rej('timeout'),ms));
-
-    // Thử fetch trực tiếp (Google Sheets CSV hỗ trợ CORS)
-    try {
-      const r = await Promise.race([fetch(SHEET_CSV,{cache:'no-store'}), timeout(6000)]);
-      if (r.ok) csvText = await r.text();
-    } catch(e1) {
-      // Fallback proxy
-      try {
-        const r2 = await Promise.race([
-          fetch('https://corsproxy.io/?'+encodeURIComponent(SHEET_CSV)), timeout(6000)
-        ]);
-        if (r2.ok) csvText = await r2.text();
-      } catch(e2) {
-        const r3 = await Promise.race([
-          fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(SHEET_CSV)), timeout(6000)
-        ]);
-        if (r3.ok) csvText = await r3.text();
-      }
-    }
-
-    if (!csvText || csvText.length < 10) throw new Error('CSV rỗng');
-
-    // Parse CSV
-    const rows = csvText.trim().split('\n');
-    const headers = rows[0].split(',').map(h => h.trim().replace(/"/g,'').toLowerCase());
-
-    // Tìm index các cột
-    const iSo    = headers.findIndex(h => h.includes('bi') && h.includes('n s'));
-    const iTinh  = headers.findIndex(h => h.includes('t') && (h.includes('nh') || h.includes('tp')));
-    const iLoai  = headers.findIndex(h => h.includes('lo') && h.includes('i'));
-    const iNgay  = headers.findIndex(h => h.includes('ng') && h.includes('y'));
-    const iNguoi = headers.findIndex(h => h.includes('ng') && h.includes('i'));
-
+    const r = await fetch(SHEET_CSV, {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const csv = await r.text();
+    if (!csv || csv.length < 10) throw new Error('empty');
+    const rows = csv.trim().split('\n');
     const data = [];
     for (let i = 1; i < rows.length; i++) {
-      const cols = rows[i].split(',').map(c => c.trim().replace(/"/g,''));
-      const so = iSo >= 0 ? cols[iSo] : cols[0];
-      if (!so || !so.match(/\d/)) continue;
-
-      // Format biển số: 30B55555 → 30B-555.55, 30B888888 → 30B-888.88
-      const soFormatted = formatBienSo(so);
-
-      data.push({
-        so:   soFormatted,
-        t:    iTinh  >= 0 ? cols[iTinh]  : getTinh(so),
-        loai: iLoai  >= 0 ? cols[iLoai]  : 'Xe Con',
-        ngay: iNgay  >= 0 ? cols[iNgay]  : '',
-        nguoi:iNguoi >= 0 ? cols[iNguoi] : '0',
-        s:    score(soFormatted),
-      });
+      const cols = rows[i].split(',').map(c=>c.trim().replace(/"/g,''));
+      const so = formatBienSo(cols[0]);
+      if (!so || !/[0-9]/.test(so)) continue;
+      data.push({so, t:cols[1]||getTinh(so), loai:cols[2]||'Xe Con', nguoi:cols[3]||'0', ngay:cols[4]||'', s:score(so)});
     }
-
-    if (data.length === 0) throw new Error('Không có dữ liệu hợp lệ');
-
-    ALL = data.map(d => enrichBienSo(d));
-    updateAdminStats();
-    applyFilters();
-    toast('✅ Đã tải ' + ALL.length.toLocaleString('vi-VN') + ' biển số từ Google Sheet');
-
+    if (!data.length) throw new Error('no data');
+    ALL = data.map(d=>enrichBienSo(d));
+    updateAdminStats(); applyFilters();
+    toast('Đã tải '+ALL.length.toLocaleString('vi-VN')+' biển số');
   } catch(e) {
-    console.warn('Sheet error:', e);
-    // Fallback: dùng data mẫu
-    ALL = genData();
-    ALL = ALL.map(d => d.giaTrungBinh !== undefined ? d : enrichBienSo(d));
-    updateAdminStats();
-    applyFilters();
-    toast('⚠ Dùng dữ liệu mẫu — ' + (e.message||e));
+    console.warn('loadData error:', e);
+    ALL = genData().map(d=>enrichBienSo(d));
+    updateAdminStats(); applyFilters();
+    toast('Dùng dữ liệu mẫu');
   }
 }
 
-// Format biển số từ dạng liền (30B55555) sang chuẩn (30B-555.55)
 function formatBienSo(so) {
   if (!so) return so;
   so = so.toString().trim().toUpperCase().replace(/\s+/g,'');
-
-  // Đã có định dạng đúng rồi (có dấu - hoặc .)
-  if (so.match(/^\d{2}[A-Z]{1,2}-\d{3}\.\d{2}$/) ||
-      so.match(/^\d{2}[A-Z]\d-\d{3}\.\d{2}$/)) return so;
-
-  // Dạng 30B55555 (7 ký tự số sau chữ) → 30B-555.55
-  const m1 = so.match(/^(\d{2}[A-Z]{1,2})(\d{5})$/);
-  if (m1) return m1[1] + '-' + m1[2].slice(0,3) + '.' + m1[2].slice(3);
-
-  // Dạng 30B155555 (chữ số + 5 số) → 30B1-555.55
-  const m2 = so.match(/^(\d{2}[A-Z]\d)(\d{5})$/);
-  if (m2) return m2[1] + '-' + m2[2].slice(0,3) + '.' + m2[2].slice(3);
-
+  if (/^[0-9]{2}[A-Z]{1,2}-[0-9]{3}\.[0-9]{2}$/.test(so)) return so;
+  if (/^[0-9]{2}[A-Z][0-9]-[0-9]{3}\.[0-9]{2}$/.test(so)) return so;
+  const m1 = /^([0-9]{2}[A-Z]{1,2})([0-9]{5})$/.exec(so);
+  if (m1) return m1[1]+'-'+m1[2].slice(0,3)+'.'+m1[2].slice(3);
+  const m2 = /^([0-9]{2}[A-Z][0-9])([0-9]{5})$/.exec(so);
+  if (m2) return m2[1]+'-'+m2[2].slice(0,3)+'.'+m2[2].slice(3);
   return so;
 }
+
 
 function parseVPAHtml(html) {
   const doc=new DOMParser().parseFromString(html,'text/html');
