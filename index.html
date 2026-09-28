@@ -97,7 +97,7 @@ $('#grid').onclick=x=>{const b=x.target.closest('[data-b]');if(!b)return;const p
 /* ---------- ADMIN ---------- */
 const m=t=>{const n=$('#msg');if(n)n.textContent=t};
 function login(){$('#app').innerHTML=`<div class="login wrap"><h2>Đăng nhập quản trị</h2><label for="u">Tài khoản</label><input id="u" autocomplete="username"><label for="pw">Mật khẩu</label><input id="pw" type="password" autocomplete="current-password"><div class="actions"><button id="go">Đăng nhập</button><a class="btn ghost" href="#/">Về trang chủ</a></div><p id="msg"></p></div>`;
-$('#go').onclick=async()=>{if(await hash('bss|'+$('#u').value.trim()+'|'+$('#pw').value)===H){sessionStorage.setItem('bss_ok','1');admin()}else m('Sai tài khoản hoặc mật khẩu.')};$('#pw').onkeydown=x=>x.key=='Enter'&&$('#go').click()}
+$('#go').onclick=async()=>{if(await hash('bss|'+$('#u').value.trim()+'|'+$('#pw').value)===H){sessionStorage.setItem('bss_ok','1');admin()}else m('Sai tài khoản hoặc mật khẩu.')};$('#pw').onkeydown=x=>{if(x.key=='Enter')$('#go').click()}}
 function admin(){if(!sessionStorage.getItem('bss_ok'))return login();
 $('#app').innerHTML=`<div class="wrap adm"><div class="bar"><h2 style="margin:0">Quản trị BIENSOSHOP</h2><div><a class="btn ghost" href="#/">Xem web</a> <button class="ghost" id="out">Đăng xuất</button></div></div><div class="tabs">${[['p','Biển số'],['s','Google Sheet'],['t','Giao diện'],['c','Liên hệ']].map(([k,n])=>`<button class="${k==tab?'':'ghost'}" data-t="${k}">${n}</button>`).join('')}</div><div id="pane"></div><p id="msg" role="status"></p></div>`;
 $('#out').onclick=()=>{sessionStorage.removeItem('bss_ok');location.hash='#/'};
