@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -71,7 +72,11 @@ const L=()=>U?U.level:0;
 const money=g=>{if(!/^\d+$/.test(g))return g||'Liên hệ';const n=+g;return n>=1e9?(n/1e9).toLocaleString('vi-VN')+' tỷ':(n/1e6).toLocaleString('vi-VN')+' triệu'};
 const df=p=>/^\d+$/.test(p.gia)&&/^\d+$/.test(p.giathu)?money(String(p.gia-p.giathu)):'';
 const m=t=>{const n=$('#msg');if(n)n.textContent=t};
-async function api(a,d={}){if(!API)return{ok:0,m:'Chưa dán link Apps Script vào file index.html (dòng const API).'};try{return await(await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({a,t:U&&U.t,...d})})).json()}catch{return{ok:0,m:'Không kết nối được máy chủ.'}}}
+async function api(a,d={}){if(!API)return{ok:0,m:'Chưa dán link Apps Script vào file index.html (dòng const API).'};try{return await(await fetch(API+'?d='+encodeURIComponent(JSON.stringify({a,t:U&&U.t,...d}))+'&_='+Date.now())).json()}catch{return{ok:0,m:'Không kết nối được máy chủ.'}}}
+async function uploadBg(dataUrl){if(!API)return{ok:0,m:'Chưa dán link Apps Script.'};const tok=Date.now()+'-'+Math.random().toString(36).slice(2);
+try{await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({a:'upload',t:U&&U.t,tok,data:dataUrl})})}catch{}
+for(let i=0;i<25;i++){await new Promise(r=>setTimeout(r,1000));const r=await api('uploadstatus',{tok});if(r.ok&&r.url)return r;if(!r.pending)return r}
+return{ok:0,m:'Tải ảnh quá lâu, thử lại.'}}
 async function load(){if(!API){P=SAMPLE;return}const r=await api('list');if(r.ok){P=r.plates;C={...D,...r.cfg}}}
 function sp(b){const s=String(b).toUpperCase().replace(/[^0-9A-Z]/g,''),x=s.match(/^(\d{2})([A-Z]{1,2})(\d{4,5})$/);return x?{t:x[1],s:x[2],n:x[3]}:{t:'',s:'',n:s}}
 const nf=n=>n.length==5?n.slice(0,3)+'.'+n.slice(3):n;
@@ -139,8 +144,9 @@ $('#pane').innerHTML=`<canvas class="pv" id="pv"></canvas><div class="actions"><
 const r=()=>{if(C.bg){$('#pv').style.background=`url("${C.bg}") center/cover`}else $('#pv').style.background='';paint($('#pv'))};r();
 $('#nb').onclick=()=>{C.seed=Math.random()*1e9|0;C.bg='';r()};$('#rm').onclick=()=>{C.bg='';r()};
 $('#pane').onclick=x=>{if(x.target.dataset.p!=null){C.pal=+x.target.dataset.p;C.bg='';r()}};
-$('#up').onchange=async x=>{const f=x.target.files[0];if(!f)return;m('Đang tải ảnh lên...');const u=await api('upload',{data:await fit(f)});if(u.ok){C.bg=u.url;r();m('Đã tải ảnh. Bấm Lưu để áp dụng.')}else m(u.m)};
+$('#up').onchange=async x=>{const f=x.target.files[0];if(!f)return;m('Đang tải ảnh lên...');const u=await uploadBg(await fit(f));if(u.ok){C.bg=u.url;r();m('Đã tải ảnh. Bấm Lưu để áp dụng.')}else m(u.m||'Tải ảnh thất bại.')};
 $('#sc').onclick=async()=>{Object.keys(Lb).forEach(k=>C[k]=$('#c_'+k).value.trim());const x=await api('cfg',{cfg:C});m(x.ok?'Đã lưu.':x.m)}}
 function route(){(location.hash.startsWith('#/admin')||/\/admin\/?$/.test(location.pathname))?admin():site()}
 addEventListener('hashchange',route);load().then(route);
 </script></body></html>
+ 
