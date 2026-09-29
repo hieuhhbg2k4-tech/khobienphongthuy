@@ -1,159 +1,89 @@
 <!DOCTYPE html>
-<html lang="vi"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>BIENXEOTO – Kho biển số đẹp</title>
-<meta name="description" content="Kho biển số đẹp, tìm theo đuôi, theo mệnh. Tư vấn qua hotline và Zalo.">
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kích hoạt key</title>
 <style>
-:root{--bg:#0c1917;--ink:#11201d;--brass:#d6a94a;--bone:#efe7d3;--mute:#9fb3ac;--line:#ffffff1f}
-*{box-sizing:border-box;margin:0}
-body{background:var(--bg);color:var(--bone);font:16px/1.6 "Segoe UI",system-ui,sans-serif}
-h1,h2,.brand{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-weight:700}
-a{color:inherit}.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
-header{position:sticky;top:0;z-index:5;background:#0c1917e6;backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-header .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
-.brand{font-size:20px;color:var(--brass);text-decoration:none}
-nav a{margin-left:20px;text-decoration:none;color:var(--mute)}nav a:hover{color:var(--bone)}
-.hero{position:relative;min-height:420px;display:flex;align-items:flex-end;overflow:hidden;background-size:cover;background-position:center}
-.hero canvas{position:absolute;inset:0;width:100%;height:100%}
-.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--bg) 3%,#0c191759 75%)}
-.hero .wrap{position:relative;z-index:1;padding-top:90px;padding-bottom:40px;width:100%}
-h1{font-size:clamp(32px,6vw,56px);line-height:1.1;max-width:14ch}
-.sub{color:var(--mute);margin:12px 0 20px;max-width:46ch}
-input,select,textarea,button{font:inherit}
-input,select,textarea{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ffffff2b;background:#0a1412;color:var(--bone)}
-button,.btn{padding:10px 16px;border-radius:8px;border:0;background:var(--brass);color:#1a1205;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
-.ghost{background:transparent;color:var(--bone);border:1px solid #ffffff38}
-:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
-.sb{display:flex;gap:8px;max-width:680px;flex-wrap:wrap}.sb input{flex:2;min-width:160px}.sb select{flex:1;min-width:110px}
-h2{font-size:28px;margin:40px 0 14px}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.chips button{padding:6px 13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-.card{background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:18px;cursor:pointer;text-align:left;color:inherit;width:100%}
-.card:hover{border-color:var(--brass)}
-.plate{display:inline-block;background:#f6f3ea;color:#161616;border:3px solid #161616;border-radius:8px;padding:5px 14px;font:800 24px/1.2 "Courier New",monospace;letter-spacing:2px}
-.price{color:var(--brass);font-weight:700;font-size:19px;margin-top:12px}.meta{color:var(--mute);font-size:14px}
-.contact dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-.contact dt{color:var(--brass);font-weight:700}.contact .box{background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:16px}
-footer{margin-top:56px;padding:22px 0;border-top:1px solid var(--line);color:var(--mute);font-size:14px}
-dialog{background:var(--ink);color:var(--bone);border:1px solid var(--brass);border-radius:12px;padding:24px;max-width:420px;width:92%}
-dialog::backdrop{background:#000a}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
-.adm{padding-top:20px;padding-bottom:40px}.bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
-label{display:block;font-size:14px;color:var(--mute);margin:10px 0 4px}
-#msg{margin-top:14px;color:var(--brass)}
-.login{max-width:380px;margin:9vh auto}
-.tw{overflow-x:auto;margin-top:12px}table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--brass)}
-canvas.pv{width:100%;height:180px;border-radius:10px;border:1px solid var(--line)}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style></head><body><div id="app"></div>
+  :root { --bg:#eef1f5; --card:#fff; --ink:#1b2430; --mute:#5d6b7c; --line:#d5dbe3; --ok:#0f766e; --err:#b42318; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12171e; --card:#1a212b; --ink:#e8edf3; --mute:#93a0b0; --line:#2b3542; --ok:#4fd1c5; --err:#ff8a80; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; padding:20px;
+         background:var(--bg); color:var(--ink); font:16px/1.5 "Segoe UI", system-ui, sans-serif; }
+  main { width:100%; max-width:440px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:28px; }
+  h1 { margin:0 0 4px; font-size:22px; }
+  p.sub { margin:0 0 22px; color:var(--mute); font-size:14px; }
+  label { display:block; font-size:13px; color:var(--mute); margin:14px 0 6px; }
+  input { width:100%; padding:11px 12px; font:inherit; color:var(--ink); background:transparent;
+          border:1px solid var(--line); border-radius:8px; }
+  input:focus-visible, button:focus-visible { outline:2px solid var(--ok); outline-offset:2px; }
+  button { width:100%; margin-top:20px; padding:12px; font:inherit; font-weight:600; cursor:pointer;
+           color:#fff; background:var(--ok); border:0; border-radius:8px; }
+  @media (prefers-color-scheme: dark) { button { color:#0b1f1d; } }
+  button:disabled { opacity:.6; cursor:wait; }
+  #msg { margin-top:16px; min-height:24px; font-size:14px; }
+  #msg.ok { color:var(--ok); } #msg.err { color:var(--err); }
+  .dev { margin-top:22px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--mute); word-break:break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kích hoạt key</h1>
+  <p class="sub">Nhập key bạn đã nhận để dùng gói theo tháng.</p>
+
+  <label for="key">Key</label>
+  <input id="key" autocomplete="off" spellcheck="false" placeholder="Dán key vào đây">
+
+  <label for="server">Địa chỉ server</label>
+  <input id="server" value="https://license-server-a70g.onrender.com">
+
+  <button id="go">Kích hoạt</button>
+  <div id="msg" role="status" aria-live="polite"></div>
+
+  <div class="dev">Mã thiết bị: <span id="dev"></span></div>
+</main>
+
 <script>
-const API='https://script.google.com/macros/s/AKfycbwgIBEgC-xPjj7mX2q4774X43YiTjVCNJHhMa9T6amEqtwayu_Iv9obQCQLlOPY4Hm7/exec';/* dán link Apps Script (Web app) vào đây */
-function sha256(s){const K=[],H=[];let p=0,c=2;const r=(x,n)=>x>>>n|x<<32-n;
-for(;p<64;c++){let ok=1;for(let i=2;i*i<=c;i++)if(c%i==0){ok=0;break}if(ok){if(p<8)H[p]=Math.pow(c,.5)%1*4294967296|0;K[p++]=Math.pow(c,1/3)%1*4294967296|0}}
-const b=[...new TextEncoder().encode(s)],l=b.length*8;b.push(128);while(b.length%64!=56)b.push(0);for(let i=0;i<4;i++)b.push(0);for(let i=3;i>=0;i--)b.push(l>>>i*8&255);
-let h=H.slice();
-for(let o=0;o<b.length;o+=64){const w=[];for(let i=0;i<16;i++)w[i]=b[o+4*i]<<24|b[o+4*i+1]<<16|b[o+4*i+2]<<8|b[o+4*i+3];
-for(let i=16;i<64;i++){const s0=r(w[i-15],7)^r(w[i-15],18)^w[i-15]>>>3,s1=r(w[i-2],17)^r(w[i-2],19)^w[i-2]>>>10;w[i]=w[i-16]+s0+w[i-7]+s1|0}
-let[a,B,C,d,E,f,g,q]=h;
-for(let i=0;i<64;i++){const S1=r(E,6)^r(E,11)^r(E,25),ch=E&f^~E&g,t1=q+S1+ch+K[i]+w[i]|0,S0=r(a,2)^r(a,13)^r(a,22),mj=a&B^a&C^B&C,t2=S0+mj|0;q=g;g=f;f=E;E=d+t1|0;d=C;C=B;B=a;a=t1+t2|0}
-h=[h[0]+a|0,h[1]+B|0,h[2]+C|0,h[3]+d|0,h[4]+E|0,h[5]+f|0,h[6]+g|0,h[7]+q|0]}
-return h.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('')}
-const D={hot:'0888.188.888',tel:'0888188888',zalo:'https://zalo.me/0985198198',mail:'biensodep186@gmail.com',addr:'Tầng 5 - 326 Phạm Văn Đồng, Xuân Đỉnh, Hà Nội',hours:'Thứ 2 - Chủ nhật: 8:00 - 22:00',seed:7,pal:0,bg:''};
-const SAMPLE=[{bks:'99B-745.68',tinh:'Bắc Ninh',gia:'79000000',menh:'Kim',ghichu:'Lộc phát'},{bks:'30K-888.88',tinh:'Hà Nội',gia:'',menh:'Kim',ghichu:'Ngũ quý 8'},{bks:'51H-686.86',tinh:'TP. Hồ Chí Minh',gia:'350000000',menh:'Thủy',ghichu:''}];
-const PAL=[['#0c1917','#1b4a41','214,169,74'],['#1c0f0e','#5a1a14','233,190,110'],['#0e1526','#233a63','200,215,240'],['#161208','#4a3a12','240,205,120']];
-const $=s=>document.querySelector(s);
-const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let U=JSON.parse(sessionStorage.getItem('bx_u')||'null'),P=[],C={...D},F={q:'',mode:'chua',t:''},tab='k',mode='in',ed=null;
-const L=()=>U?U.level:0;
-const money=g=>{if(!/^\d+$/.test(g))return g||'Liên hệ';const n=+g;return n>=1e9?(n/1e9).toLocaleString('vi-VN')+' tỷ':(n/1e6).toLocaleString('vi-VN')+' triệu'};
-const df=p=>/^\d+$/.test(p.gia)&&/^\d+$/.test(p.giathu)?money(String(p.gia-p.giathu)):'';
-const m=t=>{const n=$('#msg');if(n)n.textContent=t};
-let jsonpN=0;
-function jsonp(payload,timeout=15000){return new Promise(resolve=>{const cb='cb_'+(jsonpN++)+'_'+Date.now();
-window[cb]=res=>{clear();resolve(res)};
-const s=document.createElement('script');s.src=API+'?d='+encodeURIComponent(payload)+'&cb='+cb+'&_='+Date.now();
-s.onerror=()=>{clear();resolve({ok:0,m:'Không kết nối được máy chủ.'})};
-const tm=setTimeout(()=>{clear();resolve({ok:0,m:'Máy chủ phản hồi quá lâu.'})},timeout);
-function clear(){clearTimeout(tm);delete window[cb];s.remove()}
-document.body.appendChild(s)})}
-async function api(a,d={}){if(!API)return{ok:0,m:'Chưa dán link Apps Script vào file index.html (dòng const API).'};return jsonp(JSON.stringify({a,t:U&&U.t,...d}))}
-async function uploadBg(dataUrl){if(!API)return{ok:0,m:'Chưa dán link Apps Script.'};const tok=Date.now()+'-'+Math.random().toString(36).slice(2);
-try{await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({a:'upload',t:U&&U.t,tok,data:dataUrl})})}catch{}
-for(let i=0;i<25;i++){await new Promise(r=>setTimeout(r,1000));const r=await api('uploadstatus',{tok});if(r.ok&&r.url)return r;if(!r.pending)return r}
-return{ok:0,m:'Tải ảnh quá lâu, thử lại.'}}
-async function load(){if(!API){P=SAMPLE;return}const r=await api('list');if(r.ok){P=r.plates;C={...D,...r.cfg}}}
-function sp(b){const s=String(b).toUpperCase().replace(/[^0-9A-Z]/g,''),x=s.match(/^(\d{2})([A-Z]{1,2})(\d{4,5})$/);return x?{t:x[1],s:x[2],n:x[3]}:{t:'',s:'',n:s}}
-const nf=n=>n.length==5?n.slice(0,3)+'.'+n.slice(3):n;
-const fmt=b=>{const s=sp(b);return s.t?s.t+s.s+'-'+nf(s.n):b};let lim=120;
-const PROVINCE_MAP={11:'Cao Bằng',12:'Lạng Sơn',14:'Quảng Ninh',15:'Hải Phòng',16:'Hải Phòng',17:'Hưng Yên',18:'Ninh Bình',19:'Phú Thọ',20:'Thái Nguyên',21:'Lào Cai',22:'Tuyên Quang',23:'Tuyên Quang',24:'Lào Cai',25:'Lai Châu',26:'Sơn La',27:'Điện Biên',28:'Phú Thọ',29:'Hà Nội',30:'Hà Nội',31:'Hà Nội',32:'Hà Nội',33:'Hà Nội',34:'Hải Phòng',35:'Ninh Bình',36:'Thanh Hóa',37:'Nghệ An',38:'Hà Tĩnh',39:'Đồng Nai',40:'Hà Nội',41:'TP. Hồ Chí Minh',43:'Đà Nẵng',47:'Đắk Lắk',48:'Lâm Đồng',49:'Lâm Đồng',50:'TP. Hồ Chí Minh',51:'TP. Hồ Chí Minh',52:'TP. Hồ Chí Minh',53:'TP. Hồ Chí Minh',54:'TP. Hồ Chí Minh',55:'TP. Hồ Chí Minh',56:'TP. Hồ Chí Minh',57:'TP. Hồ Chí Minh',58:'TP. Hồ Chí Minh',59:'TP. Hồ Chí Minh',60:'Đồng Nai',61:'TP. Hồ Chí Minh',62:'Tây Ninh',63:'Đồng Tháp',64:'Vĩnh Long',65:'Cần Thơ',66:'Đồng Tháp',67:'An Giang',68:'An Giang',69:'Cà Mau',70:'Tây Ninh',71:'Vĩnh Long',72:'TP. Hồ Chí Minh',73:'Quảng Trị',74:'Quảng Trị',75:'TP. Huế',76:'Quảng Ngãi',77:'Gia Lai',78:'Đắk Lắk',79:'Khánh Hòa',80:'Cục CSGT',81:'Gia Lai',82:'Quảng Ngãi',83:'Cần Thơ',84:'Vĩnh Long',85:'Khánh Hòa',86:'Lâm Đồng',88:'Phú Thọ',89:'Hưng Yên',90:'Ninh Bình',92:'Đà Nẵng',93:'Đồng Nai',94:'Cà Mau',95:'Cần Thơ',97:'Thái Nguyên',98:'Bắc Ninh',99:'Bắc Ninh'};
-const tinhOf=b=>PROVINCE_MAP[+sp(b).t]||'';
-const provList=()=>[...new Set(P.map(p=>tinhOf(p.bks)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));
-function match(p){if(F.t&&tinhOf(p.bks)!=F.t)return 0;const q=F.q.toLowerCase().replace(/[^a-z0-9*]/g,'');if(!q)return 1;const s=sp(p.bks),all=(s.t+s.s+s.n).toLowerCase();
-if(q.includes('*'))return new RegExp('^'+q.replace(/\*/g,'.*')+'$').test(s.n);
-return F.mode=='duoi'?all.endsWith(q):F.mode=='dau'?s.n.startsWith(q):all.includes(q)}
-const filt=()=>P.filter(match);
-function cp(t){if(navigator.clipboard&&isSecureContext)return navigator.clipboard.writeText(t);const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();return Promise.resolve()}
-function paint(cv){const dpr=devicePixelRatio||1,cw=cv.clientWidth||1200,ch=cv.clientHeight||420,w=cv.width=Math.min(1600,cw*dpr)|0,h=cv.height=(ch*w/cw)|0,x=cv.getContext('2d'),p=PAL[C.pal%PAL.length];
-const g=x.createLinearGradient(0,0,w,h);g.addColorStop(0,p[0]);g.addColorStop(1,p[1]);x.fillStyle=g;x.fillRect(0,0,w,h);
-let s=+C.seed||7;const R=()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
-for(let n=0;n<3;n++){const cx=R()*w,cy=R()*h;for(let r=30;r<Math.max(w,h);r+=26+R()*14){x.beginPath();x.arc(cx,cy,r,0,7);x.strokeStyle=`rgba(${p[2]},${.05+R()*.14})`;x.lineWidth=1+R()*2;x.stroke()}}
-for(let i=0;i<24;i++){x.fillStyle=`rgba(${p[2]},${R()*.08})`;x.fillRect(R()*w,0,2+R()*8,h)}}
-function searchBar(id){return`<div class="sb"><input id="q${id}" placeholder="Tìm biển: 68, 39*39, 99B..." aria-label="Tìm biển số" value="${e(F.q)}"><select id="md${id}" aria-label="Kiểu tìm">${[['chua','Chứa'],['duoi','Đuôi'],['dau','Đầu']].map(([v,n])=>`<option value="${v}"${F.mode==v?' selected':''}>${n}</option>`).join('')}</select><select id="tn${id}" aria-label="Tỉnh"><option value="">Tất cả tỉnh</option>${provList().map(t=>`<option${F.t==t?' selected':''}>${e(t)}</option>`).join('')}</select></div><div class="chips">${['68','86','79','39','88','999'].map(n=>`<button class="ghost" data-sx="${n}">Đuôi ${n}</button>`).join('')}</div>`}
-function bindSearch(id,fn){$('#q'+id).oninput=x=>{F.q=x.target.value;fn()};$('#md'+id).onchange=x=>{F.mode=x.target.value;fn()};$('#tn'+id).onchange=x=>{F.t=x.target.value;fn()};
-document.querySelectorAll('[data-sx]').forEach(b=>b.onclick=()=>{F.q=b.dataset.sx;F.mode='duoi';$('#q'+id).value=F.q;$('#md'+id).value='duoi';fn()})}
-function site(){const c=C;$('#app').innerHTML=`<header><div class="wrap"><a class="brand" href="#/">BIENXEOTO</a><nav><a href="#kho">Kho biển</a><a href="#lienhe">Liên hệ</a><a href="#/admin">Đăng nhập</a></nav></div></header>
-<section class="hero" id="hero"><canvas id="cv"></canvas><div class="wrap"><h1>Biển số đẹp, giá rõ ràng</h1><p class="sub">Tìm biển theo đuôi, theo mệnh, theo ngân sách. Gọi hoặc nhắn Zalo để được tư vấn thủ tục sang tên.</p><div id="sbx"></div></div></section>
-<main class="wrap" id="kho"><h2>Kho biển số</h2><div class="grid" id="grid"></div></main>
-<section class="wrap contact" id="lienhe"><h2>Liên Hệ BIENXEOTO</h2><p class="meta" style="margin-bottom:16px">Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7. Liên hệ với chúng tôi qua các kênh sau:</p>
-<dl><div class="box"><dt>📞 Hotline</dt><dd><a href="tel:${e(c.tel)}">${e(c.hot)}</a></dd></div><div class="box"><dt>💬 Zalo</dt><dd><a href="${e(c.zalo)}" target="_blank" rel="noopener">Chat Zalo ngay</a></dd></div><div class="box"><dt>📧 Email</dt><dd><a href="mailto:${e(c.mail)}">${e(c.mail)}</a></dd></div><div class="box"><dt>📍 Địa chỉ</dt><dd>${e(c.addr)}</dd></div><div class="box"><dt>Giờ làm việc</dt><dd>${e(c.hours)}</dd></div></dl></section>
-<footer><div class="wrap">© 2026 BIENXEOTO · ${e(c.addr)}</div></footer><dialog id="dlg"></dialog>`;
-if(c.bg){$('#hero').style.backgroundImage=`url("${c.bg}")`;$('#cv').style.display='none'}else paint($('#cv'));
-const draw=k=>{lim=120;$('#sbx').innerHTML=searchBar('');bindSearch('',draw);list();if(k)$('#q').focus()};draw();
-function list(){const a=filt(),v=a.slice(0,lim);$('#grid').innerHTML=a.length?v.map(p=>`<button class="card" data-i="${P.indexOf(p)}"><span class="plate">${e(fmt(p.bks))}</span><div class="price">${e(money(p.gia))}</div><div class="meta">${e(tinhOf(p.bks))}</div></button>`).join('')+(a.length>lim?`<button class="ghost" id="more" style="grid-column:1/-1">Xem thêm (${a.length-lim} biển)</button>`:''):'<p class="meta">Chưa có biển phù hợp. Gọi hotline để được tìm giúp.</p>';if($('#more'))$('#more').onclick=()=>{lim+=120;list()}}
-$('#grid').onclick=x=>{const b=x.target.closest('[data-i]');if(!b)return;const p=P[b.dataset.i];$('#dlg').innerHTML=`<span class="plate">${e(fmt(p.bks))}</span><div class="price">${e(money(p.gia))}</div><p class="meta">${e(tinhOf(p.bks))}</p><p>${e(p.ghichu)}</p><div class="actions"><a class="btn" href="tel:${e(c.tel)}">Gọi ${e(c.hot)}</a><a class="btn ghost" href="${e(c.zalo)}" target="_blank" rel="noopener">Chat Zalo</a><button class="ghost" onclick="dlg.close()">Đóng</button></div>`;$('#dlg').showModal()}}
-/* ---- ADMIN ---- */
-function auth(){$('#app').innerHTML=`<div class="login wrap"><h2>${mode=='in'?'Đăng nhập':'Đăng ký tài khoản'}</h2>
-<label for="u">Số điện thoại</label><input id="u" inputmode="numeric" autocomplete="username">${mode=='up'?'<label for="nm">Họ tên</label><input id="nm">':''}
-<label for="pw">Mật khẩu</label><input id="pw" type="password" autocomplete="current-password"><div class="actions"><button id="go">${mode=='in'?'Đăng nhập':'Gửi đăng ký'}</button><button class="ghost" id="sw">${mode=='in'?'Đăng ký mới':'Đã có tài khoản'}</button><a class="btn ghost" href="#/">Trang chủ</a></div><p id="msg"></p></div>`;
-$('#sw').onclick=()=>{mode=mode=='in'?'up':'in';auth()};
-const ph=()=>$('#u').value.trim();
-$('#go').onclick=async()=>{if(!ph()||!$('#pw').value)return m('Nhập số điện thoại và mật khẩu.');const h=sha256('bx|'+ph()+'|'+$('#pw').value);
-if(mode=='up'){if($('#pw').value.length<6)return m('Mật khẩu tối thiểu 6 ký tự.');const r=await api('register',{phone:ph(),name:$('#nm').value.trim(),h});return m(r.ok?'Đã gửi đăng ký. Chờ quản trị viên duyệt.':r.m)}
-const r=await api('login',{phone:ph(),h});if(!r.ok)return m(r.m);U={...r.u,t:r.t};sessionStorage.setItem('bx_u',JSON.stringify(U));await load();admin()};
-$('#pw').onkeydown=x=>{if(x.key=='Enter')$('#go').click()}}
-function admin(){if(!U)return auth();const T=[['k','Kho biển']];if(L()>=3)T.push(['u','Tài khoản'],['c','Giao diện & liên hệ']);
-$('#app').innerHTML=`<div class="wrap adm"><div class="bar"><h2 style="margin:0">BIENXEOTO · ${e(U.name||U.phone)} (cấp ${L()})</h2><div><a class="btn ghost" href="#/">Xem web</a> <button class="ghost" id="out">Đăng xuất</button></div></div><div class="tabs">${T.map(([k,n])=>`<button class="${k==tab?'':'ghost'}" data-t="${k}">${n}</button>`).join('')}</div><div id="pane"></div><p id="msg" role="status"></p></div>`;
-$('#out').onclick=()=>{U=null;sessionStorage.removeItem('bx_u');location.hash='#/'};
-document.querySelector('.tabs').onclick=x=>{if(x.target.dataset.t){tab=x.target.dataset.t;admin()}};({k:pK,u:pU,c:pC})[tab]()}
-function pK(){const l=L();$('#pane').innerHTML=`<div id="sbx"></div><div class="actions"><select id="fm" style="width:200px"><option value="goc">Copy: dạng gốc</option><option value="lien">Copy: liền, không dấu</option><option value="cot">Copy: tách cột (dán Excel)</option></select><button id="cpy">Copy các biển đã lọc</button><span class="meta" id="cnt"></span></div>
-${l>=3?`<div class="row" style="margin-top:14px"><input id="e1" placeholder="Biển số"><input id="e3" placeholder="Giá bán (triệu)" inputmode="numeric"><input id="e4" placeholder="Giá thu (triệu)" inputmode="numeric"><input id="e7" placeholder="Đại lý / tab (VD: Tiến công)"><button id="sv">Lưu biển</button></div>`:''}
-<div class="tw"><table><thead><tr><th>Biển</th><th>Tỉnh</th><th>Seri</th><th>Số</th><th>Giá bán</th>${l>=2?'<th>Giá thu</th><th>Chênh</th><th>Đại lý</th><th>Nguồn (tab)</th>':''}${l>=3?'<th></th>':''}</tr></thead><tbody id="tb"></tbody></table></div>`;
-const draw=k=>{$('#sbx').innerHTML=searchBar('');bindSearch('',draw);rows();if(k)$('#q').focus()};
-function rows(){const a=filt();$('#cnt').textContent=a.length+' biển';$('#tb').innerHTML=a.slice(0,300).map(p=>{const s=sp(p.bks);return`<tr><td><b>${e(fmt(p.bks))}</b></td><td>${e(tinhOf(p.bks))}</td><td>${s.s}</td><td>${nf(s.n)}</td><td>${e(money(p.gia))}</td>${l>=2?`<td>${e(money(p.giathu))}</td><td>${e(df(p))}</td><td>${e(p.daily)}</td><td>${e(p.nguon)}</td>`:''}${l>=3?`<td><button class="ghost" data-e="${P.indexOf(p)}">Sửa</button> <button class="ghost" data-x="${P.indexOf(p)}">Xóa</button></td>`:''}</tr>`}).join('')}
-draw();
-$('#cpy').onclick=async()=>{const f=$('#fm').value,t=filt().map(p=>{const s=sp(p.bks);return f=='goc'?p.bks:f=='lien'?s.t+s.s+s.n:[s.t,s.s,nf(s.n)].join('\t')}).join('\n');await cp(t);m('Đã copy '+filt().length+' biển.')};
-if(l>=3){const n=x=>x.replace(/\D/g,''),tr=g=>/^\d+$/.test(g)?Math.round(g/1e6):'';
-$('#sv').onclick=async()=>{const bks=$('#e1').value.trim().toUpperCase();if(!bks)return m('Nhập biển số.');const r=await api('save',{p:{bks,gia:n($('#e3').value),giathu:n($('#e4').value)},nguon:ed?ed.nguon:($('#e7').value.trim()||'Kho'),...(ed?{row:ed.row,col:ed.col,cg:ed.cg,ct:ed.ct}:{})});m(r.ok?'Đã lưu.':r.m);if(r.ok){ed=null;await load();pK()}};
-$('#tb').onclick=async x=>{const i=x.target.dataset.e,j=x.target.dataset.x;if(i!=null){const p=P[i];ed=p;$('#e1').value=p.bks;$('#e3').value=tr(p.gia);$('#e4').value=tr(p.giathu);$('#e7').value=p.nguon;m('Đang sửa '+p.bks+'. Sửa xong bấm Lưu biển.')}
-if(j!=null&&confirm('Xóa biển '+P[j].bks+'?')){const p=P[j],r=await api('del',{nguon:p.nguon,row:p.row,col:p.col});m(r.ok?'Đã xóa.':r.m);if(r.ok){await load();pK()}}}}}
-async function pU(){$('#pane').innerHTML='<p class="meta">Đang tải...</p>';const r=await api('users');if(!r.ok){$('#pane').innerHTML='';return m(r.m)}
-$('#pane').innerHTML=`<div class="row"><input id="n1" placeholder="Số điện thoại"><input id="n2" placeholder="Họ tên"><input id="n3" type="password" placeholder="Mật khẩu"><select id="n4"><option value="1">Cấp 1</option><option value="2">Cấp 2</option><option value="3">Cấp 3</option></select><button id="nc">Tạo tài khoản</button></div><div class="tw"><table><thead><tr><th>SĐT</th><th>Tên</th><th>Cấp</th><th>Trạng thái</th><th></th></tr></thead><tbody>${r.users.map(u=>`<tr><td>${e(u.phone)}</td><td>${e(u.name)}</td><td><select data-l="${e(u.phone)}" style="width:90px">${[1,2,3].map(n=>`<option${u.level==n?' selected':''}>${n}</option>`).join('')}</select></td><td>${u.status=='ok'?'Đã duyệt':'Chờ duyệt'}</td><td>${u.status!='ok'?`<button data-a="${e(u.phone)}">Duyệt</button> `:''}<button class="ghost" data-d="${e(u.phone)}">Xóa</button></td></tr>`).join('')}</tbody></table></div>`;
-$('#nc').onclick=async()=>{const p=$('#n1').value.trim();if(!p||$('#n3').value.length<6)return m('Nhập SĐT và mật khẩu (từ 6 ký tự).');const x=await api('ucreate',{phone:p,name:$('#n2').value.trim(),h:sha256('bx|'+p+'|'+$('#n3').value),level:+$('#n4').value});m(x.ok?'Đã tạo.':x.m);if(x.ok)pU()};
-const set=async(p,lv,st,del)=>{const x=await api('uset',{phone:p,level:lv,status:st,del});m(x.ok?'Đã cập nhật.':x.m);pU()};
-$('#pane').onchange=x=>{const p=x.target.dataset.l;if(p)set(p,+x.target.value,'ok')};
-$('#pane').onclick=x=>{const a=x.target.dataset.a,d=x.target.dataset.d;if(a){const u=r.users.find(z=>z.phone==a);set(a,u.level,'ok')}if(d&&confirm('Xóa tài khoản '+d+'?'))set(d,0,'',1)}}
-function fit(f){return new Promise(r=>{const i=new Image();i.onload=()=>{const k=Math.min(1,1600/i.width),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.8))};i.src=URL.createObjectURL(f)})}
-function pC(){const Lb={hot:'Hotline hiển thị',tel:'Số gọi (chữ số)',zalo:'Link Zalo',mail:'Email',addr:'Địa chỉ',hours:'Giờ làm việc'};
-$('#pane').innerHTML=`<canvas class="pv" id="pv"></canvas><div class="actions"><button id="nb">Tạo nền mới</button>${PAL.map((p,i)=>`<button class="ghost" data-p="${i}">Bảng màu ${i+1}</button>`).join('')}<button class="ghost" id="rm">Bỏ ảnh tải lên</button></div><label for="up">Tải ảnh nền (hiện cho mọi khách)</label><input id="up" type="file" accept="image/*">${Object.keys(Lb).map(k=>`<label for="c_${k}">${Lb[k]}</label><input id="c_${k}" value="${e(C[k])}">`).join('')}<div class="actions"><button id="sc">Lưu giao diện & liên hệ</button></div>`;
-const r=()=>{if(C.bg){$('#pv').style.background=`url("${C.bg}") center/cover`}else $('#pv').style.background='';paint($('#pv'))};r();
-$('#nb').onclick=()=>{C.seed=Math.random()*1e9|0;C.bg='';r()};$('#rm').onclick=()=>{C.bg='';r()};
-$('#pane').onclick=x=>{if(x.target.dataset.p!=null){C.pal=+x.target.dataset.p;C.bg='';r()}};
-$('#up').onchange=async x=>{const f=x.target.files[0];if(!f)return;m('Đang tải ảnh lên...');const u=await uploadBg(await fit(f));if(u.ok){C.bg=u.url;r();m('Đã tải ảnh. Bấm Lưu để áp dụng.')}else m(u.m||'Tải ảnh thất bại.')};
-$('#sc').onclick=async()=>{Object.keys(Lb).forEach(k=>C[k]=$('#c_'+k).value.trim());const x=await api('cfg',{cfg:C});m(x.ok?'Đã lưu.':x.m)}}
-function route(){(location.hash.startsWith('#/admin')||/\/admin\/?$/.test(location.pathname))?admin():site()}
-addEventListener('hashchange',route);load().then(route);
-</script></body></html>
- 
+  function getDeviceId() {
+    try {
+      let id = localStorage.getItem("device_id");
+      if (!id) { id = crypto.randomUUID(); localStorage.setItem("device_id", id); }
+      return id;
+    } catch (e) { return "tam-" + Math.random().toString(36).slice(2); }
+  }
+  const deviceId = getDeviceId();
+  document.getElementById("dev").textContent = deviceId;
+
+  const msg = document.getElementById("msg");
+  const btn = document.getElementById("go");
+
+  function show(text, cls) { msg.textContent = text; msg.className = cls || ""; }
+
+  btn.addEventListener("click", async () => {
+    const key = document.getElementById("key").value.trim();
+    const server = document.getElementById("server").value.trim().replace(/\/$/, "");
+    if (!key) { show("Chưa nhập key.", "err"); return; }
+
+    btn.disabled = true; show("Đang kiểm tra...");
+    try {
+      const res = await fetch(server + "/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, device_id: deviceId })
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        const d = new Date(data.expires_at * 1000).toLocaleDateString("vi-VN");
+        show("Kích hoạt thành công. Hạn dùng đến " + d + ".", "ok");
+      } else {
+        show(data.detail || "Key không hợp lệ.", "err");
+      }
+    } catch (e) {
+      show("Không kết nối được server. Kiểm tra server đã chạy và địa chỉ đã đúng chưa.", "err");
+    } finally { btn.disabled = false; }
+  });
+</script>
+</body>
+</html>
