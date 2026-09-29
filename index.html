@@ -50,7 +50,7 @@ canvas.pv{width:100%;height:180px;border-radius:10px;border:1px solid var(--line
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body><div id="app"></div>
 <script>
-const API='https://script.google.com/macros/s/AKfycbzLlcUuDZaUO81ZS_NgiOdtdbfUSC4d2N0KRcd0DE-0RJQHZ6UM-VBsO4cT-JRytMariA/exec';/* dán link Apps Script (Web app) vào đây */
+const API='https://script.google.com/macros/s/AKfycbwgIBEgC-xPjj7mX2q4774X43YiTjVCNJHhMa9T6amEqtwayu_Iv9obQCQLlOPY4Hm7/exec';/* dán link Apps Script (Web app) vào đây */
 function sha256(s){const K=[],H=[];let p=0,c=2;const r=(x,n)=>x>>>n|x<<32-n;
 for(;p<64;c++){let ok=1;for(let i=2;i*i<=c;i++)if(c%i==0){ok=0;break}if(ok){if(p<8)H[p]=Math.pow(c,.5)%1*4294967296|0;K[p++]=Math.pow(c,1/3)%1*4294967296|0}}
 const b=[...new TextEncoder().encode(s)],l=b.length*8;b.push(128);while(b.length%64!=56)b.push(0);for(let i=0;i<4;i++)b.push(0);for(let i=3;i>=0;i--)b.push(l>>>i*8&255);
