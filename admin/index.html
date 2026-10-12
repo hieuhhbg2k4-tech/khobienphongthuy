@@ -72,6 +72,15 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;font-weight:600;opacity:0;transition:.2s;pointer-events:none;z-index:9}
 .toast.show{opacity:1}
 @media (max-width:700px){.tbl-wrap{max-height:none}}
+.tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 16px;cursor:pointer;font-weight:700;color:var(--mute)}
+.tabs button.on{color:var(--gold2);border-bottom-color:var(--gold)}
+.srcs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.src{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line2);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--mute)}
+.src.on{border-color:var(--gold);color:var(--gold2);background:rgba(232,176,75,.1)}
+.src b{color:var(--ink);font-weight:600}
+.t-yel{background:rgba(245,201,107,.18);color:#ffd66b}
+.loadmsg{padding:30px;text-align:center;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -98,6 +107,11 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         <button class="btn btn-red" id="logout" type="button">Đăng xuất</button>
       </div>
     </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="on" data-tab="kho" role="tab">Kho của tôi</button>
+      <button type="button" data-tab="vpa" role="tab">Biển VPA</button>
+    </div>
+    <div id="tabKho">
     <div class="stat" id="stat"></div>
 
     <div class="panel">
@@ -144,6 +158,44 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         </table>
       </div>
       <div class="more"><button class="btn" id="more" type="button" hidden>Xem thêm</button></div>
+    </div>
+    </div>
+
+    <div id="tabVpa" hidden>
+      <div class="stat"><span>Nguồn: danh sách biển VPA công bố (file Excel)</span><span>Cập nhật: <b id="vUpd">—</b></span><span>Đang nạp: <b id="vLoaded">0</b> biển</span></div>
+      <div class="panel">
+        <div class="row"><div class="srcs" id="vSrcs"><span class="dim">Đang tải danh sách nguồn…</span></div></div>
+        <div class="row">
+          <input class="in grow" id="vq" placeholder="Tìm biển: 30A, 68686, *68, mẫu AABB / ABAB, 39*39…" aria-label="Tìm biển VPA">
+          <button class="btn btn-red" id="vReset" type="button">Xóa lọc</button>
+        </div>
+        <div class="filters">
+          <select id="vFmt" aria-label="Định dạng"><option value="">Định dạng</option></select>
+          <select id="vAvoid" aria-label="Tránh số"><option value="">Tránh số</option><option value="4">Không có 4</option><option value="7">Không có 7</option><option value="47">Không 4 &amp; 7</option><option value="49">Không có 49</option><option value="53">Không có 53</option></select>
+          <select id="vNut" aria-label="Nút"><option value="">Nút</option></select>
+          <select id="vProv" aria-label="Tỉnh/TP"><option value="">Tỉnh/TP</option></select>
+          <select id="vLetter" aria-label="Seri"><option value="">Seri (chữ)</option></select>
+        </div>
+        <div class="row"><div class="digits" id="vDigits"><span>CHỌN DÃY SỐ</span></div></div>
+        <div class="row">
+          <span class="pill">Kết quả: <b id="vCnt">0</b></span>
+          <span class="pill">Đã chọn: <b id="vSelCnt">0</b></span>
+          <button class="btn" id="vCopySel" type="button">Chép biển đã chọn</button>
+          <button class="btn" id="vCopyAll" type="button">Chép tất cả kết quả</button>
+          <button class="btn" id="vCsv" type="button">Xuất CSV</button>
+        </div>
+        <div class="tbl-wrap">
+          <table style="min-width:760px">
+            <thead><tr>
+              <th style="width:36px;cursor:default"><input type="checkbox" id="vSelAll" aria-label="Chọn tất cả đang hiện"></th>
+              <th style="cursor:default">Biển số</th><th style="cursor:default">Dạng số</th><th style="cursor:default">Loại xe</th>
+              <th style="cursor:default">Nguồn</th><th style="cursor:default">Tỉnh/TP</th><th class="num" style="cursor:default">Nút</th>
+            </tr></thead>
+            <tbody id="vTb"></tbody>
+          </table>
+        </div>
+        <div class="more"><button class="btn" id="vMore" type="button" hidden>Xem thêm</button></div>
+      </div>
     </div>
   </div>
 </section>
@@ -330,6 +382,141 @@ $("copySel").addEventListener("click", async () => {
   try{ await navigator.clipboard.writeText(txt); toast(`Đã chép ${SEL.size} biển`); }catch(e){ toast("Trình duyệt không cho chép"); }
 });
 $("csv").addEventListener("click", csvExport);
+
+/* ===== BIỂN VPA (đọc từ /vpa-data, do GitHub Action tạo từ file Excel) ===== */
+const VPA_BASE = "/vpa-data/", VPAGE = 200;
+const KIND_LABEL = { car: "Ô tô", car_yellow: "Ô tô vàng", moto: "Xe máy" };
+const B = {}; FMT_ORDER.forEach((f,i) => B[f] = 1 << i);
+let VIDX = null, VRES = [], vShown = 0; const VSRC = {}, VON = new Set(), VSEL = new Set(), VDIG = new Set();
+function vClass(x){
+  const a=(x/10000|0), b=(x/1000|0)%10, c=(x/100|0)%10, d=(x/10|0)%10, e=x%10; let m=0;
+  if (a===b&&b===c&&c===d&&d===e) m|=B["Ngũ quý"]; else if ((b===c&&c===d&&d===e)||(a===b&&b===c&&c===d)) m|=B["Tứ quý"];
+  if (!m && ((b===a+1&&c===b+1&&d===c+1&&e===d+1)||(c===b+1&&d===c+1&&e===d+1))) m|=B["Sảnh tiến"];
+  if (!(m&(B["Ngũ quý"]|B["Tứ quý"])) && ((c===d&&d===e)||(a===b&&b===c))) m|=B["Tam hoa"];
+  const l2=d*10+e; if (l2===68||l2===86) m|=B["Lộc phát"]; if (l2===39||l2===79) m|=B["Thần tài"]; if (l2===38||l2===78) m|=B["Ông địa"];
+  const y=x%10000; if ((b===1&&c===9&&y>=1950)||(b===2&&c===0&&y<=2030)) m|=B["Năm sinh"];
+  if (b===d&&c===e&&b!==c) m|=B["ABAB"]; if (b===e&&c===d&&b!==c) m|=B["ABBA"]; if (b===c&&d===e&&b!==d) m|=B["AABB"];
+  if (a===e&&b===d&&!(m&B["Ngũ quý"])) m|=B["Đối xứng"];
+  if (!m && d===e) m|=B["Kép đuôi"]; if (!m) m|=B["Số đẹp"];
+  return m;
+}
+const mainOf = m => FMT_ORDER[31 - Math.clz32(m & -m)];
+const pad5 = n => String(n).padStart(5,"0");
+const vText = (s,i) => { const p=s.pre[s.pi[i]], n=pad5(s.num[i]); return p + "-" + n.slice(0,3) + "." + n.slice(3); };
+const cleanProv = (p, code) => (p || PROV[code] || "Khác").replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, "");
+
+async function vInit(){
+  if (VIDX) return;
+  try{ VIDX = await fetch(VPA_BASE + "index.json", {cache:"no-store"}).then(r => { if(!r.ok) throw 0; return r.json(); }); }
+  catch(e){ $("vSrcs").innerHTML = '<span class="dim">Chưa có dữ liệu VPA. Hãy tải file Excel VPA lên thư mục <b>vpa/</b> trên GitHub.</span>'; return; }
+  $("vUpd").textContent = VIDX.updated || "—";
+  $("vSrcs").innerHTML = VIDX.sources.map(s => `<label class="src" data-id="${esc(s.id)}"><input type="checkbox" hidden> ${esc(s.name)} <b>${s.count.toLocaleString("vi-VN")}</b></label>`).join("");
+  $("vFmt").length = 1; $("vFmt").insertAdjacentHTML("beforeend", FMT_ORDER.map(f=>`<option>${f}</option>`).join(""));
+  $("vNut").length = 1; $("vNut").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1} nút</option>`).join(""));
+  // mặc định bật các nguồn "Phiên"
+  for (const s of VIDX.sources) if (/^Phiên/i.test(s.name)) await vToggle(s.id, true);
+  if (!VON.size && VIDX.sources[0]) await vToggle(VIDX.sources[0].id, true);
+  vApply();
+}
+
+async function vLoad(id){
+  if (VSRC[id]) return VSRC[id];
+  const meta = VIDX.sources.find(s => s.id === id);
+  $("vTb").innerHTML = `<tr><td colspan="7" class="loadmsg">Đang tải ${esc(meta.name)}…</td></tr>`;
+  const d = await fetch(VPA_BASE + id + ".json").then(r => r.json());
+  const keys = Object.keys(d.groups), n = meta.count;
+  const s = { id, name: meta.name, kind: d.kind, pre: keys, prov: [], pi: new Uint16Array(n), num: new Uint32Array(n), tag: new Uint16Array(n), nut: new Uint8Array(n), len: 0 };
+  let k = 0;
+  keys.forEach((key, gi) => {
+    const g = d.groups[key]; s.prov[gi] = cleanProv(g.p, key.slice(0,2));
+    for (let j = 0; j + 5 <= g.n.length; j += 5){
+      const x = +g.n.substr(j,5);
+      if (k >= s.num.length) break;
+      s.pi[k] = gi; s.num[k] = x; s.tag[k] = vClass(x);
+      s.nut[k] = ((x/10000|0)+((x/1000|0)%10)+((x/100|0)%10)+((x/10|0)%10)+x%10) % 10 || 10; k++;
+    }
+  });
+  s.len = k; VSRC[id] = s; return s;
+}
+
+async function vToggle(id, on){
+  const lab = document.querySelector(`.src[data-id="${CSS.escape(id)}"]`);
+  if (on){ await vLoad(id); VON.add(id); } else VON.delete(id);
+  if (lab) lab.classList.toggle("on", on);
+  const provs = new Set(), lets = new Set(); let total = 0;
+  for (const sid of VON){ const s = VSRC[sid]; total += s.len; s.prov.forEach(p => provs.add(p)); s.pre.forEach(p => lets.add(p.slice(2,3))); }
+  $("vLoaded").textContent = total.toLocaleString("vi-VN");
+  const keepP = $("vProv").value, keepL = $("vLetter").value;
+  $("vProv").length = 1; $("vProv").insertAdjacentHTML("beforeend", [...provs].sort((a,b)=>a.localeCompare(b,"vi")).map(p=>`<option>${esc(p)}</option>`).join("")); $("vProv").value = keepP;
+  $("vLetter").length = 1; $("vLetter").insertAdjacentHTML("beforeend", [...lets].sort().map(l=>`<option>${l}</option>`).join("")); $("vLetter").value = keepL;
+}
+
+function vApply(){
+  const q = $("vq").value.toUpperCase().replace(/[\s\-.]/g,""), fmt = $("vFmt").value, av = $("vAvoid").value,
+        nut = +$("vNut").value || 0, prov = $("vProv").value, let1 = $("vLetter").value, fbit = fmt ? B[fmt] : 0;
+  let pat = null, re = null;
+  if (/^[A-E]{2,5}$/.test(q)) pat = q; else if (q.includes("*")) re = new RegExp(q.replace(/\*/g, "\\d*"));
+  const digs = [...VDIG];
+  VRES = [];
+  for (const sid of VON){
+    const s = VSRC[sid];
+    const preOk = s.pre.map((p, gi) => (!prov || s.prov[gi] === prov) && (!let1 || p[2] === let1));
+    for (let i = 0; i < s.len; i++){
+      if (!preOk[s.pi[i]]) continue;
+      if (fbit && !(s.tag[i] & fbit)) continue;
+      if (nut && s.nut[i] !== nut) continue;
+      const n = pad5(s.num[i]);
+      if (av && (av === "47" ? /[47]/.test(n) : n.includes(av))) continue;
+      if (digs.length && !digs.every(d => n.includes(d))) continue;
+      if (q){
+        if (pat){ const t = n.slice(-pat.length), mp = {}, us = {}; let ok = true;
+          for (let j=0;j<pat.length;j++){ const L=pat[j], c=t[j]; if (mp[L]===undefined){ if (us[c]){ok=false;break;} mp[L]=c; us[c]=1; } else if (mp[L]!==c){ok=false;break;} }
+          if (!ok) continue; }
+        else { const full = s.pre[s.pi[i]] + n; if (re ? !re.test(full) : !full.includes(q)) continue; }
+      }
+      VRES.push([sid, i]);
+    }
+  }
+  $("vCnt").textContent = VRES.length.toLocaleString("vi-VN");
+  vShown = 0; $("vTb").innerHTML = ""; vRender();
+}
+function vRow([sid, i]){
+  const s = VSRC[sid], t = vText(s, i), on = VSEL.has(t);
+  const kc = s.kind === "moto" ? "t-moto" : s.kind === "car_yellow" ? "t-yel" : "t-car";
+  return `<tr class="${on?"sel":""}" data-p="${t}"><td><input type="checkbox" class="vpick" ${on?"checked":""} aria-label="Chọn ${t}"></td>
+    <td class="plate">${t}</td><td><span class="tag t-fmt">${mainOf(s.tag[i])}</span></td><td><span class="tag ${kc}">${KIND_LABEL[s.kind]}</span></td>
+    <td class="dim">${esc(s.name.split(" – ")[0])}</td><td>${esc(s.prov[s.pi[i]])}</td><td class="num">${s.nut[i]}</td></tr>`;
+}
+function vRender(){
+  const next = VRES.slice(vShown, vShown + VPAGE);
+  $("vTb").insertAdjacentHTML("beforeend", next.length ? next.map(vRow).join("") : (vShown ? "" : '<tr><td colspan="7" class="loadmsg">Không có biển phù hợp.</td></tr>'));
+  vShown += next.length; $("vMore").hidden = vShown >= VRES.length;
+  $("vMore").textContent = `Xem thêm (còn ${(VRES.length - vShown).toLocaleString("vi-VN")})`;
+}
+async function vCopy(list){
+  if (!list.length) return toast("Không có biển để chép");
+  try{ await navigator.clipboard.writeText(list.join("\n")); toast(`Đã chép ${list.length.toLocaleString("vi-VN")} biển`); }catch(e){ toast("Trình duyệt không cho chép"); }
+}
+let vt; $("vq").addEventListener("input", () => { clearTimeout(vt); vt = setTimeout(vApply, 300); });
+["vFmt","vAvoid","vNut","vProv","vLetter"].forEach(id => $(id).addEventListener("change", vApply));
+$("vDigits").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join(""));
+$("vDigits").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; const d=b.dataset.d; VDIG.has(d)?VDIG.delete(d):VDIG.add(d); b.classList.toggle("on"); vApply(); });
+$("vReset").addEventListener("click", () => { $("vq").value=""; ["vFmt","vAvoid","vNut","vProv","vLetter"].forEach(id=>$(id).value=""); VDIG.clear(); document.querySelectorAll("#vDigits button").forEach(b=>b.classList.remove("on")); vApply(); });
+$("vSrcs").addEventListener("click", async e => { const l=e.target.closest(".src"); if(!l) return; e.preventDefault(); await vToggle(l.dataset.id, !VON.has(l.dataset.id)); vApply(); });
+$("vMore").addEventListener("click", vRender);
+$("vTb").addEventListener("change", e => { if (!e.target.classList.contains("vpick")) return; const tr=e.target.closest("tr"), p=tr.dataset.p; e.target.checked?VSEL.add(p):VSEL.delete(p); tr.classList.toggle("sel", e.target.checked); $("vSelCnt").textContent=VSEL.size.toLocaleString("vi-VN"); });
+$("vSelAll").addEventListener("change", e => { VRES.slice(0, vShown).forEach(r => { const t=vText(VSRC[r[0]], r[1]); e.target.checked?VSEL.add(t):VSEL.delete(t); }); $("vSelCnt").textContent=VSEL.size.toLocaleString("vi-VN"); vShown=0; $("vTb").innerHTML=""; const n=Math.max(VPAGE, 0); vRender(); });
+$("vCopySel").addEventListener("click", () => vCopy([...VSEL]));
+$("vCopyAll").addEventListener("click", () => vCopy(VRES.map(r => vText(VSRC[r[0]], r[1]))));
+$("vCsv").addEventListener("click", () => {
+  const lines = ["Biển số,Dạng số,Loại xe,Nguồn,Tỉnh/TP,Nút"].concat(VRES.map(([sid,i]) => { const s=VSRC[sid]; return [vText(s,i), mainOf(s.tag[i]), KIND_LABEL[s.kind], s.name, s.prov[s.pi[i]], s.nut[i]].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","); }));
+  const blob = new Blob(["\ufeff" + lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "bien-vpa-" + new Date().toISOString().slice(0,10) + ".csv"; a.click(); URL.revokeObjectURL(a.href);
+});
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  const v = b.dataset.tab === "vpa"; $("tabKho").hidden = v; $("tabVpa").hidden = !v; if (v) vInit();
+}));
 
 /* ===== Start ===== */
 const saved = store.get();
