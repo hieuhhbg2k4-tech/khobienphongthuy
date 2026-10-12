@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Quản trị kho biển</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a1220;--bg2:#0e1829;--card:#111d31;--card2:#15233a;--line:#22324d;--line2:#2c3f5f;--ink:#eef2f8;--mute:#93a3bb;--gold:#e8b04b;--gold2:#f5c96b;--ok:#3ecf8e;--bad:#ff7a7a;--blue:#5aa9ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+.wrap{max-width:1500px;margin:0 auto;padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:9px;border:1px solid var(--line2);background:var(--card);cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:var(--gold)}
+.btn-gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#1a1204;border-color:transparent}
+.btn-red{color:var(--bad);border-color:rgba(255,122,122,.5)}
+.in,select{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:0;width:100%}
+.in:focus,select:focus{border-color:var(--gold)}
+
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:16px}
+.login-card{width:min(380px,100%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+.login-card h1{font-size:20px;margin:0 0 4px}
+.login-card p{color:var(--mute);margin:0 0 18px;font-size:13px}
+.login-card label{display:block;font-size:12px;color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:12px 0 6px}
+.chk{display:flex;gap:8px;align-items:center;color:var(--mute);font-size:13px;margin:12px 0}
+.err{color:var(--bad);min-height:20px;font-size:13px;margin-top:10px}
+
+/* app */
+#app{display:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.top h1{font-size:18px;margin:0}
+.top .sub{color:var(--mute);font-size:13px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap}
+.stat b{color:var(--gold2);font-size:17px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.row{display:flex;gap:10px;padding:12px 14px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.row .grow{flex:1;min-width:220px}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.digits{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.digits span{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--gold);margin-right:4px}
+.digits button{width:32px;height:32px;border-radius:50%;border:1px solid var(--line2);background:var(--bg2);cursor:pointer;font-weight:700;color:var(--mute)}
+.digits button.on{border-color:var(--gold);color:var(--gold2);background:rgba(232,176,75,.14)}
+.pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line2);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--mute)}
+.pill b{color:var(--ink)}
+.tbl-wrap{overflow:auto;max-height:calc(100vh - 330px);min-height:300px}
+table{width:100%;border-collapse:collapse;min-width:1100px}
+th{position:sticky;top:0;background:var(--card2);z-index:1;text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:10px;border-bottom:1px solid var(--line2);cursor:pointer;user-select:none;white-space:nowrap}
+th.sorted{color:var(--gold2)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,.02)}
+tr.sel td{background:rgba(232,176,75,.07)}
+.plate{font-weight:800;color:var(--gold2);font-size:15px;letter-spacing:.02em}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600}
+.t-car{background:rgba(90,169,255,.14);color:var(--blue)}
+.t-moto{background:rgba(62,207,142,.14);color:var(--ok)}
+.t-fmt{background:rgba(232,176,75,.12);color:var(--gold2)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.price{font-weight:700;color:var(--gold2)}
+.cost{color:var(--mute)}
+.profit{color:var(--ok);font-weight:600}
+.neg{color:var(--bad)}
+.dim{color:#5f6f88}
+.more{display:flex;justify-content:center;padding:14px}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;font-weight:600;opacity:0;transition:.2s;pointer-events:none;z-index:9}
+.toast.show{opacity:1}
+@media (max-width:700px){.tbl-wrap{max-height:none}}
+</style>
+</head>
+<body>
+
+<section id="login">
+  <form class="login-card" id="loginForm">
+    <h1>Quản trị kho biển</h1>
+    <p>Khu vực nội bộ — nhập mật khẩu admin.</p>
+    <label for="pass">Mật khẩu</label>
+    <input class="in" id="pass" type="password" autocomplete="current-password" required>
+    <label class="chk"><input type="checkbox" id="remember"> Ghi nhớ trên máy này</label>
+    <button class="btn btn-gold" type="submit" style="width:100%" id="loginBtn">Đăng nhập</button>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+</section>
+
+<section id="app">
+  <div class="wrap">
+    <div class="top">
+      <div><h1>Kho biển số</h1><div class="sub" id="sub">—</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="reload" type="button">↻ Tải lại</button>
+        <a class="btn" href="/" target="_blank" rel="noopener">Xem web</a>
+        <button class="btn btn-red" id="logout" type="button">Đăng xuất</button>
+      </div>
+    </div>
+    <div class="stat" id="stat"></div>
+
+    <div class="panel">
+      <div class="row">
+        <input class="in grow" id="q" placeholder="Tìm biển số, mẫu (AABB, 39*39), người bán…" aria-label="Tìm kiếm">
+        <button class="btn btn-red" id="reset" type="button">Xóa lọc</button>
+      </div>
+      <div class="filters">
+        <select id="fFmt" aria-label="Định dạng"><option value="">Định dạng</option></select>
+        <select id="fAvoid" aria-label="Tránh số"><option value="">Tránh số</option><option value="4">Không có 4</option><option value="7">Không có 7</option><option value="47">Không 4 &amp; 7</option><option value="49">Không có 49</option><option value="53">Không có 53</option></select>
+        <select id="fNut" aria-label="Nút"><option value="">Nút</option></select>
+        <select id="fYear" aria-label="Năm sinh"><option value="">Năm sinh</option><option value="1">Chỉ biển năm sinh</option></select>
+        <select id="fProv" aria-label="Tỉnh/TP"><option value="">Tỉnh/TP</option></select>
+        <select id="fType" aria-label="Loại xe"><option value="">Loại xe</option><option value="0">Ô tô</option><option value="1">Xe máy</option></select>
+        <select id="fPrice" aria-label="Mức giá"><option value="">Mức giá</option><option value="0-50">Dưới 50 tr</option><option value="50-100">50–100 tr</option><option value="100-200">100–200 tr</option><option value="200-500">200–500 tr</option><option value="500-1000">500 tr – 1 tỷ</option><option value="1000-">Trên 1 tỷ</option></select>
+        <select id="fGroup" aria-label="Nhóm trong sheet"><option value="">Nhóm (sheet)</option></select>
+      </div>
+      <div class="row">
+        <div class="digits" id="digits"><span>CHỌN DÃY SỐ</span></div>
+      </div>
+      <div class="row">
+        <span class="pill">Đang lọc: <b id="cnt">0</b></span>
+        <span class="pill">Đã chọn: <b id="selCnt">0</b></span>
+        <button class="btn" id="copySel" type="button">Chép biển đã chọn</button>
+        <button class="btn" id="csv" type="button">Xuất CSV (đang lọc)</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:36px;cursor:default"><input type="checkbox" id="selAll" aria-label="Chọn tất cả"></th>
+            <th data-k="plate">Biển số</th>
+            <th data-k="moto">Loại xe</th>
+            <th data-k="main">Loại</th>
+            <th data-k="prov">Tỉnh/TP</th>
+            <th data-k="nut" class="num">Nút</th>
+            <th data-k="price" class="num">Giá niêm yết</th>
+            <th data-k="cost" class="num">Giá thu</th>
+            <th data-k="profit" class="num">Lãi</th>
+            <th data-k="seller">Người bán / ghi chú</th>
+            <th data-k="group">Nhóm (sheet)</th>
+            <th data-k="row" class="num">Dòng</th>
+          </tr></thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+      <div class="more"><button class="btn" id="more" type="button" hidden>Xem thêm</button></div>
+    </div>
+  </div>
+</section>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===== CẤU HÌNH ===== */
+const API_URL = "https://script.google.com/macros/s/AKfycbyvz7N82Wq-TIvtLNM-FWgLEiTUb6biBWVFXneR3kVBr1_P9y4xV1NkFkvW_cA5K-0N/exec";   // link Web App của Apps Script
+const PAGE = 100;
+
+const PROV = {"11":"Cao Bằng","12":"Lạng Sơn","14":"Quảng Ninh","15":"Hải Phòng","16":"Hải Phòng","17":"Thái Bình","18":"Nam Định","19":"Phú Thọ","20":"Thái Nguyên","21":"Yên Bái","22":"Tuyên Quang","23":"Hà Giang","24":"Lào Cai","25":"Lai Châu","26":"Sơn La","27":"Điện Biên","28":"Hòa Bình","29":"Hà Nội","30":"Hà Nội","31":"Hà Nội","32":"Hà Nội","33":"Hà Nội","40":"Hà Nội","34":"Hải Dương","35":"Ninh Bình","36":"Thanh Hóa","37":"Nghệ An","38":"Hà Tĩnh","43":"Đà Nẵng","47":"Đắk Lắk","48":"Đắk Nông","49":"Lâm Đồng","41":"TP.HCM","50":"TP.HCM","51":"TP.HCM","52":"TP.HCM","53":"TP.HCM","54":"TP.HCM","55":"TP.HCM","56":"TP.HCM","57":"TP.HCM","58":"TP.HCM","59":"TP.HCM","60":"Đồng Nai","61":"Bình Dương","62":"Long An","63":"Tiền Giang","64":"Vĩnh Long","65":"Cần Thơ","66":"Đồng Tháp","67":"An Giang","68":"Kiên Giang","69":"Cà Mau","70":"Tây Ninh","71":"Bến Tre","72":"Bà Rịa - Vũng Tàu","73":"Quảng Bình","74":"Quảng Trị","75":"Thừa Thiên Huế","76":"Quảng Ngãi","77":"Bình Định","78":"Phú Yên","79":"Khánh Hòa","81":"Gia Lai","82":"Kon Tum","83":"Sóc Trăng","84":"Trà Vinh","85":"Ninh Thuận","86":"Bình Thuận","88":"Vĩnh Phúc","89":"Hưng Yên","90":"Hà Nam","92":"Quảng Nam","93":"Bình Phước","94":"Bạc Liêu","95":"Hậu Giang","97":"Bắc Kạn","98":"Bắc Giang","99":"Bắc Ninh"};
+const FMT_ORDER = ["Ngũ quý","Tứ quý","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
+
+function classify(d){
+  const t = new Set(), l4 = d.slice(1), l3 = d.slice(2), l2 = d.slice(3);
+  const same = s => s.split("").every(c => c === s[0]);
+  const inc = s => s.split("").every((c,i,a) => i===0 || +c === +a[i-1] + 1);
+  if (same(d)) t.add("Ngũ quý"); else if (same(l4) || same(d.slice(0,4))) t.add("Tứ quý");
+  if (!t.size && (inc(d) || inc(l4))) t.add("Sảnh tiến");
+  if (!t.has("Ngũ quý") && !t.has("Tứ quý") && (same(l3) || same(d.slice(0,3)))) t.add("Tam hoa");
+  if (l2 === "68" || l2 === "86") t.add("Lộc phát");
+  if (l2 === "39" || l2 === "79") t.add("Thần tài");
+  if (l2 === "38" || l2 === "78") t.add("Ông địa");
+  const y = +l4; if ((l4.startsWith("19") && y >= 1950) || (l4.startsWith("20") && y <= 2030)) t.add("Năm sinh");
+  const [a,b,c,e] = l4.split("");
+  if (a===c && b===e && a!==b) t.add("ABAB");
+  if (a===e && b===c && a!==b) t.add("ABBA");
+  if (a===b && c===e && a!==c) t.add("AABB");
+  if (d[0]===d[4] && d[1]===d[3] && !same(d)) t.add("Đối xứng");
+  if (!t.size && l2[0]===l2[1]) t.add("Kép đuôi");
+  if (!t.size) t.add("Số đẹp");
+  const tags = FMT_ORDER.filter(x => t.has(x));
+  return { tags, main: tags[0], nut: d.split("").reduce((s,x)=>s+ +x,0) % 10 || 10 };
+}
+
+/* ===== State ===== */
+let KEY = "", ALL = [], VIEW = [], shown = 0, sortK = "price", sortDir = -1;
+const SEL = new Set(), DIG = new Set();
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money = v => v == null ? '<span class="dim">—</span>' : (v >= 1000 ? (v/1000).toLocaleString("vi-VN",{maximumFractionDigits:2}) + " tỷ" : v.toLocaleString("vi-VN") + " tr");
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("show"),2400); }
+const store = { get(){ try{ return sessionStorage.getItem("kbpt_k") || localStorage.getItem("kbpt_k") || ""; }catch(e){ return ""; } },
+  set(k, keep){ try{ sessionStorage.setItem("kbpt_k", k); if (keep) localStorage.setItem("kbpt_k", k); }catch(e){} },
+  clear(){ try{ sessionStorage.removeItem("kbpt_k"); localStorage.removeItem("kbpt_k"); }catch(e){} } };
+
+async function fetchData(key){
+  const res = await fetch(API_URL + "?action=admin&key=" + encodeURIComponent(key), {cache:"no-store"});
+  return res.json();
+}
+
+function prepare(rows){
+  return rows.map((r,i) => {
+    const m = r.plate.match(/^(\d{2})([A-Z]{1,2}\d?)-(\d{3})\.(\d{2})$/); if (!m) return null;
+    const digits = m[3] + m[4], c = classify(digits);
+    return { ...r, ...c, i, code:m[1], digits, prov: PROV[m[1]] || "Khác",
+      profit: (r.price != null && r.cost != null) ? r.price - r.cost : null,
+      hay: (r.plate + " " + r.plate.replace(/[-.]/g,"") + " " + (r.seller||"") + " " + (r.group||"")).toUpperCase() };
+  }).filter(Boolean);
+}
+
+function patternMatch(p, q){
+  // Mẫu chữ cái: AABB, ABAB, ABCBA… so với các số cuối
+  if (/^[A-E]{2,5}$/.test(q)){
+    const tail = p.digits.slice(-q.length), map = {}, used = {};
+    for (let i=0;i<q.length;i++){ const L=q[i], d=tail[i];
+      if (map[L] === undefined){ if (used[d]) return false; map[L]=d; used[d]=1; } else if (map[L] !== d) return false; }
+    return true;
+  }
+  if (q.includes("*")){ const re = new RegExp(q.replace(/[-.]/g,"").replace(/\*/g,"\\d*")); return re.test(p.plate.replace(/[-.]/g,"")); }
+  return p.hay.includes(q);
+}
+
+function apply(){
+  const q = $("q").value.trim().toUpperCase();
+  const fmt = $("fFmt").value, av = $("fAvoid").value, nut = $("fNut").value, yr = $("fYear").value,
+        prov = $("fProv").value, type = $("fType").value, pr = $("fPrice").value, grp = $("fGroup").value;
+  const [pmin, pmax] = pr ? pr.split("-").map(x => x === "" ? Infinity : +x) : [-Infinity, Infinity];
+  VIEW = ALL.filter(p =>
+    (!q || patternMatch(p, q)) &&
+    (!fmt || p.tags.includes(fmt)) &&
+    (!av || (av === "47" ? !/[47]/.test(p.digits) : !p.digits.includes(av))) &&
+    (!nut || p.nut === +nut) &&
+    (!yr || p.tags.includes("Năm sinh")) &&
+    (!prov || p.prov === prov) &&
+    (type === "" || String(p.moto) === type) &&
+    (!grp || p.group === grp) &&
+    (!pr || (p.price >= pmin && p.price < (pmax === Infinity ? Infinity : pmax))) &&
+    [...DIG].every(d => p.digits.includes(d))
+  );
+  VIEW.sort((a,b) => {
+    const x = a[sortK], y = b[sortK];
+    if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return (typeof x === "string" ? x.localeCompare(y,"vi") : x - y) * sortDir;
+  });
+  document.querySelectorAll("th[data-k]").forEach(th => th.classList.toggle("sorted", th.dataset.k === sortK));
+  $("cnt").textContent = VIEW.length.toLocaleString("vi-VN");
+  shown = 0; $("tb").innerHTML = ""; render();
+}
+
+function rowHtml(p){
+  const on = SEL.has(p.plate);
+  return `<tr class="${on?"sel":""}" data-p="${esc(p.plate)}">
+    <td><input type="checkbox" class="pick" ${on?"checked":""} aria-label="Chọn ${esc(p.plate)}"></td>
+    <td class="plate">${esc(p.plate)}${p.isNew?' <span class="tag t-moto" style="font-size:10px">MỚI</span>':''}</td>
+    <td><span class="tag ${p.moto?"t-moto":"t-car"}">${p.moto?"Xe máy":"Ô tô"}</span></td>
+    <td><span class="tag t-fmt">${esc(p.main)}</span></td>
+    <td>${esc(p.prov)}</td>
+    <td class="num">${p.nut}</td>
+    <td class="num price">${money(p.price)}</td>
+    <td class="num cost">${money(p.cost)}</td>
+    <td class="num ${p.profit!=null&&p.profit<0?"neg":"profit"}">${p.profit==null?'<span class="dim">—</span>':money(p.profit)}</td>
+    <td>${esc(p.seller) || '<span class="dim">—</span>'}</td>
+    <td class="dim">${esc(p.group) || "—"}</td>
+    <td class="num dim">${p.row}</td></tr>`;
+}
+function render(){
+  const next = VIEW.slice(shown, shown + PAGE);
+  $("tb").insertAdjacentHTML("beforeend", next.length ? next.map(rowHtml).join("") : (shown ? "" : '<tr><td colspan="12" class="dim" style="text-align:center;padding:40px">Không có biển phù hợp.</td></tr>'));
+  shown += next.length;
+  $("more").hidden = shown >= VIEW.length;
+  $("more").textContent = `Xem thêm (còn ${(VIEW.length - shown).toLocaleString("vi-VN")})`;
+}
+
+function stats(){
+  const tot = ALL.length, val = ALL.reduce((s,p)=>s+(p.price||0),0), costN = ALL.filter(p=>p.cost!=null);
+  const prof = costN.reduce((s,p)=>s+(p.profit||0),0);
+  $("stat").innerHTML = `<span>Tổng kho: <b>${tot.toLocaleString("vi-VN")}</b> biển</span>
+    <span>Tổng giá niêm yết: <b>${money(val)}</b></span>
+    <span>Lãi dự kiến (${costN.length} biển có giá thu): <b>${money(prof)}</b></span>
+    <span>Ô tô: <b>${ALL.filter(p=>!p.moto).length}</b> · Xe máy: <b>${ALL.filter(p=>p.moto).length}</b></span>`;
+}
+
+function fillSelects(){
+  const opt = (id, list) => { const s=$(id); s.length = 1; s.insertAdjacentHTML("beforeend", list.map(v=>`<option>${esc(v)}</option>`).join("")); };
+  opt("fFmt", FMT_ORDER);
+  $("fNut").length = 1; $("fNut").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1} nút</option>`).join(""));
+  opt("fProv", [...new Set(ALL.map(p=>p.prov))].sort((a,b)=>a.localeCompare(b,"vi")));
+  opt("fGroup", [...new Set(ALL.map(p=>p.group).filter(Boolean))]);
+}
+
+async function load(key, keep){
+  $("loginBtn").disabled = true; $("err").textContent = "Đang kiểm tra…";
+  try{
+    const d = await fetchData(key);
+    if (!d.ok){ $("err").textContent = d.error || "Không đăng nhập được."; store.clear(); showLogin(); return false; }
+    KEY = key; store.set(key, keep);
+    ALL = prepare(d.rows || []);
+    $("sub").textContent = `${ALL.length.toLocaleString("vi-VN")} biển · cập nhật lúc ${new Date(d.updated).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"})}`;
+    fillSelects(); stats(); apply();
+    $("login").style.display = "none"; $("app").style.display = "block"; $("err").textContent = "";
+    return true;
+  }catch(e){
+    $("err").textContent = "Không kết nối được máy chủ dữ liệu. Thử lại sau."; showLogin(); return false;
+  }finally{ $("loginBtn").disabled = false; }
+}
+function showLogin(){ $("app").style.display = "none"; $("login").style.display = "grid"; }
+
+function csvExport(){
+  const head = ["Biển số","Loại xe","Loại","Tỉnh/TP","Nút","Giá niêm yết (tr)","Giá thu (tr)","Lãi (tr)","Người bán","Nhóm","Dòng"];
+  const q = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
+  const lines = [head.map(q).join(",")].concat(VIEW.map(p => [p.plate, p.moto?"Xe máy":"Ô tô", p.main, p.prov, p.nut, p.price, p.cost, p.profit, p.seller, p.group, p.row].map(q).join(",")));
+  const blob = new Blob(["﻿" + lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "kho-bien-" + new Date().toISOString().slice(0,10) + ".csv"; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ===== Events ===== */
+$("loginForm").addEventListener("submit", e => { e.preventDefault(); load($("pass").value, $("remember").checked); });
+$("logout").addEventListener("click", () => { store.clear(); KEY = ""; ALL = []; $("pass").value = ""; showLogin(); });
+$("reload").addEventListener("click", () => load(KEY, !!localStorage.getItem("kbpt_k")).then(ok => ok && toast("Đã tải dữ liệu mới")));
+let tq; $("q").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(apply, 200); });
+["fFmt","fAvoid","fNut","fYear","fProv","fType","fPrice","fGroup"].forEach(id => $(id).addEventListener("change", apply));
+$("digits").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join(""));
+$("digits").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const d=b.dataset.d; DIG.has(d)?DIG.delete(d):DIG.add(d); b.classList.toggle("on"); apply(); });
+$("reset").addEventListener("click", () => { $("q").value=""; ["fFmt","fAvoid","fNut","fYear","fProv","fType","fPrice","fGroup"].forEach(id=>$(id).value=""); DIG.clear(); document.querySelectorAll("#digits button").forEach(b=>b.classList.remove("on")); apply(); });
+$("more").addEventListener("click", render);
+document.querySelectorAll("th[data-k]").forEach(th => th.addEventListener("click", () => { const k=th.dataset.k; if (sortK===k) sortDir*=-1; else { sortK=k; sortDir = ["price","cost","profit","nut"].includes(k) ? -1 : 1; } apply(); }));
+$("tb").addEventListener("change", e => { if (!e.target.classList.contains("pick")) return; const tr=e.target.closest("tr"), p=tr.dataset.p; e.target.checked?SEL.add(p):SEL.delete(p); tr.classList.toggle("sel", e.target.checked); $("selCnt").textContent=SEL.size; });
+$("selAll").addEventListener("change", e => { VIEW.forEach(p => e.target.checked ? SEL.add(p.plate) : SEL.delete(p.plate)); $("selCnt").textContent=SEL.size; shown=0; $("tb").innerHTML=""; render(); });
+$("copySel").addEventListener("click", async () => {
+  if (!SEL.size) return toast("Chưa chọn biển nào");
+  const txt = ALL.filter(p=>SEL.has(p.plate)).map(p=>`${p.plate} - ${money(p.price).replace(/<[^>]+>/g,"")}`).join("\n");
+  try{ await navigator.clipboard.writeText(txt); toast(`Đã chép ${SEL.size} biển`); }catch(e){ toast("Trình duyệt không cho chép"); }
+});
+$("csv").addEventListener("click", csvExport);
+
+/* ===== Start ===== */
+const saved = store.get();
+if (saved) load(saved, !!(()=>{ try{ return localStorage.getItem("kbpt_k"); }catch(e){ return null; } })()); else showLogin();
+</script>
+</body>
+</html>
