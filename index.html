@@ -402,7 +402,8 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 /* ===== CẤU HÌNH ===== */
 const HOTLINE = "0979868868";
 const ZALO = "https://zalo.me/0979868868";
-// Nguồn dữ liệu: file data.json cùng thư mục. Có thể đổi sang link Apps Script trả JSON.
+// Nguồn dữ liệu: Apps Script đọc thẳng Google Sheet (chỉ biển + giá khách). Lỗi thì dùng data.json dự phòng.
+const API_URL = "https://script.google.com/macros/s/AKfycbyvz7N82Wq-TIvtLNM-FWgLEiTUb6biBWVFXneR3kVBr1_P9y4xV1NkFkvW_cA5K-0N/exec";
 const DATA_URL = "data.json";
 const PAGE = 24;
 
@@ -581,8 +582,9 @@ function initUI(){
 
 async function load(){
   try{
-    const res = await fetch(DATA_URL, {cache:"no-store"});
-    const rows = await res.json();
+    let rows;
+    try{ rows = await fetch(API_URL).then(r => r.json()); if (!Array.isArray(rows) || !rows.length) throw 0; }
+    catch(e){ rows = await fetch(DATA_URL, {cache:"no-store"}).then(r => r.json()); }
     ALL = (Array.isArray(rows) ? rows : rows.data || []).map(parsePlate).filter(Boolean);
   }catch(err){
     $("grid").innerHTML = `<div class="empty">Không tải được danh sách biển. Vui lòng gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0979 868 868</a>.</div>`;
