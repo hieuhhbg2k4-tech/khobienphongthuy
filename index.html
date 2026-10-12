@@ -535,7 +535,11 @@ function syncControls(){
 }
 
 function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),2600); }
-async function copy(t){ try{ await navigator.clipboard.writeText(t); return true; }catch(e){ return false; } }
+async function copy(t){
+  try{ if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); return true; } }catch(e){}
+  const ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0";
+  document.body.appendChild(ta); ta.focus(); ta.select(); let ok = false; try{ ok = document.execCommand("copy"); }catch(e){} ta.remove(); return ok;
+}
 function toggleFilters(open){ $("filters").classList.toggle("open",open); $("scrim").classList.toggle("open",open); }
 
 /* ===== Init ===== */
