@@ -1,0 +1,19 @@
+{
+ "updated": "11:48 12/10/2026",
+ "sources": [
+  {
+   "id": "kho-vpa-xe-may",
+   "name": "Kho VPA – Xe máy",
+   "kind": "moto",
+   "count": 520808,
+   "file": "Moto_kho.xlsx"
+  },
+  {
+   "id": "kho-vpa-o-to",
+   "name": "Kho VPA – Ô tô",
+   "kind": "car",
+   "count": 270633,
+   "file": "Oto_Kho.xlsx"
+  }
+ ]
+}
