@@ -187,13 +187,6 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .loading{grid-column:1/-1;text-align:center;color:var(--mute);padding:40px}
-/* admin */
-.admin-only{display:none!important}
-body.is-admin .admin-only{display:inline-flex!important}
-body.is-admin .card-act .vpa{grid-column:1/-1}
-.btn-vpa{background:#0f8f7a;color:#fff;border-color:#0f8f7a}
-.btn-vpa:hover{background:#13a88f}
-.admin-badge{position:fixed;left:12px;bottom:12px;z-index:70;background:#0f8f7a;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;padding:5px 10px;border-radius:999px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -246,7 +239,6 @@ body.is-admin .card-act .vpa{grid-column:1/-1}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a3bb" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Nhập số: 8888, *68, 30K, 51M-999…" autocomplete="off" aria-label="Tìm biển số">
         <button class="btn btn-gold btn-sm" type="submit">Tìm ngay</button>
-        <button class="btn btn-vpa btn-sm admin-only" type="button" id="vpaSearch" title="Chép biển số và mở trang VPA">Tra VPA</button>
       </form>
       <div class="chips" id="chips"></div>
       <div class="hint">Mẹo: gõ <b>*68</b> để tìm biển đuôi 68, gõ <b>30K</b> để tìm theo đầu biển.</div>
@@ -413,18 +405,6 @@ const ZALO = "https://zalo.me/0979868868";
 // Nguồn dữ liệu: file data.json cùng thư mục. Có thể đổi sang link Apps Script trả JSON.
 const DATA_URL = "data.json";
 const PAGE = 24;
-const VPA_URL = "https://dgbs.vpa.com.vn/danh-sach-bien";
-
-/* ===== Chế độ admin: mở web bằng ?admin=1 để bật, ?admin=0 để tắt ===== */
-(function(){
-  try{
-    const a = new URLSearchParams(location.search).get("admin");
-    if (a === "1") localStorage.setItem("kbpt_admin","1");
-    if (a === "0") localStorage.removeItem("kbpt_admin");
-    if (a !== null) history.replaceState(null, "", location.pathname + location.hash);
-    if (localStorage.getItem("kbpt_admin") === "1") document.documentElement.dataset.admin = "1";
-  }catch(e){}
-})();
 
 const PROV = {"11":"Cao Bằng","12":"Lạng Sơn","14":"Quảng Ninh","15":"Hải Phòng","16":"Hải Phòng","17":"Thái Bình","18":"Nam Định","19":"Phú Thọ","20":"Thái Nguyên","21":"Yên Bái","22":"Tuyên Quang","23":"Hà Giang","24":"Lào Cai","25":"Lai Châu","26":"Sơn La","27":"Điện Biên","28":"Hòa Bình","29":"Hà Nội","30":"Hà Nội","31":"Hà Nội","32":"Hà Nội","33":"Hà Nội","40":"Hà Nội","34":"Hải Dương","35":"Ninh Bình","36":"Thanh Hóa","37":"Nghệ An","38":"Hà Tĩnh","43":"Đà Nẵng","47":"Đắk Lắk","48":"Đắk Nông","49":"Lâm Đồng","41":"TP.HCM","50":"TP.HCM","51":"TP.HCM","52":"TP.HCM","53":"TP.HCM","54":"TP.HCM","55":"TP.HCM","56":"TP.HCM","57":"TP.HCM","58":"TP.HCM","59":"TP.HCM","60":"Đồng Nai","61":"Bình Dương","62":"Long An","63":"Tiền Giang","64":"Vĩnh Long","65":"Cần Thơ","66":"Đồng Tháp","67":"An Giang","68":"Kiên Giang","69":"Cà Mau","70":"Tây Ninh","71":"Bến Tre","72":"Bà Rịa - Vũng Tàu","73":"Quảng Bình","74":"Quảng Trị","75":"Thừa Thiên Huế","76":"Quảng Ngãi","77":"Bình Định","78":"Phú Yên","79":"Khánh Hòa","81":"Gia Lai","82":"Kon Tum","83":"Sóc Trăng","84":"Trà Vinh","85":"Ninh Thuận","86":"Bình Thuận","88":"Vĩnh Phúc","89":"Hưng Yên","90":"Hà Nam","92":"Quảng Nam","93":"Bình Phước","94":"Bạc Liêu","95":"Hậu Giang","97":"Bắc Kạn","98":"Bắc Giang","99":"Bắc Ninh"};
 
@@ -519,7 +499,6 @@ function card(p){
     <div class="card-act">
       <a class="btn btn-ghost" href="tel:${HOTLINE}">Gọi</a>
       <a class="btn btn-gold" href="${ZALO}" target="_blank" rel="noopener" data-copy="${esc(decodeURIComponent(msg))}">Zalo</a>
-      <button class="btn btn-vpa vpa admin-only" type="button" data-vpa="${esc(p.code + p.series + p.digits)}">Tra trên VPA</button>
     </div></article>`;
 }
 
@@ -556,11 +535,6 @@ function syncControls(){
 
 function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),2600); }
 async function copy(t){ try{ await navigator.clipboard.writeText(t); return true; }catch(e){ return false; } }
-async function openVPA(plate){
-  const w = window.open(VPA_URL, "_blank", "noopener");
-  if (plate && await copy(plate)) toast(`Đã chép ${plate} — dán vào ô "Biển số xe cần tìm" bên VPA`);
-  else if (!w) location.href = VPA_URL;
-}
 function toggleFilters(open){ $("filters").classList.toggle("open",open); $("scrim").classList.toggle("open",open); }
 
 /* ===== Init ===== */
@@ -589,15 +563,7 @@ function initUI(){
   $("burger").addEventListener("click", () => { const o = $("menu").classList.toggle("open"); $("burger").setAttribute("aria-expanded", o); });
   $("menu").addEventListener("click", e => { if (e.target.tagName === "A") $("menu").classList.remove("open"); });
 
-  if (document.documentElement.dataset.admin === "1"){
-    document.body.classList.add("is-admin");
-    document.body.insertAdjacentHTML("beforeend", '<div class="admin-badge" id="adminBadge" title="Bấm để tắt chế độ admin trên máy này">ADMIN</div>');
-    $("adminBadge").addEventListener("click", () => { try{ localStorage.removeItem("kbpt_admin"); }catch(e){} location.reload(); });
-  }
-  $("vpaSearch").addEventListener("click", () => openVPA($("q").value.trim().toUpperCase().replace(/[^0-9A-Z]/g,"")));
-
   $("grid").addEventListener("click", async e => {
-    const v = e.target.closest("[data-vpa]"); if (v){ openVPA(v.dataset.vpa); return; }
     const a = e.target.closest("[data-copy]"); if (!a) return;
     if (await copy(a.dataset.copy)) toast("Đã chép tên biển — dán vào Zalo để hỏi nhanh");
   });
