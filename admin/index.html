@@ -237,6 +237,15 @@ const SEL = new Set(), DIG = new Set();
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const money = v => v == null ? '<span class="dim">—</span>' : (v >= 1000 ? (v/1000).toLocaleString("vi-VN",{maximumFractionDigits:2}) + " tỷ" : v.toLocaleString("vi-VN") + " tr");
+// Chép chữ: dùng clipboard (https), nếu không được thì dùng cách dự phòng (chạy cả trên http)
+async function copyText(t){
+  try{ if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); return true; } }catch(e){}
+  const ta = document.createElement("textarea");
+  ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0";
+  document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
+  let ok = false; try{ ok = document.execCommand("copy"); }catch(e){}
+  ta.remove(); return ok;
+}
 function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("show"),2400); }
 const store = { get(){ try{ return sessionStorage.getItem("kbpt_k") || localStorage.getItem("kbpt_k") || ""; }catch(e){ return ""; } },
   set(k, keep){ try{ sessionStorage.setItem("kbpt_k", k); if (keep) localStorage.setItem("kbpt_k", k); }catch(e){} },
@@ -379,7 +388,7 @@ $("selAll").addEventListener("change", e => { VIEW.forEach(p => e.target.checked
 $("copySel").addEventListener("click", async () => {
   if (!SEL.size) return toast("Chưa chọn biển nào");
   const txt = ALL.filter(p=>SEL.has(p.plate)).map(p=>`${p.plate} - ${money(p.price).replace(/<[^>]+>/g,"")}`).join("\n");
-  try{ await navigator.clipboard.writeText(txt); toast(`Đã chép ${SEL.size} biển`); }catch(e){ toast("Trình duyệt không cho chép"); }
+  toast(await copyText(txt) ? `Đã chép ${SEL.size} biển` : "Trình duyệt không cho chép");
 });
 $("csv").addEventListener("click", csvExport);
 
@@ -495,7 +504,8 @@ function vRender(){
 }
 async function vCopy(list){
   if (!list.length) return toast("Không có biển để chép");
-  try{ await navigator.clipboard.writeText(list.join("\n")); toast(`Đã chép ${list.length.toLocaleString("vi-VN")} biển`); }catch(e){ toast("Trình duyệt không cho chép"); }
+  if (list.length > 200000 && !confirm(`Chép ${list.length.toLocaleString("vi-VN")} biển có thể làm máy chậm. Nên lọc bớt hoặc dùng Xuất CSV. Vẫn chép?`)) return;
+  toast(await copyText(list.join("\n")) ? `Đã chép ${list.length.toLocaleString("vi-VN")} biển` : "Trình duyệt không cho chép — hãy dùng Xuất CSV");
 }
 let vt; $("vq").addEventListener("input", () => { clearTimeout(vt); vt = setTimeout(vApply, 300); });
 ["vFmt","vAvoid","vNut","vProv","vLetter"].forEach(id => $(id).addEventListener("change", vApply));
