@@ -170,11 +170,14 @@ section.band{padding:64px 0;border-top:1px solid var(--line)}
 .faq p{color:var(--mute);margin:10px 0 0}
 
 footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);font-size:14px}
-.foot{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:24px}
+.foot{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.2fr;gap:28px}
+.foot h4{letter-spacing:.06em;color:var(--gold2)!important}
+.foot-bottom{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:#5f6f88}
 .foot h4{color:var(--ink);margin:0 0 10px;font-size:14px}
 .foot a:hover{color:var(--gold2)}
 .foot p{margin:4px 0}
-@media (max-width:760px){.foot{grid-template-columns:1fr}}
+@media (max-width:900px){.foot{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.foot{grid-template-columns:1fr}}
 
 /* floating */
 .float{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:10px;z-index:50}
@@ -371,23 +374,31 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
   <div class="wrap foot">
     <div>
       <a class="logo" href="#top"><span class="logo-mark">KP</span><span>KHO BIỂN <b>PHONG THỦY</b></span></a>
-      <p style="margin-top:12px">Kho biển số đẹp ô tô, xe máy toàn quốc. Giá niêm yết minh bạch.</p>
+      <p style="margin-top:12px">Kho biển số đẹp ô tô, xe máy toàn quốc. Giá niêm yết minh bạch, hỗ trợ thủ tục sang tên nhanh gọn.</p>
     </div>
     <div>
-      <h4>Liên hệ</h4>
-      <p>Hotline: <a href="tel:0979868868">0979 868 868</a></p>
-      <p>Zalo: <a href="https://zalo.me/0979868868" target="_blank" rel="noopener">0979 868 868</a></p>
-      <p>Web: khobienphongthuy.vn</p>
+      <h4>LIÊN KẾT NHANH</h4>
+      <p><a href="#top">Trang chủ</a></p>
+      <p><a href="#kho">Kho biển số</a></p>
+      <p><a href="#dinhgia">Định giá &amp; ký gửi</a></p>
+      <p><a href="#quytrinh">Quy trình</a></p>
+      <p><a href="#lienhe">Liên hệ</a></p>
     </div>
     <div>
-      <h4>Danh mục</h4>
-      <p><a href="#kho" data-chip="fmt:Ngũ quý">Biển ngũ quý</a></p>
-      <p><a href="#kho" data-chip="fmt:Tứ quý">Biển tứ quý</a></p>
-      <p><a href="#kho" data-chip="fmt:Lộc phát">Biển lộc phát</a></p>
-      <p><a href="#kho" data-chip="type:1">Biển xe máy</a></p>
+      <h4>DỊCH VỤ</h4>
+      <p><a href="#kho">Biển số đẹp</a></p>
+      <p><a href="tel:0888188888">Hỗ trợ trả góp</a></p>
+      <p><a href="#quytrinh">Sang tên đổi chủ</a></p>
+      <p><a href="#kho">Bảng giá tham khảo</a></p>
+      <p><a href="#dinhgia">Định giá biển số</a></p>
+    </div>
+    <div>
+      <h4>THÔNG TIN LIÊN HỆ</h4>
+      <p>Hotline: <a href="tel:0888188888">0888.188.888</a></p>
+      <p>Website: khobienphongthuy.vn</p>
     </div>
   </div>
-  <div class="wrap" style="margin-top:24px;font-size:12px;color:#5f6f88">© <span id="yr"></span> Kho Biển Phong Thủy. Giá có thể thay đổi, vui lòng liên hệ để xác nhận.</div>
+  <div class="wrap foot-bottom">© <span id="yr"></span> Kho Biển Phong Thủy. Giá có thể thay đổi, vui lòng liên hệ để xác nhận.</div>
 </footer>
 
 <div class="float">
