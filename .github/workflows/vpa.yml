@@ -39,7 +39,7 @@ jobs:
           git add -A vpa-data
           if git diff --cached --quiet; then echo "Khong co thay doi"; exit 0; fi
           git commit -m "Cap nhat du lieu bien VPA"
-          git push
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 10; done
 
       - name: Cap nhat trang web
         env:
