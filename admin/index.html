@@ -139,7 +139,6 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
             <label><input type="checkbox" value="13"> Không có 13</label>
           </div>
         </div>
-        <select id="fNut" aria-label="Nút"><option value="">Nút</option></select>
         <select id="fYear" aria-label="Năm sinh"><option value="">Năm sinh</option><option value="all">Mọi năm sinh</option></select>
         <select id="fProv" aria-label="Tỉnh/TP"><option value="">Toàn quốc</option></select>
         <select id="fType" aria-label="Loại xe"><option value="">Loại xe</option><option value="0">Ô tô</option><option value="1">Xe máy</option></select>
@@ -149,7 +148,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         <select id="sort" aria-label="Sắp xếp"><option value="hot">Nổi bật trước</option><option value="date">Lịch ĐG gần nhất</option><option value="reg">Nhiều người ĐK</option><option value="none">Theo kho</option></select>
       </div>
       <div class="row"><div class="btns" id="fLetters"><span>CHỮ</span></div></div>
-      <div class="row"><div class="btns round" id="fDigits"><span>CHỌN DÃY SỐ</span></div></div>
+      <div class="row"><div class="btns round" id="fDigits" title="Tổng 5 số cuối, lấy hàng đơn vị (0 = 10 nút). Chọn được nhiều nút."><span>NÚT (TỔNG SỐ)</span></div></div>
       <div class="row">
         <span class="pill">Kết quả: <b id="cnt">0</b></span>
         <span class="pill">Đã chọn: <b id="selCnt">0</b></span>
@@ -312,8 +311,8 @@ function apply(){
   if (!SRC.length) return;
   const v = $("fSrc").value;
   LIST = active();
-  RES = KE.filter(LIST, { q:$("q").value, fmt:$("fFmt").value, avoid:[...AVOID], nut:$("fNut").value, year:$("fYear").value, prov:$("fProv").value,
-    head:$("fHead").value, letter:LETTER, digits:[...DIG], type:$("fType").value, menh:$("fMenh").value, dated:$("fDate").value }, !v);
+  RES = KE.filter(LIST, { q:$("q").value, fmt:$("fFmt").value, avoid:[...AVOID], nut:[...DIG], year:$("fYear").value, prov:$("fProv").value,
+    head:$("fHead").value, letter:LETTER, type:$("fType").value, menh:$("fMenh").value, dated:$("fDate").value }, !v);
   if ($("sort").value !== "none") KE.sortRes(LIST, RES, $("sort").value);
   $("cnt").textContent = N(RES.length);
   redraw();
@@ -353,13 +352,12 @@ async function copyList(lines){
 
 /* ===== Sự kiện ===== */
 $("fFmt").insertAdjacentHTML("beforeend", KE.FMT_ORDER.map(f=>`<option>${f}</option>`).join(""));
-$("fNut").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1} nút</option>`).join(""));
 $("fMenh").insertAdjacentHTML("beforeend", KE.MENH.map(m=>`<option value="${m}">Hợp mệnh ${m}</option>`).join(""));
 { const y = []; for (let k = 2030; k >= 1950; k--) y.push(`<option>${k}</option>`); $("fYear").insertAdjacentHTML("beforeend", y.join("")); }
-$("fDigits").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join(""));
+$("fDigits").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<button type="button" data-d="${i+1}">${i+1}</button>`).join(""));
 
 let tq; $("q").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(apply, 300); });
-["fFmt","fNut","fYear","fType","fMenh","fDate","sort"].forEach(id => $(id).addEventListener("change", apply));
+["fFmt","fYear","fType","fMenh","fDate","sort"].forEach(id => $(id).addEventListener("change", apply));
 $("fSrc").addEventListener("change", () => { fillProvs(); apply(); });
 $("fProv").addEventListener("change", () => { fillHeads(); apply(); });
 $("fHead").addEventListener("change", () => { fillLetters(); apply(); });
@@ -372,7 +370,7 @@ avBtn.addEventListener("click", () => { avPop.hidden = !avPop.hidden; avBtn.setA
 avPop.addEventListener("change", e => { const v = e.target.value; e.target.checked ? AVOID.add(v) : AVOID.delete(v); avLabel(); apply(); });
 document.addEventListener("click", e => { if (!av.contains(e.target)) avPop.hidden = true; });
 $("reset").addEventListener("click", () => {
-  $("q").value = ""; ["fSrc","fFmt","fNut","fYear","fProv","fType","fMenh","fHead","fDate"].forEach(id => $(id).value = "");
+  $("q").value = ""; ["fSrc","fFmt","fYear","fProv","fType","fMenh","fHead","fDate"].forEach(id => $(id).value = "");
   LETTER = ""; DIG.clear(); AVOID.clear(); avPop.querySelectorAll("input").forEach(i => i.checked = false); avLabel();
   document.querySelectorAll("#fDigits button").forEach(b => b.classList.remove("on")); $("sort").value = "hot"; fillProvs.init = false; fillProvs(); apply();
 });
