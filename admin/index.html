@@ -51,6 +51,7 @@ a{color:inherit;text-decoration:none}
 .letters span{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--gold);margin-right:4px}
 .letters button{min-width:34px;height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);background:var(--bg2);cursor:pointer;font-weight:700;color:var(--mute)}
 .letters button.on{border-color:var(--gold);color:var(--gold2);background:rgba(232,176,75,.14)}
+#vAvoid button.on{border-color:var(--bad,#ff7a7a);color:var(--bad,#ff7a7a);background:rgba(255,122,122,.12);text-decoration:line-through}
 .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line2);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--mute)}
 .pill b{color:var(--ink)}
 .tbl-wrap{overflow:auto;max-height:calc(100vh - 330px);min-height:300px}
@@ -175,12 +176,12 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         </div>
         <div class="filters">
           <select id="vFmt" aria-label="Định dạng"><option value="">Định dạng</option></select>
-          <select id="vAvoid" aria-label="Tránh số"><option value="">Tránh số</option><option value="4">Không có 4</option><option value="7">Không có 7</option><option value="47">Không 4 &amp; 7</option><option value="49">Không có 49</option><option value="53">Không có 53</option></select>
           <select id="vNut" aria-label="Nút"><option value="">Nút</option></select>
           <select id="vProv" aria-label="Tỉnh/TP"><option value="">Tỉnh/TP</option></select>
           <select id="vHead" aria-label="Đầu biển"><option value="">Đầu (tất cả)</option></select>
         </div>
         <div class="row"><div class="letters" id="vLetters"><span>CHỮ</span></div></div>
+        <div class="row"><div class="letters" id="vAvoid"><span>TRÁNH SỐ</span><button type="button" data-a="4">4</button><button type="button" data-a="7">7</button><button type="button" data-a="49">49</button><button type="button" data-a="53">53</button><button type="button" data-a="13">13</button></div></div>
         <div class="row"><div class="digits" id="vDigits"><span>CHỌN DÃY SỐ</span></div></div>
         <div class="row">
           <span class="pill">Kết quả: <b id="vCnt">0</b></span>
@@ -401,7 +402,7 @@ $("csv").addEventListener("click", csvExport);
 const VPA_BASE = "/vpa-data/", VPAGE = 200;
 const KIND_LABEL = { car: "Ô tô", car_yellow: "Ô tô vàng", moto: "Xe máy" };
 const B = {}; FMT_ORDER.forEach((f,i) => B[f] = 1 << i);
-let VIDX = null, VRES = [], vShown = 0; const VSRC = {}, VON = new Set(), VSEL = new Set(), VDIG = new Set(); let VLET = "";
+let VIDX = null, VRES = [], vShown = 0; const VSRC = {}, VON = new Set(), VSEL = new Set(), VDIG = new Set(); let VLET = ""; const VAV = new Set();
 function vClass(x){
   const a=(x/10000|0), b=(x/1000|0)%10, c=(x/100|0)%10, d=(x/10|0)%10, e=x%10; let m=0;
   if (a===b&&b===c&&c===d&&d===e) m|=B["Ngũ quý"]; else if ((b===c&&c===d&&d===e)||(a===b&&b===c&&c===d)) m|=B["Tứ quý"];
@@ -484,7 +485,7 @@ function vLetters(){
 }
 
 function vApply(){
-  const q = $("vq").value.toUpperCase().replace(/[\s\-.]/g,""), fmt = $("vFmt").value, av = $("vAvoid").value,
+  const q = $("vq").value.toUpperCase().replace(/[\s\-.]/g,""), fmt = $("vFmt").value, avs = [...VAV],
         nut = +$("vNut").value || 0, prov = $("vProv").value, head = $("vHead").value, let1 = VLET, fbit = fmt ? B[fmt] : 0;
   let pat = null, re = null;
   if (/^[A-E]{2,5}$/.test(q)) pat = q; else if (q.includes("*")) re = new RegExp(q.replace(/\*/g, "\\d*"));
@@ -498,7 +499,7 @@ function vApply(){
       if (fbit && !(s.tag[i] & fbit)) continue;
       if (nut && s.nut[i] !== nut) continue;
       const n = pad5(s.num[i]);
-      if (av && (av === "47" ? /[47]/.test(n) : n.includes(av))) continue;
+      if (avs.length && avs.some(a => n.includes(a))) continue;
       if (digs.length && !digs.every(d => n.includes(d))) continue;
       if (q){
         if (pat){ const t = n.slice(-pat.length), mp = {}, us = {}; let ok = true;
@@ -531,13 +532,14 @@ async function vCopy(list){
   toast(await copyText(list.join("\n")) ? `Đã chép ${list.length.toLocaleString("vi-VN")} biển` : "Trình duyệt không cho chép — hãy dùng Xuất CSV");
 }
 let vt; $("vq").addEventListener("input", () => { clearTimeout(vt); vt = setTimeout(vApply, 300); });
-["vFmt","vAvoid","vNut"].forEach(id => $(id).addEventListener("change", vApply));
+["vFmt","vNut"].forEach(id => $(id).addEventListener("change", vApply));
+$("vAvoid").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; const a=b.dataset.a; VAV.has(a)?VAV.delete(a):VAV.add(a); b.classList.toggle("on", VAV.has(a)); vApply(); });
 $("vProv").addEventListener("change", () => { vHeads(); vApply(); });
 $("vHead").addEventListener("change", () => { vLetters(); vApply(); });
 $("vLetters").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; VLET = VLET === b.dataset.l ? "" : b.dataset.l; vLetters(); vApply(); });
 $("vDigits").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join(""));
 $("vDigits").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; const d=b.dataset.d; VDIG.has(d)?VDIG.delete(d):VDIG.add(d); b.classList.toggle("on"); vApply(); });
-$("vReset").addEventListener("click", () => { $("vq").value=""; ["vFmt","vAvoid","vNut","vProv","vHead"].forEach(id=>$(id).value=""); VLET=""; vHeads(); VDIG.clear(); document.querySelectorAll("#vDigits button").forEach(b=>b.classList.remove("on")); vApply(); });
+$("vReset").addEventListener("click", () => { $("vq").value=""; ["vFmt","vNut","vProv","vHead"].forEach(id=>$(id).value=""); VLET=""; VAV.clear(); document.querySelectorAll("#vAvoid button").forEach(b=>b.classList.remove("on")); vHeads(); VDIG.clear(); document.querySelectorAll("#vDigits button").forEach(b=>b.classList.remove("on")); vApply(); });
 $("vSrcs").addEventListener("click", async e => { const l=e.target.closest(".src"); if(!l) return; e.preventDefault(); await vToggle(l.dataset.id, !VON.has(l.dataset.id)); vApply(); });
 $("vMore").addEventListener("click", vRender);
 $("vTb").addEventListener("change", e => { if (!e.target.classList.contains("vpick")) return; const tr=e.target.closest("tr"), p=tr.dataset.p; e.target.checked?VSEL.add(p):VSEL.delete(p); tr.classList.toggle("sel", e.target.checked); $("vSelCnt").textContent=VSEL.size.toLocaleString("vi-VN"); });
