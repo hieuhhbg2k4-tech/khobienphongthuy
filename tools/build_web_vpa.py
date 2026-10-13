@@ -4,7 +4,7 @@
                      "rows": [[biển, chỉ số tỉnh, xe máy 0/1, "dd/MM/yyyy" | "", số người ĐK (-1 = ẩn)]]}
 An toàn: nếu Sheet trả về quá ít biển (đang xoá/dọn dở) thì KHÔNG ghi đè dữ liệu cũ.
 """
-import json, os, sys, time, urllib.request
+import json, os, re, sys, time, urllib.request
 
 URL = os.environ.get("VPA_EXPORT_URL") or (
     "https://script.google.com/macros/s/"
@@ -12,6 +12,7 @@ URL = os.environ.get("VPA_EXPORT_URL") or (
 )
 OUT = sys.argv[1] if len(sys.argv) > 1 else "kho-data/web.json"
 MIN_ROWS = int(os.environ.get("MIN_ROWS", "1000"))
+YELLOW = {"H", "E"}  # seri biển vàng — không đưa lên web
 MIN_RATIO = float(os.environ.get("MIN_RATIO", "0.5"))  # không chấp nhận giảm quá 50% so với lần trước
 
 
@@ -32,6 +33,12 @@ def fetch():
 def main():
     data = fetch()
     rows = data.get("rows") or []
+    def series(plate):
+        m = re.match(r"^\d{2}([A-Z]+)\d", str(plate).upper())
+        return m.group(1) if m else ""
+    before = len(rows)
+    rows = [r for r in rows if series(r[0]) not in YELLOW]
+    print(f"Bỏ {before - len(rows):,} biển vàng (seri {', '.join(sorted(YELLOW))})")
     n = len(rows)
     print(f"Sheet trả về {n:,} biển, cập nhật {data.get('updated')}")
 
