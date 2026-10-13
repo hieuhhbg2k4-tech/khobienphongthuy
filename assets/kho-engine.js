@@ -2,8 +2,8 @@
    Mỗi nguồn biển lưu dạng mảng số (typed array) để lọc nhanh hàng triệu biển ngay trên trình duyệt. */
 (function (G) {
 "use strict";
-const FMT_ORDER = ["Ngũ quý","Tứ quý","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
-const FMT_RANK = [10,9,8,7,5,5,4,4,6,6,6,5,3,1];
+const FMT_ORDER = ["Ngũ quý","Tứ quý","Tứ quý đầu","Tứ quý đuôi","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Đuôi 99","Đuôi 89","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
+const FMT_RANK = [10,9,9,9,8,7,5,5,4,4,3,4,6,6,6,5,3,1];
 const B = {}; FMT_ORDER.forEach((f, i) => B[f] = 1 << i);
 const YELLOW = /^\d{2}[HE]$/;   // seri biển vàng ô tô (kinh doanh vận tải)
 
@@ -39,6 +39,9 @@ function classify(x) {
   if (b===d&&c===e&&b!==c) m|=B["ABAB"]; if (b===e&&c===d&&b!==c) m|=B["ABBA"]; if (b===c&&d===e&&b!==d) m|=B["AABB"];
   if (a===e&&b===d&&!(m&B["Ngũ quý"])) m|=B["Đối xứng"];
   if (!m && d===e) m|=B["Kép đuôi"]; if (!m) m|=B["Số đẹp"];
+  // Tứ quý đầu (1111x) / Tứ quý đuôi (x1111), đuôi 99 / 89 — thêm sau để không ảnh hưởng nhóm chính
+  if (m & B["Tứ quý"]) m |= (a===b&&b===c&&c===d) ? B["Tứ quý đầu"] : B["Tứ quý đuôi"];
+  if (l2===99) m|=B["Đuôi 99"]; if (l2===89) m|=B["Đuôi 89"];
   return m;
 }
 const mainIdx = m => 31 - Math.clz32(m & -m);
@@ -54,7 +57,7 @@ function Source(opts) {
   const n = opts.cap || 1024;
   Object.assign(this, opts);
   this.pre = []; this.preIdx = {}; this.len = 0;
-  this.pi = new Uint16Array(n); this.num = new Uint32Array(n); this.tag = new Uint16Array(n);
+  this.pi = new Uint16Array(n); this.num = new Uint32Array(n); this.tag = new Uint32Array(n);
   this.nut = new Uint8Array(n); this.moto = new Uint8Array(n); this.dup = null;
   if (opts.live) { this.date = new Uint32Array(n); this.cnt = new Int32Array(n); }
   if (opts.group === "kho") { this.price = new Float64Array(n).fill(NaN); this.extra = []; }
