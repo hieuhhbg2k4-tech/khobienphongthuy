@@ -7,6 +7,7 @@ import openpyxl
 SRC = sys.argv[1] if len(sys.argv) > 1 else "vpa"
 OUT = sys.argv[2] if len(sys.argv) > 2 else "vpa-data"
 RE = re.compile(r"^(\d{2})([A-Z]{1,2})(\d{4,5})$")
+YELLOW = {"H", "E"}  # seri biển vàng (kinh doanh vận tải) — không đưa lên web
 
 def norm(v):
     s = re.sub(r"[^0-9A-Z]", "", str(v or "").upper())
@@ -40,6 +41,7 @@ def read_file(path):
         rows = ws.iter_rows(values_only=True)
         first = next(rows, None)
         if first is None: continue
+        if kind_of(ws.title, fname) == "car_yellow": continue  # bỏ sheet biển vàng
         head = [str(x or "").strip().lower() for x in first]
         groups, session = {}, ""
         if "biển số" in head:
@@ -49,14 +51,14 @@ def read_file(path):
             iy = head.index("năm") if "năm" in head else None
             for r in rows:
                 x = norm(r[ib] if ib < len(r) else None)
-                if not x: continue
+                if not x or x[0][2:] in YELLOW: continue
                 if not session and iph is not None and r[iph]:
                     session = f"Phiên {r[iph]}" + (f"/{r[iy]}" if iy is not None and r[iy] else "")
                 add(groups, x[0], x[1], r[ip] if ip is not None else "")
         else:
             for r in [first, *rows]:
                 x = norm(r[0] if r else None)
-                if x: add(groups, x[0], x[1], "")
+                if x and x[0][2:] not in YELLOW: add(groups, x[0], x[1], "")
         if not groups: continue
         k = kind_of(ws.title, fname)
         label = session or ("Kho VPA" if "kho" in fname.lower() else os.path.splitext(fname)[0])
