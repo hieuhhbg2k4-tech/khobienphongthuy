@@ -226,9 +226,9 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
           <a class="btn btn-ghost" href="tel:0888188888">☎ Gọi tư vấn</a>
         </div>
         <div class="stats">
-          <div class="stat"><b id="statCount">—</b><span>biển số đang bán</span></div>
+          <div class="stat"><b id="statCount">—</b><span>biển số VPA</span></div>
           <div class="stat"><b id="statProv">—</b><span>tỉnh thành</span></div>
-          <div class="stat"><b>Mỗi ngày</b><span>cập nhật giá</span></div>
+          <div class="stat"><b>Mỗi ngày</b><span>cập nhật dữ liệu</span></div>
         </div>
       </div>
       <div class="hero-plate" aria-hidden="true">
@@ -254,7 +254,8 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
   <section class="store" id="kho">
     <div class="wrap">
       <span class="eyebrow">Kho biển</span>
-      <h2>Biển số đang có sẵn</h2>
+      <h2>Biển số sắp đấu giá</h2>
+      <p class="sub" id="dataNote" style="margin-top:-6px">Danh sách biển công bố đấu giá trên VPA, cập nhật hằng ngày.</p>
       <div class="scrim" id="scrim"></div>
       <div class="store-grid">
         <aside class="filters" id="filters" aria-label="Bộ lọc">
@@ -287,10 +288,11 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
             </div>
           </div>
           <div class="f-group">
-            <span class="f-label">Giá (triệu đồng)</span>
-            <div class="row2">
-              <input class="in" id="pMin" type="number" inputmode="numeric" min="0" placeholder="Từ" aria-label="Giá từ">
-              <input class="in" id="pMax" type="number" inputmode="numeric" min="0" placeholder="Đến" aria-label="Giá đến">
+            <span class="f-label">Lịch đấu giá</span>
+            <div class="seg" id="fDate">
+              <button type="button" data-v="" class="on">Tất cả</button>
+              <button type="button" data-v="1">Đã có lịch</button>
+              <button type="button" data-v="0">Chưa có</button>
             </div>
           </div>
           <button class="btn btn-gold" type="button" id="applyF" style="width:100%;margin-top:6px">Xem kết quả</button>
@@ -303,9 +305,8 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
               <button class="btn btn-ghost btn-sm openf" id="openF" type="button">⚙ Bộ lọc</button>
               <select id="sort" aria-label="Sắp xếp">
                 <option value="hot">Nổi bật</option>
-                <option value="asc">Giá: thấp → cao</option>
-                <option value="desc">Giá: cao → thấp</option>
-                <option value="new">Mới về</option>
+                <option value="date">Ngày đấu giá gần nhất</option>
+                <option value="reg">Nhiều người đăng ký</option>
               </select>
             </div>
           </div>
@@ -416,12 +417,10 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 /* ===== CẤU HÌNH ===== */
 const HOTLINE = "0888188888";
 const ZALO = "https://zalo.me/0888188888";
-// Nguồn dữ liệu: Apps Script đọc thẳng Google Sheet (chỉ biển + giá khách). Lỗi thì dùng data.json dự phòng.
-const API_URL = "https://script.google.com/macros/s/AKfycbyvz7N82Wq-TIvtLNM-FWgLEiTUb6biBWVFXneR3kVBr1_P9y4xV1NkFkvW_cA5K-0N/exec";
-const DATA_URL = "data.json";
+// Nguồn dữ liệu: Google Sheet BIENSOVP (biển VPA) → GitHub Action lưu hằng ngày vào kho-data/web.json
+const DATA_URL = "kho-data/web.json";
 const PAGE = 24;
 
-const PROV = {"11":"Cao Bằng","12":"Lạng Sơn","14":"Quảng Ninh","15":"Hải Phòng","16":"Hải Phòng","17":"Thái Bình","18":"Nam Định","19":"Phú Thọ","20":"Thái Nguyên","21":"Yên Bái","22":"Tuyên Quang","23":"Hà Giang","24":"Lào Cai","25":"Lai Châu","26":"Sơn La","27":"Điện Biên","28":"Hòa Bình","29":"Hà Nội","30":"Hà Nội","31":"Hà Nội","32":"Hà Nội","33":"Hà Nội","40":"Hà Nội","34":"Hải Dương","35":"Ninh Bình","36":"Thanh Hóa","37":"Nghệ An","38":"Hà Tĩnh","43":"Đà Nẵng","47":"Đắk Lắk","48":"Đắk Nông","49":"Lâm Đồng","41":"TP.HCM","50":"TP.HCM","51":"TP.HCM","52":"TP.HCM","53":"TP.HCM","54":"TP.HCM","55":"TP.HCM","56":"TP.HCM","57":"TP.HCM","58":"TP.HCM","59":"TP.HCM","60":"Đồng Nai","61":"Bình Dương","62":"Long An","63":"Tiền Giang","64":"Vĩnh Long","65":"Cần Thơ","66":"Đồng Tháp","67":"An Giang","68":"Kiên Giang","69":"Cà Mau","70":"Tây Ninh","71":"Bến Tre","72":"Bà Rịa - Vũng Tàu","73":"Quảng Bình","74":"Quảng Trị","75":"Thừa Thiên Huế","76":"Quảng Ngãi","77":"Bình Định","78":"Phú Yên","79":"Khánh Hòa","81":"Gia Lai","82":"Kon Tum","83":"Sóc Trăng","84":"Trà Vinh","85":"Ninh Thuận","86":"Bình Thuận","88":"Vĩnh Phúc","89":"Hưng Yên","90":"Hà Nam","92":"Quảng Nam","93":"Bình Phước","94":"Bạc Liêu","95":"Hậu Giang","97":"Bắc Kạn","98":"Bắc Giang","99":"Bắc Ninh"};
 
 const FMT_ORDER = ["Ngũ quý","Tứ quý","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
 const FMT_RANK = {"Ngũ quý":10,"Tứ quý":9,"Sảnh tiến":8,"Tam hoa":7,"ABAB":6,"ABBA":6,"AABB":6,"Đối xứng":5,"Lộc phát":5,"Thần tài":5,"Ông địa":4,"Năm sinh":4,"Kép đuôi":3,"Số đẹp":1};
@@ -451,69 +450,73 @@ function classify(d){ // d: chuỗi 5 số
   return { tags, main: tags[0], nut: sum, score: Math.max(...tags.map(x => FMT_RANK[x] || 0)) };
 }
 
-function parsePlate(row, i){
-  const [plate, price, moto, isNew] = row;
-  const m = String(plate).toUpperCase().match(/^(\d{2})([A-Z]{1,2}\d?)-?(\d{3})\.?(\d{2})$/);
+function parsePlate(row, i, provs){
+  // row: [biển, chỉ số tỉnh, xe máy 0/1, "dd/MM/yyyy" | "", số người đăng ký (-1 = VPA ẩn)]
+  const [plate, pi, moto, date, cnt] = row;
+  const raw = String(plate).toUpperCase().replace(/[^0-9A-Z]/g, "");
+  const m = raw.match(/^(\d{2})([A-Z]{1,2}\d?)(\d{3})(\d{2})$/);
   if (!m) return null;
   const digits = m[3] + m[4];
   const c = classify(digits);
+  const dm = String(date || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   return {
-    id: i, code: m[1], series: m[2], letter: m[2][0], digits,
-    head: moto ? m[1] + "-" + m[2] : m[1] + m[2], tail: m[3] + "." + m[4],
-    text: m[1] + m[2] + "-" + m[3] + "." + m[4],
-    price: +price, moto: moto ? 1 : 0, isNew: !!isNew,
-    prov: PROV[m[1]] || "Khác", ...c
+    id: i, raw, code: m[1], series: m[2], letter: m[2][0], digits, moto: moto ? 1 : 0,
+    prov: provs[pi] || "Khác", date: dm ? date : "", dts: dm ? +(dm[3] + dm[2] + dm[1]) : 0,
+    cnt: typeof cnt === "number" ? cnt : -1,
+    main: c.tags[0], tags: c.tags.length > 1 ? c.tags.slice(0, 2) : null, nut: c.nut, score: c.score
   };
 }
+const head_ = p => p.moto ? p.code + "-" + p.series : p.code + p.series;
+const tail_ = p => p.digits.slice(0, 3) + "." + p.digits.slice(3);
+const text_ = p => p.code + p.series + "-" + tail_(p);
+const tagsOf = p => p.tags || [p.main];
 
 /* ===== State ===== */
 let ALL = [], VIEW = [], shown = 0;
-const S = { q:"", type:"", prov:"", letter:"", fmt:"", nut:new Set(), avoid:new Set(), min:"", max:"", sort:"hot" };
+const S = { q:"", type:"", prov:"", letter:"", fmt:"", dated:"", nut:new Set(), avoid:new Set(), sort:"hot" };
 const $ = id => document.getElementById(id);
-const fmtPrice = p => p >= 1000 ? (p/1000).toLocaleString("vi-VN",{maximumFractionDigits:2}) + " tỷ" : p.toLocaleString("vi-VN") + " triệu";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-function matchQuery(p, q){
-  if (!q) return true;
-  q = q.toUpperCase().replace(/\s+/g,"");
-  const flat = p.text.replace(/[-.]/g,"");
-  if (q.startsWith("*")) return p.digits.endsWith(q.slice(1).replace(/\D/g,""));
-  if (q.endsWith("*")) return flat.startsWith(q.slice(0,-1).replace(/[-.]/g,""));
-  return flat.includes(q.replace(/[-.*]/g,""));
+function prepQuery(q){
+  q = (q || "").toUpperCase().replace(/\s+/g,"");
+  if (!q) return null;
+  if (q.startsWith("*")) { const t = q.slice(1).replace(/\D/g,""); return p => p.digits.endsWith(t); }
+  if (q.endsWith("*")) { const t = q.slice(0,-1).replace(/[-.]/g,""); return p => p.raw.startsWith(t); }
+  const t = q.replace(/[-.*]/g,""); return p => p.raw.includes(t);
 }
 
 function apply(){
-  const min = S.min === "" ? -Infinity : +S.min, max = S.max === "" ? Infinity : +S.max;
+  const mq = prepQuery(S.q), avoid = [...S.avoid];
   VIEW = ALL.filter(p =>
-    matchQuery(p, S.q) &&
+    (!mq || mq(p)) &&
     (S.type === "" || String(p.moto) === S.type) &&
     (!S.prov || p.prov === S.prov) &&
     (!S.letter || p.letter === S.letter) &&
-    (!S.fmt || p.tags.includes(S.fmt)) &&
+    (!S.fmt || p.main === S.fmt || (p.tags && p.tags.includes(S.fmt))) &&
+    (S.dated === "" || (S.dated === "1" ? p.dts > 0 : p.dts === 0)) &&
     (!S.nut.size || S.nut.has(p.nut)) &&
-    (![...S.avoid].some(a => p.digits.includes(a))) &&
-    p.price >= min && p.price <= max
+    (!avoid.length || !avoid.some(a => p.digits.includes(a)))
   );
   const so = S.sort;
-  VIEW.sort(so === "asc" ? (a,b)=>a.price-b.price
-          : so === "desc" ? (a,b)=>b.price-a.price
-          : so === "new" ? (a,b)=>(b.isNew-a.isNew) || a.id-b.id
-          : (a,b)=>(b.score-a.score) || (b.price-a.price));
+  VIEW.sort(so === "date" ? (a,b)=>((a.dts||9e9)-(b.dts||9e9)) || (b.score-a.score)
+          : so === "reg" ? (a,b)=>(b.cnt-a.cnt) || (b.score-a.score)
+          : (a,b)=>(b.score-a.score) || ((a.dts||9e9)-(b.dts||9e9)) || a.id-b.id);
   shown = 0; $("grid").innerHTML = ""; render();
   $("count").innerHTML = `Tìm thấy <b>${VIEW.length.toLocaleString("vi-VN")}</b> biển số`;
   syncChips();
 }
 
 function card(p){
-  const msg = encodeURIComponent(`Tôi muốn hỏi biển ${p.text} (${fmtPrice(p.price)})`);
+  const t = text_(p);
+  const msg = `Tôi muốn hỏi biển ${t}` + (p.date ? ` (đấu giá ${p.date})` : "");
   return `<article class="card">
     <div class="card-top"><span class="prov">${esc(p.prov)}</span><span class="tag">${esc(p.main)}</span></div>
-    <div class="plate">${p.isNew?'<span class="new">MỚI</span>':''}<span class="kind">${p.moto?"Xe máy":"Ô tô"}</span><span class="l1">${esc(p.head)}</span><span class="l2">${esc(p.tail)}</span></div>
-    <div class="price">${fmtPrice(p.price)}</div>
-    <div class="meta"><span>${esc(p.tags.slice(0,2).join(" · "))}</span><span>Tổng ${p.nut} nút</span></div>
+    <div class="plate"><span class="kind">${p.moto?"Xe máy":"Ô tô"}</span><span class="l1">${esc(head_(p))}</span><span class="l2">${esc(tail_(p))}</span></div>
+    <div class="price" style="font-size:16px">${p.date ? "Đấu giá " + p.date : "Chưa có lịch ĐG"}</div>
+    <div class="meta"><span>${esc(tagsOf(p).join(" · "))}</span><span>${p.cnt >= 0 ? p.cnt + " người ĐK · " : ""}${p.nut} nút</span></div>
     <div class="card-act">
       <a class="btn btn-ghost" href="tel:${HOTLINE}">Gọi</a>
-      <a class="btn btn-gold" href="${ZALO}" target="_blank" rel="noopener" data-copy="${esc(decodeURIComponent(msg))}">Zalo</a>
+      <a class="btn btn-gold" href="${ZALO}" target="_blank" rel="noopener" data-copy="${esc(msg)}">Zalo</a>
     </div></article>`;
 }
 
@@ -527,14 +530,14 @@ function render(){
 }
 
 /* ===== Chips ===== */
-const CHIPS = [["Tất cả",""],["Hà Nội","prov:Hà Nội"],["TP.HCM","prov:TP.HCM"],["Ngũ quý","fmt:Ngũ quý"],["Tứ quý","fmt:Tứ quý"],["Tam hoa","fmt:Tam hoa"],["Sảnh tiến","fmt:Sảnh tiến"],["Lộc phát","fmt:Lộc phát"],["Thần tài","fmt:Thần tài"],["Xe máy","type:1"],["Dưới 100 triệu","max:100"]];
+const CHIPS = [["Tất cả",""],["Hà Nội","prov:Hà Nội"],["TP.HCM","prov:Hồ Chí Minh"],["Ngũ quý","fmt:Ngũ quý"],["Tứ quý","fmt:Tứ quý"],["Tam hoa","fmt:Tam hoa"],["Sảnh tiến","fmt:Sảnh tiến"],["Lộc phát","fmt:Lộc phát"],["Thần tài","fmt:Thần tài"],["Xe máy","type:1"],["Có lịch đấu giá","dated:1"]];
 function chipOn(v){
-  if (!v) return !S.prov && !S.fmt && !S.type && S.max === "" && !S.q;
+  if (!v) return !S.prov && !S.fmt && !S.type && !S.dated && !S.q;
   const [k,val] = v.split(":");
-  return k==="prov" ? S.prov===val : k==="fmt" ? S.fmt===val : k==="type" ? S.type===val : k==="max" ? S.max===val : false;
+  return k==="prov" ? S.prov===val : k==="fmt" ? S.fmt===val : k==="type" ? S.type===val : k==="dated" ? S.dated===val : false;
 }
 function setChip(v){
-  Object.assign(S,{prov:"",fmt:"",type:"",max:"",min:"",q:""}); $("q").value="";
+  Object.assign(S,{prov:"",fmt:"",type:"",dated:"",q:""}); $("q").value="";
   if (v){ const [k,val] = v.split(":"); S[k] = val; }
   syncControls(); apply();
 }
@@ -542,7 +545,8 @@ function syncChips(){ document.querySelectorAll("#chips .chip").forEach(b => b.c
 
 function syncControls(){
   $("fProv").value = S.prov; $("fLetter").value = S.letter; $("fFmt").value = S.fmt;
-  $("pMin").value = S.min; $("pMax").value = S.max; $("sort").value = S.sort;
+  $("sort").value = S.sort;
+  document.querySelectorAll("#fDate button").forEach(b => b.classList.toggle("on", b.dataset.v === S.dated));
   document.querySelectorAll("#fType button").forEach(b => b.classList.toggle("on", b.dataset.v === S.type));
   document.querySelectorAll("#fNut button").forEach(b => b.classList.toggle("on", S.nut.has(+b.dataset.v)));
   document.querySelectorAll("#fAvoid button").forEach(b => b.classList.toggle("on", S.avoid.has(b.dataset.v)));
@@ -571,9 +575,9 @@ function initUI(){
   $("fNut").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; const v=+b.dataset.v; S.nut.has(v)?S.nut.delete(v):S.nut.add(v); syncControls(); apply(); });
   $("fAvoid").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; const v=b.dataset.v; S.avoid.has(v)?S.avoid.delete(v):S.avoid.add(v); syncControls(); apply(); });
   ["fProv","fLetter","fFmt"].forEach(id => $(id).addEventListener("change", e => { S[{fProv:"prov",fLetter:"letter",fFmt:"fmt"}[id]] = e.target.value; apply(); }));
-  ["pMin","pMax"].forEach(id => $(id).addEventListener("change", e => { S[id==="pMin"?"min":"max"] = e.target.value; apply(); }));
+  $("fDate").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.dated=b.dataset.v; syncControls(); apply(); });
   $("sort").addEventListener("change", e => { S.sort = e.target.value; apply(); });
-  $("reset").addEventListener("click", () => { Object.assign(S,{q:"",type:"",prov:"",letter:"",fmt:"",min:"",max:""}); S.nut.clear(); S.avoid.clear(); $("q").value=""; syncControls(); apply(); });
+  $("reset").addEventListener("click", () => { Object.assign(S,{q:"",type:"",prov:"",letter:"",fmt:"",dated:""}); S.nut.clear(); S.avoid.clear(); $("q").value=""; syncControls(); apply(); });
   $("moreBtn").addEventListener("click", render);
   $("openF").addEventListener("click", () => toggleFilters(true));
   $("scrim").addEventListener("click", () => toggleFilters(false));
@@ -599,23 +603,25 @@ function initUI(){
 }
 
 async function load(){
+  let data;
   try{
-    let rows;
-    try{ rows = await fetch(API_URL).then(r => r.json()); if (!Array.isArray(rows) || !rows.length) throw 0; }
-    catch(e){ rows = await fetch(DATA_URL, {cache:"no-store"}).then(r => r.json()); }
-    ALL = (Array.isArray(rows) ? rows : rows.data || []).map(parsePlate).filter(Boolean);
+    data = await fetch(DATA_URL, {cache:"no-cache"}).then(r => { if (!r.ok) throw r.status; return r.json(); });
+    const provs = data.provs || [];
+    ALL = (data.rows || []).map((r, i) => parsePlate(r, i, provs)).filter(Boolean);
   }catch(err){
     $("grid").innerHTML = `<div class="empty">Không tải được danh sách biển. Vui lòng gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`;
     $("count").textContent = ""; return;
   }
+  if (data.updated) $("dataNote").textContent = `Danh sách biển công bố đấu giá trên VPA — cập nhật lúc ${data.updated}.`;
   const provs = [...new Set(ALL.map(p=>p.prov))].sort((a,b)=>a.localeCompare(b,"vi"));
   $("fProv").insertAdjacentHTML("beforeend", provs.map(p=>`<option>${esc(p)}</option>`).join(""));
   const letters = [...new Set(ALL.map(p=>p.letter))].sort();
   $("fLetter").insertAdjacentHTML("beforeend", letters.map(l=>`<option>${l}</option>`).join(""));
   $("statCount").textContent = ALL.length.toLocaleString("vi-VN");
   $("statProv").textContent = provs.length;
-  const top = ALL.filter(p=>p.score>=9).sort((a,b)=>b.price-a.price)[0];
-  if (top) $("heroPlate").innerHTML = `<span class="l1">${esc(top.head)}</span><span class="l2">${esc(top.tail)}</span>`;
+  let top = null; for (const p of ALL) if (p.score >= 9 && (!top || p.score > top.score || (p.score === top.score && p.cnt > top.cnt))) top = p;
+  if (top) $("heroPlate").innerHTML = `<span class="l1">${esc(head_(top))}</span><span class="l2">${esc(tail_(top))}</span>`;
+  if (!ALL.length) { $("grid").innerHTML = `<div class="empty">Danh sách đang được cập nhật, vui lòng quay lại sau hoặc gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`; $("count").textContent = ""; return; }
   apply();
 }
 
