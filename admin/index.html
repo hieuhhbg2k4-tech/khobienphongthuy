@@ -114,11 +114,6 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
     <div class="top">
       <div><h1>Kho biển số</h1><div class="sub" id="sub">—</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <form class="owner" id="ownerForm" autocomplete="off">
-          <input class="in" id="ownerPass" type="password" placeholder="Mật khẩu chủ kho" aria-label="Mật khẩu chủ kho" autocomplete="off">
-          <button class="btn" type="submit" id="ownerBtn">Xem giá thu</button>
-        </form>
-        <button class="btn" id="ownerLock" type="button" hidden>Ẩn giá thu</button>
         <button class="btn" id="reload" type="button">↻ Tải lại</button>
         <a class="btn" href="/" target="_blank" rel="noopener">Xem web</a>
         <button class="btn btn-red" id="logout" type="button">Đăng xuất</button>
@@ -132,7 +127,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         <button class="btn btn-red" id="reset" type="button">Xóa lọc</button>
       </div>
       <div class="filters">
-        <select id="fSrc" aria-label="Kho"><option value="">Kho (Tất cả)</option></select>
+        <select id="fSrc" aria-label="Kho"><option value="">Kho (Tất cả VPA)</option></select>
         <select id="fFmt" aria-label="Định dạng"><option value="">Định dạng</option></select>
         <div class="multi" id="fAvoid">
           <button type="button" aria-haspopup="true" aria-expanded="false">Tránh số</button>
@@ -146,13 +141,12 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         </div>
         <select id="fNut" aria-label="Nút"><option value="">Nút</option></select>
         <select id="fYear" aria-label="Năm sinh"><option value="">Năm sinh</option><option value="all">Mọi năm sinh</option></select>
-        <select id="fProv" aria-label="Tỉnh/TP"><option value="">Tỉnh/TP</option></select>
+        <select id="fProv" aria-label="Tỉnh/TP"><option value="">Toàn quốc</option></select>
         <select id="fType" aria-label="Loại xe"><option value="">Loại xe</option><option value="0">Ô tô</option><option value="1">Xe máy</option></select>
         <select id="fMenh" aria-label="Mệnh" title="Theo số cuối: 1-6 Thủy, 2-7 Hỏa, 3-8 Mộc, 4-9 Kim, 5-0 Thổ (gồm hành tương sinh)"><option value="">Mệnh</option></select>
-        <select id="fPrice" aria-label="Mức giá"><option value="">Mức giá</option><option value="0-50">Dưới 50 tr</option><option value="50-100">50–100 tr</option><option value="100-200">100–200 tr</option><option value="200-500">200–500 tr</option><option value="500-1000">500 tr – 1 tỷ</option><option value="1000-">Trên 1 tỷ</option></select>
         <select id="fHead" aria-label="Đầu biển"><option value="">Đầu (tất cả)</option></select>
         <select id="fDate" aria-label="Lịch đấu giá"><option value="">Lịch đấu giá</option><option value="1">Đã có lịch</option><option value="0">Chưa có lịch</option></select>
-        <select id="sort" aria-label="Sắp xếp"><option value="hot">Nổi bật trước</option><option value="price">Giá cao → thấp</option><option value="priceAsc">Giá thấp → cao</option><option value="date">Lịch ĐG gần nhất</option><option value="reg">Nhiều người ĐK</option><option value="none">Theo kho</option></select>
+        <select id="sort" aria-label="Sắp xếp"><option value="hot">Nổi bật trước</option><option value="date">Lịch ĐG gần nhất</option><option value="reg">Nhiều người ĐK</option><option value="none">Theo kho</option></select>
       </div>
       <div class="row"><div class="btns" id="fLetters"><span>CHỮ</span></div></div>
       <div class="row"><div class="btns round" id="fDigits"><span>CHỌN DÃY SỐ</span></div></div>
@@ -179,7 +173,6 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
 <script>
 /* ===== CẤU HÌNH ===== */
 const MEMBER_API = "https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec"; // Sheet BIENSOVP: tài khoản + biển VPA hằng ngày
-const KHO_API = "https://script.google.com/macros/s/AKfycbyvz7N82Wq-TIvtLNM-FWgLEiTUb6biBWVFXneR3kVBr1_P9y4xV1NkFkvW_cA5K-0N/exec";    // Sheet kho của tôi
 const VPA_BASE = "/vpa-data/";
 const PAGE = 200;
 
@@ -246,19 +239,6 @@ $("logout").addEventListener("click", () => {
 let SRC = [], LIST = [], RES = [], shown = 0, OWNER_ON = false, IDX = null, EXCEL = null;
 const SEL = new Set(), DIG = new Set(), AVOID = new Set(); let LETTER = "";
 
-async function loadKho(){
-  const key = ownerKey.get();
-  if (key){
-    try{
-      const d = await fetch(KHO_API + "?action=admin&key=" + encodeURIComponent(key), {cache:"no-store"}).then(r => r.json());
-      if (d.ok){ OWNER_ON = true; return KE.fromKho(d.rows || []); }
-    }catch(e){}
-    ownerKey.clear(); toast("Mật khẩu chủ kho không đúng hoặc đã đổi");
-  }
-  OWNER_ON = false;
-  const rows = await fetch(KHO_API, {cache:"no-store"}).then(r => r.json());
-  return KE.fromKho(rows.map(r => ({ plate: r[0], price: r[1], moto: r[2], isNew: r[3] })));
-}
 async function loadExcel(){
   if (EXCEL) return EXCEL;
   try{ IDX = await fetch(VPA_BASE + "index.json", {cache:"no-cache"}).then(r => r.json()); }catch(e){ IDX = { sources: [] }; }
@@ -276,37 +256,31 @@ async function start(){
   $("tb").innerHTML = `<tr><td colspan="12" class="loadmsg">Đang tải dữ liệu…</td></tr>`;
   // Biển VPA hằng ngày: chỉ trả về khi phiên đăng nhập hợp lệ (đồng thời là bước kiểm tra tài khoản)
   const pLive = api({ action:"member_data", token: s.token }).catch(() => ({ ok:false, error:"Không kết nối được máy chủ." }));
-  const pKho = loadKho().catch(() => null), pEx = loadExcel();
+  const pEx = loadExcel();
   const live = await pLive;
   if (!live.ok){
     if (live.relogin){ sess.clear(); return showLogin(live.error || "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại."); }
     toast(live.error || "Không tải được biển VPA hằng ngày");
   }
-  const kho = await pKho, ex = await pEx;
-  SRC = [kho, live.ok ? KE.fromLive(live) : null, ...ex].filter(Boolean);
+  const ex = await pEx;
+  SRC = [live.ok ? KE.fromLive(live) : null, ...ex].filter(Boolean);
   KE.markDups(SRC);
   const keep = $("fSrc").value;
   $("fSrc").length = 1;
-  $("fSrc").insertAdjacentHTML("beforeend", SRC.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${N(x.len)})</option>`).join("") + `<option value="vpa">Tất cả biển VPA</option>`);
+  $("fSrc").insertAdjacentHTML("beforeend", SRC.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${N(x.len)})</option>`).join(""));
   $("fSrc").value = [...$("fSrc").options].some(o => o.value === keep) ? keep : "";
   $("sub").textContent = `${s.email}` + (live.updated ? ` · VPA cập nhật ${live.updated}` : "") + (IDX && IDX.updated ? ` · file VPA ${IDX.updated}` : "");
-  $("ownerForm").hidden = OWNER_ON; $("ownerLock").hidden = !OWNER_ON;
   head(); stats(); fillProvs(); apply();
 }
 
 function stats(){
-  const kho = SRC.find(x => x.id === "kho");
-  let val = 0, prof = 0, nCost = 0;
-  if (kho) for (let i = 0; i < kho.len; i++){ const p = kho.price[i]; if (!isNaN(p)) val += p; const c = kho.extra[i] && kho.extra[i].cost; if (c != null && !isNaN(p)){ prof += p - c; nCost++; } }
   let uniq = 0; SRC.forEach(x => { for (let i = 0; i < x.len; i++) if (!x.dup[i]) uniq++; });
-  $("stat").innerHTML = (kho ? `<span>Kho của tôi: <b>${N(kho.len)}</b> biển</span><span>Tổng giá niêm yết: <b>${moneyTxt(val)}</b></span>` : `<span class="neg">Không tải được kho của tôi</span>`)
-    + (OWNER_ON ? `<span>Lãi dự kiến (${nCost} biển có giá thu): <b>${moneyTxt(prof)}</b></span>` : "")
-    + `<span>Tổng các kho (bỏ trùng): <b>${N(uniq)}</b> biển</span>`;
+  $("stat").innerHTML = SRC.map(x => `<span>${esc(x.name)}: <b>${N(x.len)}</b></span>`).join("") + `<span>Tổng (bỏ trùng): <b>${N(uniq)}</b> biển</span>`;
 }
 
 function head(){
   $("thead").innerHTML = `<th style="width:36px"><input type="checkbox" id="selAll" aria-label="Chọn tất cả đang hiện"></th>
-    <th>Biển số</th><th>Dạng số</th><th>Loại xe</th><th>Kho</th><th>Tỉnh/TP</th><th class="num">Nút</th><th class="num">Giá niêm yết</th><th>Lịch ĐG</th>`
+    <th>Biển số</th><th>Dạng số</th><th>Loại xe</th><th>Kho</th><th>Tỉnh/TP</th><th class="num">Nút</th><th>Lịch ĐG</th>`
     + (OWNER_ON ? `<th class="num">Giá thu</th><th class="num">Lãi</th><th>Người bán / ghi chú</th><th>Nhóm (sheet)</th>` : "");
   $("selAll").addEventListener("change", e => {
     RES.slice(0, shown).forEach(v => { const [s, i] = KE.unpack(LIST, v), t = s.text(i); e.target.checked ? SEL.add(t) : SEL.delete(t); });
@@ -314,9 +288,11 @@ function head(){
   });
 }
 
-function active(){ const v = $("fSrc").value; return !v ? SRC : v === "vpa" ? SRC.filter(s => s.id !== "kho") : SRC.filter(s => s.id === v); }
+function active(){ const v = $("fSrc").value; return !v ? SRC : SRC.filter(s => s.id === v); }
+// Mặc định khi mới vào / xoá lọc: biển Hà Nội, sắp xếp nổi bật trước
+const DEF_PROV = "Hà Nội";
 function fillProvs(){
-  const ps = KE.provs(active()), keep = $("fProv").value;
+  const ps = KE.provs(active()), keep = fillProvs.init ? $("fProv").value : DEF_PROV; fillProvs.init = true;
   $("fProv").length = 1; $("fProv").insertAdjacentHTML("beforeend", ps.map(p=>`<option>${esc(p)}</option>`).join(""));
   $("fProv").value = ps.includes(keep) ? keep : ""; fillHeads();
 }
@@ -337,7 +313,7 @@ function apply(){
   const v = $("fSrc").value;
   LIST = active();
   RES = KE.filter(LIST, { q:$("q").value, fmt:$("fFmt").value, avoid:[...AVOID], nut:$("fNut").value, year:$("fYear").value, prov:$("fProv").value,
-    head:$("fHead").value, letter:LETTER, digits:[...DIG], type:$("fType").value, menh:$("fMenh").value, price:$("fPrice").value, dated:$("fDate").value }, !v || v === "vpa");
+    head:$("fHead").value, letter:LETTER, digits:[...DIG], type:$("fType").value, menh:$("fMenh").value, dated:$("fDate").value }, !v);
   if ($("sort").value !== "none") KE.sortRes(LIST, RES, $("sort").value);
   $("cnt").textContent = N(RES.length);
   redraw();
@@ -357,9 +333,8 @@ function rowHtml(v){
     <td class="plate">${t}${ex && ex.isNew ? ' <span class="tag t-moto" style="font-size:10px">MỚI</span>' : ""}</td>
     <td><span class="tag t-fmt">${KE.mainOf(s.tag[i])}</span></td>
     <td><span class="tag ${moto?"t-moto":"t-car"}">${moto?"Xe máy":"Ô tô"}</span></td>
-    <td>${s.id === "kho" ? '<span class="tag t-kho">Kho của tôi</span>' : `<span class="dim">${esc(s.live ? "VPA hằng ngày" : s.name)}</span>`}</td>
+    <td><span class="dim">${esc(s.live ? "VPA hằng ngày" : s.name)}</span></td>
     <td>${esc(s.prov(i))}</td><td class="num">${s.nut[i]}</td>
-    <td class="num price">${s.price ? money(price) : '<span class="dim">—</span>'}</td>
     <td>${date ? KE.fmtDate(date) + (cnt >= 0 ? ` <span class="dim">· ${cnt} ĐK</span>` : "") : '<span class="dim">—</span>'}</td>${owner}</tr>`;
 }
 function render(){
@@ -384,7 +359,7 @@ $("fMenh").insertAdjacentHTML("beforeend", KE.MENH.map(m=>`<option value="${m}">
 $("fDigits").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join(""));
 
 let tq; $("q").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(apply, 300); });
-["fFmt","fNut","fYear","fType","fMenh","fPrice","fDate","sort"].forEach(id => $(id).addEventListener("change", apply));
+["fFmt","fNut","fYear","fType","fMenh","fDate","sort"].forEach(id => $(id).addEventListener("change", apply));
 $("fSrc").addEventListener("change", () => { fillProvs(); apply(); });
 $("fProv").addEventListener("change", () => { fillHeads(); apply(); });
 $("fHead").addEventListener("change", () => { fillLetters(); apply(); });
@@ -397,9 +372,9 @@ avBtn.addEventListener("click", () => { avPop.hidden = !avPop.hidden; avBtn.setA
 avPop.addEventListener("change", e => { const v = e.target.value; e.target.checked ? AVOID.add(v) : AVOID.delete(v); avLabel(); apply(); });
 document.addEventListener("click", e => { if (!av.contains(e.target)) avPop.hidden = true; });
 $("reset").addEventListener("click", () => {
-  $("q").value = ""; ["fSrc","fFmt","fNut","fYear","fProv","fType","fMenh","fPrice","fHead","fDate"].forEach(id => $(id).value = "");
+  $("q").value = ""; ["fSrc","fFmt","fNut","fYear","fProv","fType","fMenh","fHead","fDate"].forEach(id => $(id).value = "");
   LETTER = ""; DIG.clear(); AVOID.clear(); avPop.querySelectorAll("input").forEach(i => i.checked = false); avLabel();
-  document.querySelectorAll("#fDigits button").forEach(b => b.classList.remove("on")); fillProvs(); apply();
+  document.querySelectorAll("#fDigits button").forEach(b => b.classList.remove("on")); $("sort").value = "hot"; fillProvs.init = false; fillProvs(); apply();
 });
 $("more").addEventListener("click", render);
 $("tb").addEventListener("change", e => {
@@ -410,10 +385,10 @@ $("tb").addEventListener("change", e => {
 $("copySel").addEventListener("click", () => copyList([...SEL]));
 $("copyAll").addEventListener("click", () => copyList(RES.map(lineOf)));
 $("csv").addEventListener("click", () => {
-  const h = ["Biển số","Dạng số","Loại xe","Kho","Tỉnh/TP","Nút","Giá niêm yết (tr)","Lịch ĐG","Số người ĐK"].concat(OWNER_ON ? ["Giá thu (tr)","Lãi (tr)","Người bán","Nhóm","Dòng"] : []);
+  const h = ["Biển số","Dạng số","Loại xe","Kho","Tỉnh/TP","Nút","Lịch ĐG","Số người ĐK"].concat(OWNER_ON ? ["Giá thu (tr)","Lãi (tr)","Người bán","Nhóm","Dòng"] : []);
   const rows = RES.map(v => {
     const [s, i] = KE.unpack(LIST, v), p = s.price ? s.price[i] : NaN, ex = s.extra ? s.extra[i] : null;
-    const r = [s.text(i), KE.mainOf(s.tag[i]), s.moto[i] ? "Xe máy" : "Ô tô", s.name, s.prov(i), s.nut[i], isNaN(p) ? "" : p,
+    const r = [s.text(i), KE.mainOf(s.tag[i]), s.moto[i] ? "Xe máy" : "Ô tô", s.name, s.prov(i), s.nut[i],
       s.date && s.date[i] ? KE.fmtDate(s.date[i]) : "", s.cnt && s.cnt[i] >= 0 ? s.cnt[i] : ""];
     if (OWNER_ON){ const c = ex && ex.cost != null ? ex.cost : ""; r.push(c, c !== "" && !isNaN(p) ? p - c : "", ex && ex.seller || "", ex && ex.group || "", ex && ex.row || ""); }
     return r;
@@ -421,21 +396,6 @@ $("csv").addEventListener("click", () => {
   KE.downloadCsv("kho-bien-" + new Date().toISOString().slice(0,10) + ".csv", h, rows);
 });
 $("reload").addEventListener("click", async () => { EXCEL = null; await start(); toast("Đã tải dữ liệu mới"); });
-// Mở cột giá thu / lãi / người bán bằng mật khẩu chủ kho
-$("ownerForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const k = $("ownerPass").value; if (!k) return $("ownerPass").focus();
-  $("ownerBtn").disabled = true;
-  try{
-    const d = await fetch(KHO_API + "?action=admin&key=" + encodeURIComponent(k), {cache:"no-store"}).then(r => r.json());
-    if (!d.ok) return toast(d.error || "Sai mật khẩu chủ kho");
-    ownerKey.set(k); $("ownerPass").value = ""; OWNER_ON = true;
-    SRC[SRC.findIndex(s => s.id === "kho")] = KE.fromKho(d.rows || []); KE.markDups(SRC);
-    $("ownerForm").hidden = true; $("ownerLock").hidden = false; head(); stats(); apply(); toast("Đã mở giá thu, lãi, người bán");
-  }catch(err){ toast("Không kết nối được máy chủ kho"); }
-  finally{ $("ownerBtn").disabled = false; }
-});
-$("ownerLock").addEventListener("click", async () => { ownerKey.clear(); OWNER_ON = false; $("ownerForm").hidden = false; $("ownerLock").hidden = true; await start(); });
 
 /* ===== Bắt đầu ===== */
 setMode("login");
