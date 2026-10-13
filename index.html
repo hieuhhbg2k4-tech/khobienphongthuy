@@ -193,28 +193,16 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .loading{grid-column:1/-1;text-align:center;color:var(--mute);padding:40px}
-/* ===== Đăng nhập thành viên ===== */
 [hidden]{display:none!important}
-#acctLink{display:none}
-@media (max-width:860px){#acctLink{display:block}}
-.acct{display:inline-flex}
-.gate{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(135deg,rgba(232,176,75,.16),rgba(232,176,75,.04));border:1px solid rgba(232,176,75,.45);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px}
-.gate b{color:var(--gold2)}
-.gate p{margin:4px 0 0;color:var(--mute);font-size:14px}
-.modal{position:fixed;inset:0;z-index:100;display:none;place-items:center;background:rgba(3,8,16,.72);padding:16px}
-.modal.open{display:grid}
-.mbox{width:min(400px,100%);background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:22px;position:relative}
-.mbox h3{margin:0 0 4px;font-size:20px}
-.mbox .msub{color:var(--mute);font-size:13px;margin:0 0 14px}
-.mtabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
-.mtabs button{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px;font-weight:700;color:var(--mute);cursor:pointer}
-.mtabs button.on{border-color:var(--gold);color:var(--gold2);background:rgba(232,176,75,.12)}
-.mbox label{display:block;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin:10px 0 6px}
-.mbox .chk{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;color:var(--mute);font-weight:500;font-size:13px}
-.mbox .btn{width:100%;margin-top:14px}
-.mmsg{min-height:20px;margin-top:10px;font-size:14px}
-.mmsg.err{color:#ff8a8a}.mmsg.ok{color:#5fe0a0}
-.mclose{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--mute);font-size:22px;cursor:pointer}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btns button{min-width:34px;height:32px;padding:0 9px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-weight:700;font-size:13px;color:var(--mute)}
+.btns button.on{border-color:var(--gold);color:var(--gold2);background:rgba(232,176,75,.14)}
+.btns.round button{border-radius:50%;width:32px;min-width:0;padding:0}
+.avoid button{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600;font-size:13px;color:var(--mute)}
+.f-group.row2{display:grid}
+.src-note{font-size:11px;color:#6f809b;text-align:center;margin-top:-4px}
+.prog{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin:-8px 0 14px}
+.prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .3s}
 </style>
 </head>
 <body>
@@ -228,9 +216,7 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
       <a href="#dinhgia">Định giá</a>
       <a href="#quytrinh">Quy trình</a>
       <a href="#lienhe">Liên hệ</a>
-      <a href="#" id="acctLink" data-acct>Đăng nhập</a>
     </nav>
-    <button class="btn btn-ghost btn-sm acct" id="acctBtn" type="button" data-acct>Đăng nhập</button>
     <a class="btn btn-gold btn-sm" href="tel:0888188888">☎ 0888.188.888</a>
     <button class="burger" id="burger" aria-label="Mở menu" aria-expanded="false">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -244,7 +230,7 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
       <div>
         <span class="eyebrow">Kho biển số đẹp toàn quốc</span>
         <h1>Biển Số Đẹp<br><span>Giá Minh Bạch</span></h1>
-        <p>Ngũ quý, tứ quý, tam hoa, sảnh tiến, lộc phát, thần tài… cho ô tô và xe máy. Giá niêm yết rõ ràng, hỗ trợ thủ tục sang tên trọn gói.</p>
+        <p>Tra cứu toàn bộ biển số VPA công bố đấu giá: ngũ quý, tứ quý, tam hoa, sảnh tiến, lộc phát, thần tài… cho ô tô và xe máy. Lọc theo tỉnh, đầu số, chữ, nút, mệnh.</p>
         <div class="hero-cta">
           <a class="btn btn-gold" href="#kho">Tìm biển ngay →</a>
           <a class="btn btn-ghost" href="tel:0888188888">☎ Gọi tư vấn</a>
@@ -267,23 +253,27 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
       <h2>Biển số nào phù hợp với bạn?</h2>
       <form class="searchbox" id="searchForm" role="search">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a3bb" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="Nhập số: 8888, *68, 30K, 51M-999…" autocomplete="off" aria-label="Tìm biển số">
+        <input id="q" type="search" placeholder="Nhập số: 8888, *68, 30K, mẫu AABB, 39*39…" autocomplete="off" aria-label="Tìm biển số">
         <button class="btn btn-gold btn-sm" type="submit">Tìm ngay</button>
       </form>
       <div class="chips" id="chips"></div>
-      <div class="hint">Mẹo: gõ <b>*68</b> để tìm biển đuôi 68, gõ <b>30K</b> để tìm theo đầu biển.</div>
+      <div class="hint">Mẹo: gõ <b>*68</b> tìm đuôi 68 · <b>30K</b> theo đầu biển · <b>AABB</b>, <b>ABAB</b> theo mẫu số · <b>39*39</b> có 39 và 39.</div>
     </div>
   </section>
 
   <section class="store" id="kho">
     <div class="wrap">
       <span class="eyebrow">Kho biển</span>
-      <h2>Biển số sắp đấu giá</h2>
+      <h2>Kho biển số VPA</h2>
       <p class="sub" id="dataNote" style="margin-top:-6px">Danh sách biển công bố đấu giá trên VPA, cập nhật hằng ngày.</p>
       <div class="scrim" id="scrim"></div>
       <div class="store-grid">
         <aside class="filters" id="filters" aria-label="Bộ lọc">
           <div class="f-head"><h3>Bộ lọc</h3><button class="linkbtn" id="reset" type="button">Xóa tất cả</button></div>
+          <div class="f-group">
+            <label class="f-label" for="fSrc">Kho</label>
+            <select id="fSrc"><option value="">Tất cả (bỏ biển trùng)</option></select>
+          </div>
           <div class="f-group">
             <span class="f-label">Loại xe</span>
             <div class="seg" id="fType">
@@ -292,13 +282,22 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
               <button type="button" data-v="1">Xe máy</button>
             </div>
           </div>
+          <div class="f-group row2">
+            <div><label class="f-label" for="fProv">Tỉnh/TP</label><select id="fProv"><option value="">Tất cả</option></select></div>
+            <div><label class="f-label" for="fHead">Đầu</label><select id="fHead"><option value="">Tất cả</option></select></div>
+          </div>
           <div class="f-group">
-            <label class="f-label" for="fProv">Tỉnh thành</label>
-            <select id="fProv"><option value="">Tất cả tỉnh</option></select>
+            <span class="f-label">Chữ</span>
+            <div class="btns" id="fLetters"></div>
           </div>
           <div class="f-group row2">
-            <div><label class="f-label" for="fLetter">Chữ cái</label><select id="fLetter"><option value="">Tất cả</option></select></div>
-            <div><label class="f-label" for="fFmt">Dạng số</label><select id="fFmt"><option value="">Tất cả</option></select></div>
+            <div><label class="f-label" for="fFmt">Định dạng</label><select id="fFmt"><option value="">Tất cả</option></select></div>
+            <div><label class="f-label" for="fYear">Năm sinh</label><select id="fYear"><option value="">Tất cả</option><option value="all">Mọi năm sinh</option></select></div>
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="fMenh">Mệnh</label>
+            <select id="fMenh"><option value="">Tất cả</option></select>
+            <div class="small">Theo số cuối: 1-6 Thủy, 2-7 Hỏa, 3-8 Mộc, 4-9 Kim, 5-0 Thổ (gồm hành tương sinh).</div>
           </div>
           <div class="f-group">
             <span class="f-label">Tổng nút</span>
@@ -308,8 +307,13 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
           <div class="f-group">
             <span class="f-label">Tránh số</span>
             <div class="avoid" id="fAvoid">
-              <button type="button" data-v="4">4</button><button type="button" data-v="7">7</button><button type="button" data-v="49">49</button><button type="button" data-v="53">53</button>
+              <button type="button" data-v="4">4</button><button type="button" data-v="7">7</button><button type="button" data-v="49">49</button><button type="button" data-v="53">53</button><button type="button" data-v="13">13</button>
             </div>
+          </div>
+          <div class="f-group">
+            <span class="f-label">Chọn dãy số</span>
+            <div class="btns round" id="fDigits"></div>
+            <div class="small">Biển phải chứa tất cả các số đã chọn.</div>
           </div>
           <div class="f-group">
             <span class="f-label">Lịch đấu giá</span>
@@ -331,13 +335,11 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
                 <option value="hot">Nổi bật</option>
                 <option value="date">Ngày đấu giá gần nhất</option>
                 <option value="reg">Nhiều người đăng ký</option>
+                <option value="none">Theo kho</option>
               </select>
             </div>
           </div>
-          <div class="gate" id="gate" hidden>
-            <div><b id="gateTitle">Đăng nhập để xem toàn bộ kho biển</b><p id="gateSub">Bạn đang xem một số biển mẫu. Tài khoản đã được duyệt sẽ xem và lọc được toàn bộ danh sách.</p></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold btn-sm" type="button" data-open="login">Đăng nhập</button><button class="btn btn-ghost btn-sm" type="button" data-open="register">Đăng ký</button></div>
-          </div>
+          <div class="prog" id="prog" hidden><i id="progBar"></i></div>
           <div class="grid" id="grid"><div class="loading">Đang tải kho biển…</div></div>
           <div class="more"><button class="btn btn-ghost" id="moreBtn" type="button" hidden>Xem thêm biển số</button></div>
         </div>
@@ -441,126 +443,49 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 </div>
 <div class="toast" id="toast" role="status"></div>
 
-<div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-  <div class="mbox">
-    <button class="mclose" type="button" id="authClose" aria-label="Đóng">×</button>
-    <h3 id="authTitle">Tài khoản thành viên</h3>
-    <p class="msub">Đăng ký bằng email — tài khoản được duyệt mới xem được toàn bộ kho biển.</p>
-    <div class="mtabs"><button type="button" data-tab="login" class="on">Đăng nhập</button><button type="button" data-tab="register">Đăng ký</button></div>
-    <form id="authForm" novalidate>
-      <label for="aEmail">Email</label>
-      <input class="in" id="aEmail" type="email" autocomplete="email" placeholder="ban@gmail.com" required>
-      <label for="aPass">Mật khẩu</label>
-      <input class="in" id="aPass" type="password" autocomplete="current-password" placeholder="Tối thiểu 6 ký tự" required>
-      <div id="aPass2Wrap" hidden><label for="aPass2">Nhập lại mật khẩu</label><input class="in" id="aPass2" type="password" autocomplete="new-password"></div>
-      <label class="chk" id="aRememberWrap"><input type="checkbox" id="aRemember" checked> Ghi nhớ đăng nhập trên máy này</label>
-      <button class="btn btn-gold" type="submit" id="aSubmit">Đăng nhập</button>
-      <div class="mmsg" id="aMsg" role="alert"></div>
-    </form>
-  </div>
-</div>
-
+<script src="/assets/kho-engine.js"></script>
 <script>
 /* ===== CẤU HÌNH ===== */
 const HOTLINE = "0888188888";
 const ZALO = "https://zalo.me/0888188888";
-// Nguồn dữ liệu: Google Sheet BIENSOVP qua Apps Script. Chưa đăng nhập: chỉ biển mẫu; đã duyệt: toàn bộ kho.
-const API_URL = "https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec";
+// Biển VPA cập nhật hằng ngày (Google Sheet BIENSOVP qua Apps Script) + danh sách VPA từ file Excel (/vpa-data)
+const LIVE_URL = "https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec?action=data";
+const VPA_BASE = "/vpa-data/";
 const PAGE = 24;
 
-
-const FMT_ORDER = ["Ngũ quý","Tứ quý","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
-const FMT_RANK = {"Ngũ quý":10,"Tứ quý":9,"Sảnh tiến":8,"Tam hoa":7,"ABAB":6,"ABBA":6,"AABB":6,"Đối xứng":5,"Lộc phát":5,"Thần tài":5,"Ông địa":4,"Năm sinh":4,"Kép đuôi":3,"Số đẹp":1};
-
-/* ===== Phân loại biển ===== */
-function classify(d){ // d: chuỗi 5 số
-  const t = new Set(), n = d.split("").map(Number), l4 = d.slice(1), l3 = d.slice(2), l2 = d.slice(3);
-  const same = s => s.split("").every(c => c === s[0]);
-  const inc = s => s.split("").every((c,i,a) => i===0 || +c === +a[i-1] + 1);
-  if (same(d)) t.add("Ngũ quý");
-  else if (same(l4) || same(d.slice(0,4))) t.add("Tứ quý");
-  if (!t.size && (inc(d) || inc(l4))) t.add("Sảnh tiến");
-  if (!t.has("Ngũ quý") && !t.has("Tứ quý") && (same(l3) || same(d.slice(0,3)))) t.add("Tam hoa");
-  if (l2 === "68" || l2 === "86") t.add("Lộc phát");
-  if (l2 === "39" || l2 === "79") t.add("Thần tài");
-  if (l2 === "38" || l2 === "78") t.add("Ông địa");
-  const y = +l4; if ((l4.startsWith("19") && y >= 1950) || (l4.startsWith("20") && y <= 2030)) t.add("Năm sinh");
-  const [a,b,c,e] = l4.split("");
-  if (a===c && b===e && a!==b) t.add("ABAB");
-  if (a===e && b===c && a!==b) t.add("ABBA");
-  if (a===b && c===e && a!==c) t.add("AABB");
-  if (d[0]===d[4] && d[1]===d[3] && !same(d)) t.add("Đối xứng");
-  if (!t.size && l2[0]===l2[1]) t.add("Kép đuôi");
-  if (!t.size) t.add("Số đẹp");
-  const sum = n.reduce((s,x)=>s+x,0) % 10 || 10;
-  const tags = FMT_ORDER.filter(x => t.has(x));
-  return { tags, main: tags[0], nut: sum, score: Math.max(...tags.map(x => FMT_RANK[x] || 0)) };
-}
-
-function parsePlate(row, i, provs){
-  // row: [biển, chỉ số tỉnh, xe máy 0/1, "dd/MM/yyyy" | "", số người đăng ký (-1 = VPA ẩn)]
-  const [plate, pi, moto, date, cnt] = row;
-  const raw = String(plate).toUpperCase().replace(/[^0-9A-Z]/g, "");
-  const m = raw.match(/^(\d{2})([A-Z]{1,2}\d?)(\d{3})(\d{2})$/);
-  if (!m) return null;
-  const digits = m[3] + m[4];
-  const c = classify(digits);
-  const dm = String(date || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  return {
-    id: i, raw, code: m[1], series: m[2], letter: m[2][0], digits, moto: moto ? 1 : 0,
-    prov: provs[pi] || "Khác", date: dm ? date : "", dts: dm ? +(dm[3] + dm[2] + dm[1]) : 0,
-    cnt: typeof cnt === "number" ? cnt : -1,
-    main: c.tags[0], tags: c.tags.length > 1 ? c.tags.slice(0, 2) : null, nut: c.nut, score: c.score
-  };
-}
-const head_ = p => p.moto ? p.code + "-" + p.series : p.code + p.series;
-const tail_ = p => p.digits.slice(0, 3) + "." + p.digits.slice(3);
-const text_ = p => p.code + p.series + "-" + tail_(p);
-const tagsOf = p => p.tags || [p.main];
-
 /* ===== State ===== */
-let ALL = [], VIEW = [], shown = 0;
-const S = { q:"", type:"", prov:"", letter:"", fmt:"", dated:"", nut:new Set(), avoid:new Set(), sort:"hot" };
+let SRC = [], RES = [], shown = 0;
+const S = { q:"", src:"", type:"", prov:"", head:"", letter:"", fmt:"", year:"", menh:"", dated:"", nut:new Set(), avoid:new Set(), digits:new Set(), sort:"hot" };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const N = n => n.toLocaleString("vi-VN");
 
-function prepQuery(q){
-  q = (q || "").toUpperCase().replace(/\s+/g,"");
-  if (!q) return null;
-  if (q.startsWith("*")) { const t = q.slice(1).replace(/\D/g,""); return p => p.digits.endsWith(t); }
-  if (q.endsWith("*")) { const t = q.slice(0,-1).replace(/[-.]/g,""); return p => p.raw.startsWith(t); }
-  const t = q.replace(/[-.*]/g,""); return p => p.raw.includes(t);
-}
+function active(){ return S.src ? SRC.filter(s => s.id === S.src) : SRC; }
 
 function apply(){
-  const mq = prepQuery(S.q), avoid = [...S.avoid];
-  VIEW = ALL.filter(p =>
-    (!mq || mq(p)) &&
-    (S.type === "" || String(p.moto) === S.type) &&
-    (!S.prov || p.prov === S.prov) &&
-    (!S.letter || p.letter === S.letter) &&
-    (!S.fmt || p.main === S.fmt || (p.tags && p.tags.includes(S.fmt))) &&
-    (S.dated === "" || (S.dated === "1" ? p.dts > 0 : p.dts === 0)) &&
-    (!S.nut.size || S.nut.has(p.nut)) &&
-    (!avoid.length || !avoid.some(a => p.digits.includes(a)))
-  );
-  const so = S.sort;
-  VIEW.sort(so === "date" ? (a,b)=>((a.dts||9e9)-(b.dts||9e9)) || (b.score-a.score)
-          : so === "reg" ? (a,b)=>(b.cnt-a.cnt) || (b.score-a.score)
-          : (a,b)=>(b.score-a.score) || ((a.dts||9e9)-(b.dts||9e9)) || a.id-b.id);
+  if (!SRC.length) return;
+  const list = active();
+  RES = KE.filter(list, { q:S.q, fmt:S.fmt, avoid:[...S.avoid], nut:[...S.nut], year:S.year, prov:S.prov, head:S.head, letter:S.letter,
+    digits:[...S.digits], type:S.type, menh:S.menh, dated:S.dated }, !S.src);
+  if (S.sort !== "none") KE.sortRes(list, RES, S.sort);
+  apply.list = list;
   shown = 0; $("grid").innerHTML = ""; render();
-  $("count").innerHTML = `Tìm thấy <b>${VIEW.length.toLocaleString("vi-VN")}</b> biển số`;
+  $("count").innerHTML = `Tìm thấy <b>${N(RES.length)}</b> biển số`;
   syncChips();
 }
 
-function card(p){
-  const t = text_(p);
-  const msg = `Tôi muốn hỏi biển ${t}` + (p.date ? ` (đấu giá ${p.date})` : "");
+function card(v){
+  const [s, i] = KE.unpack(apply.list, v), t = s.text(i), m = s.tag[i], p = s.pre[s.pi[i]], n = KE.pad5(s.num[i]);
+  const moto = s.moto[i], date = s.date ? s.date[i] : 0, cnt = s.cnt ? s.cnt[i] : -1;
+  const head = moto ? p.slice(0,2) + "-" + p.slice(2) : p;
+  const tags = KE.tagsOf(m).slice(0, 2);
+  const msg = `Tôi muốn hỏi biển ${t}` + (date ? ` (đấu giá ${KE.fmtDate(date)})` : "");
+  const srcName = s.live ? "VPA" : s.name.split(" – ")[0];
   return `<article class="card">
-    <div class="card-top"><span class="prov">${esc(p.prov)}</span><span class="tag">${esc(p.main)}</span></div>
-    <div class="plate"><span class="kind">${p.moto?"Xe máy":"Ô tô"}</span><span class="l1">${esc(head_(p))}</span><span class="l2">${esc(tail_(p))}</span></div>
-    <div class="price" style="font-size:16px">${p.date ? "Đấu giá " + p.date : "Chưa có lịch ĐG"}</div>
-    <div class="meta"><span>${esc(tagsOf(p).join(" · "))}</span><span>${p.cnt >= 0 ? p.cnt + " người ĐK · " : ""}${p.nut} nút</span></div>
+    <div class="card-top"><span class="prov">${esc(s.prov(i))}</span><span class="tag">${esc(tags[0])}</span></div>
+    <div class="plate"><span class="kind">${moto?"Xe máy":"Ô tô"}</span><span class="l1">${esc(head)}</span><span class="l2">${n.slice(0,3)}.${n.slice(3)}</span></div>
+    <div class="price" style="font-size:15px">${date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)}</div>
+    <div class="meta"><span>${esc(tags.join(" · "))}</span><span>${cnt >= 0 ? cnt + " người ĐK · " : ""}${s.nut[i]} nút</span></div>
     <div class="card-act">
       <a class="btn btn-ghost" href="tel:${HOTLINE}">Gọi</a>
       <a class="btn btn-gold" href="${ZALO}" target="_blank" rel="noopener" data-copy="${esc(msg)}">Zalo</a>
@@ -568,63 +493,82 @@ function card(p){
 }
 
 function render(){
-  if (!VIEW.length){ $("grid").innerHTML = `<div class="empty">Chưa có biển phù hợp. Thử bỏ bớt bộ lọc, hoặc <a href="#dinhgia" style="color:var(--gold2)">gửi yêu cầu tìm biển</a>.</div>`; $("moreBtn").hidden = true; return; }
-  const next = VIEW.slice(shown, shown + PAGE);
+  if (!RES.length){ $("grid").innerHTML = `<div class="empty">Chưa có biển phù hợp. Thử bỏ bớt bộ lọc, hoặc <a href="#dinhgia" style="color:var(--gold2)">gửi yêu cầu tìm biển</a>.</div>`; $("moreBtn").hidden = true; return; }
+  const next = RES.slice(shown, shown + PAGE);
   $("grid").insertAdjacentHTML("beforeend", next.map(card).join(""));
   shown += next.length;
-  $("moreBtn").hidden = shown >= VIEW.length;
-  $("moreBtn").textContent = `Xem thêm biển số (còn ${VIEW.length - shown})`;
+  $("moreBtn").hidden = shown >= RES.length;
+  $("moreBtn").textContent = `Xem thêm biển số (còn ${N(RES.length - shown)})`;
 }
 
 /* ===== Chips ===== */
 const CHIPS = [["Tất cả",""],["Hà Nội","prov:Hà Nội"],["TP.HCM","prov:Hồ Chí Minh"],["Ngũ quý","fmt:Ngũ quý"],["Tứ quý","fmt:Tứ quý"],["Tam hoa","fmt:Tam hoa"],["Sảnh tiến","fmt:Sảnh tiến"],["Lộc phát","fmt:Lộc phát"],["Thần tài","fmt:Thần tài"],["Xe máy","type:1"],["Có lịch đấu giá","dated:1"]];
 function chipOn(v){
   if (!v) return !S.prov && !S.fmt && !S.type && !S.dated && !S.q;
-  const [k,val] = v.split(":");
-  return k==="prov" ? S.prov===val : k==="fmt" ? S.fmt===val : k==="type" ? S.type===val : k==="dated" ? S.dated===val : false;
+  const [k,val] = v.split(":"); return S[k] === val;
 }
 function setChip(v){
-  Object.assign(S,{prov:"",fmt:"",type:"",dated:"",q:""}); $("q").value="";
+  Object.assign(S,{prov:"",head:"",letter:"",fmt:"",type:"",dated:"",q:""}); $("q").value="";
   if (v){ const [k,val] = v.split(":"); S[k] = val; }
   syncControls(); apply();
 }
 function syncChips(){ document.querySelectorAll("#chips .chip").forEach(b => b.classList.toggle("on", chipOn(b.dataset.v))); }
 
+function fillHeads(){
+  const list = active();
+  const hs = KE.heads(list, S.prov); if (S.head && !hs.includes(S.head)) S.head = "";
+  $("fHead").length = 1; $("fHead").insertAdjacentHTML("beforeend", hs.map(h=>`<option>${h}</option>`).join(""));
+  const ls = KE.letters(list, S.prov, S.head); if (S.letter && !ls.includes(S.letter)) S.letter = "";
+  $("fLetters").innerHTML = [`<button type="button" data-l="">Tất cả</button>`].concat(ls.map(l => `<button type="button" data-l="${l}">${l}</button>`)).join("");
+  syncControls();
+}
+function fillProvs(){
+  const ps = KE.provs(active());
+  $("fProv").length = 1; $("fProv").insertAdjacentHTML("beforeend", ps.map(p=>`<option>${esc(p)}</option>`).join(""));
+  if (S.prov && !ps.includes(S.prov)) S.prov = "";
+  fillHeads();
+}
+
 function syncControls(){
-  $("fProv").value = S.prov; $("fLetter").value = S.letter; $("fFmt").value = S.fmt;
+  $("fSrc").value = S.src; $("fProv").value = S.prov; $("fHead").value = S.head; $("fFmt").value = S.fmt; $("fYear").value = S.year; $("fMenh").value = S.menh;
   $("sort").value = S.sort;
   document.querySelectorAll("#fDate button").forEach(b => b.classList.toggle("on", b.dataset.v === S.dated));
   document.querySelectorAll("#fType button").forEach(b => b.classList.toggle("on", b.dataset.v === S.type));
   document.querySelectorAll("#fNut button").forEach(b => b.classList.toggle("on", S.nut.has(+b.dataset.v)));
   document.querySelectorAll("#fAvoid button").forEach(b => b.classList.toggle("on", S.avoid.has(b.dataset.v)));
+  document.querySelectorAll("#fDigits button").forEach(b => b.classList.toggle("on", S.digits.has(b.dataset.d)));
+  document.querySelectorAll("#fLetters button").forEach(b => b.classList.toggle("on", b.dataset.l === S.letter));
 }
 
 function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),2600); }
-async function copy(t){
-  try{ if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); return true; } }catch(e){}
-  const ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0";
-  document.body.appendChild(ta); ta.focus(); ta.select(); let ok = false; try{ ok = document.execCommand("copy"); }catch(e){} ta.remove(); return ok;
-}
 function toggleFilters(open){ $("filters").classList.toggle("open",open); $("scrim").classList.toggle("open",open); }
+const toggle = (set, v) => set.has(v) ? set.delete(v) : set.add(v);
 
 /* ===== Init ===== */
 function initUI(){
   $("yr").textContent = new Date().getFullYear();
   $("chips").innerHTML = CHIPS.map(([l,v]) => `<button class="chip" type="button" data-v="${v}">${l}</button>`).join("");
   $("chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (b) setChip(b.dataset.v); });
-  document.querySelectorAll("[data-chip]").forEach(a => a.addEventListener("click", () => setChip(a.dataset.chip)));
   $("fNut").innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-v="${i+1}">${i+1}</button>`).join("");
-  $("fFmt").insertAdjacentHTML("beforeend", FMT_ORDER.map(f=>`<option>${f}</option>`).join(""));
+  $("fDigits").innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join("");
+  $("fFmt").insertAdjacentHTML("beforeend", KE.FMT_ORDER.map(f=>`<option>${f}</option>`).join(""));
+  $("fMenh").insertAdjacentHTML("beforeend", KE.MENH.map(m=>`<option value="${m}">Hợp mệnh ${m}</option>`).join(""));
+  const yrs = []; for (let y = 2030; y >= 1950; y--) yrs.push(`<option>${y}</option>`); $("fYear").insertAdjacentHTML("beforeend", yrs.join(""));
 
   $("searchForm").addEventListener("submit", e => { e.preventDefault(); S.q = $("q").value.trim(); apply(); $("kho").scrollIntoView(); });
-  let tq; $("q").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(()=>{ S.q = $("q").value.trim(); apply(); }, 250); });
+  let tq; $("q").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(()=>{ S.q = $("q").value.trim(); apply(); }, 300); });
   $("fType").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.type=b.dataset.v; syncControls(); apply(); });
-  $("fNut").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; const v=+b.dataset.v; S.nut.has(v)?S.nut.delete(v):S.nut.add(v); syncControls(); apply(); });
-  $("fAvoid").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; const v=b.dataset.v; S.avoid.has(v)?S.avoid.delete(v):S.avoid.add(v); syncControls(); apply(); });
-  ["fProv","fLetter","fFmt"].forEach(id => $(id).addEventListener("change", e => { S[{fProv:"prov",fLetter:"letter",fFmt:"fmt"}[id]] = e.target.value; apply(); }));
+  $("fNut").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.nut, +b.dataset.v); syncControls(); apply(); });
+  $("fAvoid").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.avoid, b.dataset.v); syncControls(); apply(); });
+  $("fDigits").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.digits, b.dataset.d); syncControls(); apply(); });
+  $("fLetters").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.letter = S.letter === b.dataset.l ? "" : b.dataset.l; syncControls(); apply(); });
+  $("fSrc").addEventListener("change", e => { S.src = e.target.value; fillProvs(); apply(); });
+  $("fProv").addEventListener("change", e => { S.prov = e.target.value; fillHeads(); apply(); });
+  $("fHead").addEventListener("change", e => { S.head = e.target.value; fillHeads(); apply(); });
+  ["fFmt","fYear","fMenh"].forEach(id => $(id).addEventListener("change", e => { S[{fFmt:"fmt",fYear:"year",fMenh:"menh"}[id]] = e.target.value; apply(); }));
   $("fDate").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.dated=b.dataset.v; syncControls(); apply(); });
   $("sort").addEventListener("change", e => { S.sort = e.target.value; apply(); });
-  $("reset").addEventListener("click", () => { Object.assign(S,{q:"",type:"",prov:"",letter:"",fmt:"",dated:""}); S.nut.clear(); S.avoid.clear(); $("q").value=""; syncControls(); apply(); });
+  $("reset").addEventListener("click", () => { Object.assign(S,{q:"",src:"",type:"",prov:"",head:"",letter:"",fmt:"",year:"",menh:"",dated:""}); S.nut.clear(); S.avoid.clear(); S.digits.clear(); $("q").value=""; fillProvs(); apply(); });
   $("moreBtn").addEventListener("click", render);
   $("openF").addEventListener("click", () => toggleFilters(true));
   $("scrim").addEventListener("click", () => toggleFilters(false));
@@ -635,7 +579,7 @@ function initUI(){
 
   $("grid").addEventListener("click", async e => {
     const a = e.target.closest("[data-copy]"); if (!a) return;
-    if (await copy(a.dataset.copy)) toast("Đã chép tên biển — dán vào Zalo để hỏi nhanh");
+    if (await KE.copyText(a.dataset.copy)) toast("Đã chép tên biển — dán vào Zalo để hỏi nhanh");
   });
 
   $("quoteForm").addEventListener("submit", async e => {
@@ -643,117 +587,45 @@ function initUI(){
     const plate = $("qPlate").value.trim();
     if (!plate){ $("qPlate").focus(); toast("Vui lòng nhập biển số"); return; }
     const text = `${$("qNeed").value}: ${plate}` + ($("qPhone").value.trim() ? ` — SĐT: ${$("qPhone").value.trim()}` : "");
-    const ok = await copy(text);
+    const ok = await KE.copyText(text);
     toast(ok ? "Đã chép nội dung — dán vào Zalo và gửi" : "Mở Zalo, nhắn: " + text);
     window.open(ZALO, "_blank", "noopener");
   });
 }
 
-/* ===== Thành viên ===== */
-const SESS_KEY = "kbpt_member";
-const sess = {
-  get(){ try{ const v = JSON.parse(localStorage.getItem(SESS_KEY) || sessionStorage.getItem(SESS_KEY) || "null"); return v && v.exp > Date.now() ? v : null; }catch(e){ return null; } },
-  set(v, keep){ try{ (keep ? localStorage : sessionStorage).setItem(SESS_KEY, JSON.stringify(v)); }catch(e){} },
-  clear(){ try{ localStorage.removeItem(SESS_KEY); sessionStorage.removeItem(SESS_KEY); }catch(e){} }
-};
-const api = body => fetch(API_URL, { method:"POST", body: JSON.stringify(body) }).then(r => r.json());
-
-function setAcctUI(){
-  const s = sess.get();
-  document.querySelectorAll("[data-acct]").forEach(el => { el.textContent = s ? "Đăng xuất" : "Đăng nhập"; el.title = s ? s.email : ""; });
-}
-let authMode = "login";
-function openAuth(mode){
-  authMode = mode || "login";
-  document.querySelectorAll("#authModal .mtabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === authMode));
-  $("aPass2Wrap").hidden = authMode !== "register";
-  $("aRememberWrap").hidden = authMode !== "login";
-  $("aSubmit").textContent = authMode === "login" ? "Đăng nhập" : "Đăng ký";
-  $("aPass").autocomplete = authMode === "login" ? "current-password" : "new-password";
-  $("aMsg").textContent = ""; $("aMsg").className = "mmsg";
-  $("authModal").classList.add("open"); setTimeout(() => $("aEmail").focus(), 50);
-}
-function closeAuth(){ $("authModal").classList.remove("open"); }
-function authMsg(t, ok){ $("aMsg").textContent = t; $("aMsg").className = "mmsg " + (ok ? "ok" : "err"); }
-
-async function submitAuth(e){
-  e.preventDefault();
-  const email = $("aEmail").value.trim().toLowerCase(), pass = $("aPass").value;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return authMsg("Email không hợp lệ.");
-  if (pass.length < 6) return authMsg("Mật khẩu tối thiểu 6 ký tự.");
-  if (authMode === "register" && pass !== $("aPass2").value) return authMsg("Hai lần nhập mật khẩu chưa khớp.");
-  $("aSubmit").disabled = true; authMsg("Đang xử lý…", true);
-  try{
-    if (authMode === "register"){
-      const d = await api({ action:"member_register", email, pass });
-      if (!d.ok) return authMsg(d.error || "Không đăng ký được.");
-      authMsg(d.message || "Đăng ký thành công! Tài khoản đang chờ duyệt.", true);
-      $("aPass").value = ""; $("aPass2").value = "";
-    } else {
-      const keep = $("aRemember").checked;
-      const d = await api({ action:"member_login", email, pass, remember: keep });
-      if (!d.ok) return authMsg(d.error || "Không đăng nhập được.");
-      sess.set({ token: d.token, email: d.email, exp: d.exp }, keep);
-      $("aPass").value = ""; closeAuth(); setAcctUI(); toast("Đăng nhập thành công");
-      await load();
-      $("kho").scrollIntoView();
-    }
-  }catch(err){ authMsg("Không kết nối được máy chủ, vui lòng thử lại."); }
-  finally{ $("aSubmit").disabled = false; }
-}
-
-async function logout(){
-  const s = sess.get(); sess.clear(); setAcctUI();
-  if (s) api({ action:"member_logout", token: s.token }).catch(()=>{});
-  toast("Đã đăng xuất"); await load();
-}
-
-function initAuth(){
-  setAcctUI();
-  document.querySelectorAll("[data-acct]").forEach(el => el.addEventListener("click", e => { e.preventDefault(); sess.get() ? logout() : openAuth("login"); }));
-  document.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", () => openAuth(el.dataset.open)));
-  document.querySelectorAll("#authModal .mtabs button").forEach(b => b.addEventListener("click", () => openAuth(b.dataset.tab)));
-  $("authClose").addEventListener("click", closeAuth);
-  $("authModal").addEventListener("click", e => { if (e.target === $("authModal")) closeAuth(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAuth(); });
-  $("authForm").addEventListener("submit", submitAuth);
-}
-
+/* ===== Tải dữ liệu ===== */
 async function load(){
-  let data, member = false;
   $("grid").innerHTML = `<div class="loading">Đang tải kho biển…</div>`; $("count").textContent = "Đang tải…";
-  try{
-    const s = sess.get();
-    if (s){
-      data = await api({ action:"member_data", token: s.token });
-      if (!data.ok){ if (data.relogin){ sess.clear(); setAcctUI(); toast(data.error || "Phiên đăng nhập đã hết hạn"); } data = null; }
-      else member = true;
-    }
-    if (!data) data = await fetch(API_URL + "?action=sample", {cache:"no-cache"}).then(r => r.json());
-    const provs = data.provs || [];
-    ALL = (data.rows || []).map((r, i) => parsePlate(r, i, provs)).filter(Boolean);
-  }catch(err){
+  $("prog").hidden = false;
+  let idx = null, live = null, done = 0, total = 1;
+  const step = () => { done++; $("progBar").style.width = Math.round(done / total * 100) + "%"; };
+  const pLive = fetch(LIVE_URL).then(r => r.json()).then(d => { if (d && d.rows && d.rows.length) live = KE.fromLive(d); }).catch(() => {}).finally(step);
+  try { idx = await fetch(VPA_BASE + "index.json", {cache:"no-cache"}).then(r => r.json()); } catch(e) {}
+  const metas = idx ? idx.sources.filter(s => s.kind !== "car_yellow") : [];
+  total = 1 + metas.length;
+  // Thứ tự ưu tiên khi bỏ biển trùng: VPA hằng ngày → file phiên → file kho
+  metas.sort((a, b) => (/^Phiên/i.test(b.name) ? 1 : 0) - (/^Phiên/i.test(a.name) ? 1 : 0));
+  const ex = await Promise.all(metas.map(m => fetch(VPA_BASE + m.id + ".json").then(r => r.json()).then(d => KE.fromExcel(m, d)).catch(() => null).finally(step)));
+  await pLive;
+  SRC = [live, ...ex].filter(Boolean);
+  $("prog").hidden = true;
+  if (!SRC.length){
     $("grid").innerHTML = `<div class="empty">Không tải được danh sách biển. Vui lòng gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`;
     $("count").textContent = ""; return;
   }
-  const total = data.count || ALL.length;
-  $("gate").hidden = member;
-  if (!member) $("gateTitle").textContent = `Đăng nhập để xem toàn bộ ${total.toLocaleString("vi-VN")} biển`;
-  if (data.updated) $("dataNote").textContent = `Danh sách biển công bố đấu giá trên VPA — cập nhật lúc ${data.updated}.` + (member ? "" : " Bạn đang xem biển mẫu.");
-  const provs = [...new Set(ALL.map(p=>p.prov))].sort((a,b)=>a.localeCompare(b,"vi"));
-  $("fProv").length = 1; $("fProv").insertAdjacentHTML("beforeend", provs.map(p=>`<option>${esc(p)}</option>`).join(""));
-  const letters = [...new Set(ALL.map(p=>p.letter))].sort();
-  $("fLetter").length = 1; $("fLetter").insertAdjacentHTML("beforeend", letters.map(l=>`<option>${l}</option>`).join(""));
-  $("statCount").textContent = total.toLocaleString("vi-VN");
-  $("statProv").textContent = (data.provs || provs).length;
-  let top = null; for (const p of ALL) if (p.score >= 9 && (!top || p.score > top.score || (p.score === top.score && p.cnt > top.cnt))) top = p;
-  if (top) $("heroPlate").innerHTML = `<span class="l1">${esc(head_(top))}</span><span class="l2">${esc(tail_(top))}</span>`;
-  if (!ALL.length) { $("grid").innerHTML = `<div class="empty">Danh sách đang được cập nhật, vui lòng quay lại sau hoặc gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`; $("count").textContent = ""; return; }
-  apply();
-  if (!member) $("count").innerHTML = `Đang xem <b>${ALL.length}</b> biển mẫu / ${total.toLocaleString("vi-VN")} biển`;
+  KE.markDups(SRC);
+  $("fSrc").length = 1;
+  $("fSrc").insertAdjacentHTML("beforeend", SRC.map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${N(s.len)})</option>`).join(""));
+  let uniq = 0; SRC.forEach(s => { for (let i = 0; i < s.len; i++) if (!s.dup[i]) uniq++; });
+  $("statCount").textContent = N(uniq);
+  $("statProv").textContent = KE.provs(SRC).length;
+  $("dataNote").textContent = "Biển VPA công bố đấu giá" + (live && live.updated ? ` — cập nhật lúc ${live.updated}` : "") + (idx && idx.updated ? ` · file VPA: ${idx.updated}` : "") + ".";
+  if (live){ let top = -1, best = -1; for (let i = 0; i < live.len; i++){ const sc = KE.scoreOf(live.tag[i]) * 1000 + Math.max(0, live.cnt[i]); if (sc > best){ best = sc; top = i; } }
+    if (top >= 0){ const p = live.pre[live.pi[top]], n = KE.pad5(live.num[top]); $("heroPlate").innerHTML = `<span class="l1">${esc(p)}</span><span class="l2">${n.slice(0,3)}.${n.slice(3)}</span>`; } }
+  fillProvs(); apply();
 }
 
-initUI(); initAuth(); load();
+initUI(); load();
 </script>
 </body>
 </html>
