@@ -1,5 +1,5 @@
 {
- "updated": "14:14 12/10/2026",
+ "updated": "14:34 13/10/2026",
  "sources": [
   {
    "id": "kho-vpa-xe-may",
@@ -12,7 +12,7 @@
    "id": "kho-vpa-o-to",
    "name": "Kho VPA – Ô tô",
    "kind": "car",
-   "count": 270633,
+   "count": 246983,
    "file": "Oto_Kho.xlsx"
   },
   {
@@ -27,13 +27,6 @@
    "name": "Phiên 11/2026 – Ô tô trắng",
    "kind": "car",
    "count": 320970,
-   "file": "Phien 11.2026.xlsx"
-  },
-  {
-   "id": "phien-11-2026-o-to-vang",
-   "name": "Phiên 11/2026 – Ô tô vàng",
-   "kind": "car_yellow",
-   "count": 4365,
    "file": "Phien 11.2026.xlsx"
   }
  ]
