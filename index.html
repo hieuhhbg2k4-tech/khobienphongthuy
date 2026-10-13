@@ -193,6 +193,28 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .loading{grid-column:1/-1;text-align:center;color:var(--mute);padding:40px}
+/* ===== Đăng nhập thành viên ===== */
+[hidden]{display:none!important}
+#acctLink{display:none}
+@media (max-width:860px){#acctLink{display:block}}
+.acct{display:inline-flex}
+.gate{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(135deg,rgba(232,176,75,.16),rgba(232,176,75,.04));border:1px solid rgba(232,176,75,.45);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px}
+.gate b{color:var(--gold2)}
+.gate p{margin:4px 0 0;color:var(--mute);font-size:14px}
+.modal{position:fixed;inset:0;z-index:100;display:none;place-items:center;background:rgba(3,8,16,.72);padding:16px}
+.modal.open{display:grid}
+.mbox{width:min(400px,100%);background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:22px;position:relative}
+.mbox h3{margin:0 0 4px;font-size:20px}
+.mbox .msub{color:var(--mute);font-size:13px;margin:0 0 14px}
+.mtabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.mtabs button{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px;font-weight:700;color:var(--mute);cursor:pointer}
+.mtabs button.on{border-color:var(--gold);color:var(--gold2);background:rgba(232,176,75,.12)}
+.mbox label{display:block;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin:10px 0 6px}
+.mbox .chk{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;color:var(--mute);font-weight:500;font-size:13px}
+.mbox .btn{width:100%;margin-top:14px}
+.mmsg{min-height:20px;margin-top:10px;font-size:14px}
+.mmsg.err{color:#ff8a8a}.mmsg.ok{color:#5fe0a0}
+.mclose{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--mute);font-size:22px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -206,7 +228,9 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
       <a href="#dinhgia">Định giá</a>
       <a href="#quytrinh">Quy trình</a>
       <a href="#lienhe">Liên hệ</a>
+      <a href="#" id="acctLink" data-acct>Đăng nhập</a>
     </nav>
+    <button class="btn btn-ghost btn-sm acct" id="acctBtn" type="button" data-acct>Đăng nhập</button>
     <a class="btn btn-gold btn-sm" href="tel:0888188888">☎ 0888.188.888</a>
     <button class="burger" id="burger" aria-label="Mở menu" aria-expanded="false">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -309,6 +333,10 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
                 <option value="reg">Nhiều người đăng ký</option>
               </select>
             </div>
+          </div>
+          <div class="gate" id="gate" hidden>
+            <div><b id="gateTitle">Đăng nhập để xem toàn bộ kho biển</b><p id="gateSub">Bạn đang xem một số biển mẫu. Tài khoản đã được duyệt sẽ xem và lọc được toàn bộ danh sách.</p></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold btn-sm" type="button" data-open="login">Đăng nhập</button><button class="btn btn-ghost btn-sm" type="button" data-open="register">Đăng ký</button></div>
           </div>
           <div class="grid" id="grid"><div class="loading">Đang tải kho biển…</div></div>
           <div class="more"><button class="btn btn-ghost" id="moreBtn" type="button" hidden>Xem thêm biển số</button></div>
@@ -413,12 +441,31 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 </div>
 <div class="toast" id="toast" role="status"></div>
 
+<div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="mbox">
+    <button class="mclose" type="button" id="authClose" aria-label="Đóng">×</button>
+    <h3 id="authTitle">Tài khoản thành viên</h3>
+    <p class="msub">Đăng ký bằng email — tài khoản được duyệt mới xem được toàn bộ kho biển.</p>
+    <div class="mtabs"><button type="button" data-tab="login" class="on">Đăng nhập</button><button type="button" data-tab="register">Đăng ký</button></div>
+    <form id="authForm" novalidate>
+      <label for="aEmail">Email</label>
+      <input class="in" id="aEmail" type="email" autocomplete="email" placeholder="ban@gmail.com" required>
+      <label for="aPass">Mật khẩu</label>
+      <input class="in" id="aPass" type="password" autocomplete="current-password" placeholder="Tối thiểu 6 ký tự" required>
+      <div id="aPass2Wrap" hidden><label for="aPass2">Nhập lại mật khẩu</label><input class="in" id="aPass2" type="password" autocomplete="new-password"></div>
+      <label class="chk" id="aRememberWrap"><input type="checkbox" id="aRemember" checked> Ghi nhớ đăng nhập trên máy này</label>
+      <button class="btn btn-gold" type="submit" id="aSubmit">Đăng nhập</button>
+      <div class="mmsg" id="aMsg" role="alert"></div>
+    </form>
+  </div>
+</div>
+
 <script>
 /* ===== CẤU HÌNH ===== */
 const HOTLINE = "0888188888";
 const ZALO = "https://zalo.me/0888188888";
-// Nguồn dữ liệu: Google Sheet BIENSOVP (biển VPA) → GitHub Action lưu hằng ngày vào kho-data/web.json
-const DATA_URL = "kho-data/web.json";
+// Nguồn dữ liệu: Google Sheet BIENSOVP qua Apps Script. Chưa đăng nhập: chỉ biển mẫu; đã duyệt: toàn bộ kho.
+const API_URL = "https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec";
 const PAGE = 24;
 
 
@@ -602,30 +649,111 @@ function initUI(){
   });
 }
 
-async function load(){
-  let data;
+/* ===== Thành viên ===== */
+const SESS_KEY = "kbpt_member";
+const sess = {
+  get(){ try{ const v = JSON.parse(localStorage.getItem(SESS_KEY) || sessionStorage.getItem(SESS_KEY) || "null"); return v && v.exp > Date.now() ? v : null; }catch(e){ return null; } },
+  set(v, keep){ try{ (keep ? localStorage : sessionStorage).setItem(SESS_KEY, JSON.stringify(v)); }catch(e){} },
+  clear(){ try{ localStorage.removeItem(SESS_KEY); sessionStorage.removeItem(SESS_KEY); }catch(e){} }
+};
+const api = body => fetch(API_URL, { method:"POST", body: JSON.stringify(body) }).then(r => r.json());
+
+function setAcctUI(){
+  const s = sess.get();
+  document.querySelectorAll("[data-acct]").forEach(el => { el.textContent = s ? "Đăng xuất" : "Đăng nhập"; el.title = s ? s.email : ""; });
+}
+let authMode = "login";
+function openAuth(mode){
+  authMode = mode || "login";
+  document.querySelectorAll("#authModal .mtabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === authMode));
+  $("aPass2Wrap").hidden = authMode !== "register";
+  $("aRememberWrap").hidden = authMode !== "login";
+  $("aSubmit").textContent = authMode === "login" ? "Đăng nhập" : "Đăng ký";
+  $("aPass").autocomplete = authMode === "login" ? "current-password" : "new-password";
+  $("aMsg").textContent = ""; $("aMsg").className = "mmsg";
+  $("authModal").classList.add("open"); setTimeout(() => $("aEmail").focus(), 50);
+}
+function closeAuth(){ $("authModal").classList.remove("open"); }
+function authMsg(t, ok){ $("aMsg").textContent = t; $("aMsg").className = "mmsg " + (ok ? "ok" : "err"); }
+
+async function submitAuth(e){
+  e.preventDefault();
+  const email = $("aEmail").value.trim().toLowerCase(), pass = $("aPass").value;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return authMsg("Email không hợp lệ.");
+  if (pass.length < 6) return authMsg("Mật khẩu tối thiểu 6 ký tự.");
+  if (authMode === "register" && pass !== $("aPass2").value) return authMsg("Hai lần nhập mật khẩu chưa khớp.");
+  $("aSubmit").disabled = true; authMsg("Đang xử lý…", true);
   try{
-    data = await fetch(DATA_URL, {cache:"no-cache"}).then(r => { if (!r.ok) throw r.status; return r.json(); });
+    if (authMode === "register"){
+      const d = await api({ action:"member_register", email, pass });
+      if (!d.ok) return authMsg(d.error || "Không đăng ký được.");
+      authMsg(d.message || "Đăng ký thành công! Tài khoản đang chờ duyệt.", true);
+      $("aPass").value = ""; $("aPass2").value = "";
+    } else {
+      const keep = $("aRemember").checked;
+      const d = await api({ action:"member_login", email, pass, remember: keep });
+      if (!d.ok) return authMsg(d.error || "Không đăng nhập được.");
+      sess.set({ token: d.token, email: d.email, exp: d.exp }, keep);
+      $("aPass").value = ""; closeAuth(); setAcctUI(); toast("Đăng nhập thành công");
+      await load();
+      $("kho").scrollIntoView();
+    }
+  }catch(err){ authMsg("Không kết nối được máy chủ, vui lòng thử lại."); }
+  finally{ $("aSubmit").disabled = false; }
+}
+
+async function logout(){
+  const s = sess.get(); sess.clear(); setAcctUI();
+  if (s) api({ action:"member_logout", token: s.token }).catch(()=>{});
+  toast("Đã đăng xuất"); await load();
+}
+
+function initAuth(){
+  setAcctUI();
+  document.querySelectorAll("[data-acct]").forEach(el => el.addEventListener("click", e => { e.preventDefault(); sess.get() ? logout() : openAuth("login"); }));
+  document.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", () => openAuth(el.dataset.open)));
+  document.querySelectorAll("#authModal .mtabs button").forEach(b => b.addEventListener("click", () => openAuth(b.dataset.tab)));
+  $("authClose").addEventListener("click", closeAuth);
+  $("authModal").addEventListener("click", e => { if (e.target === $("authModal")) closeAuth(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAuth(); });
+  $("authForm").addEventListener("submit", submitAuth);
+}
+
+async function load(){
+  let data, member = false;
+  $("grid").innerHTML = `<div class="loading">Đang tải kho biển…</div>`; $("count").textContent = "Đang tải…";
+  try{
+    const s = sess.get();
+    if (s){
+      data = await api({ action:"member_data", token: s.token });
+      if (!data.ok){ if (data.relogin){ sess.clear(); setAcctUI(); toast(data.error || "Phiên đăng nhập đã hết hạn"); } data = null; }
+      else member = true;
+    }
+    if (!data) data = await fetch(API_URL + "?action=sample", {cache:"no-cache"}).then(r => r.json());
     const provs = data.provs || [];
     ALL = (data.rows || []).map((r, i) => parsePlate(r, i, provs)).filter(Boolean);
   }catch(err){
     $("grid").innerHTML = `<div class="empty">Không tải được danh sách biển. Vui lòng gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`;
     $("count").textContent = ""; return;
   }
-  if (data.updated) $("dataNote").textContent = `Danh sách biển công bố đấu giá trên VPA — cập nhật lúc ${data.updated}.`;
+  const total = data.count || ALL.length;
+  $("gate").hidden = member;
+  if (!member) $("gateTitle").textContent = `Đăng nhập để xem toàn bộ ${total.toLocaleString("vi-VN")} biển`;
+  if (data.updated) $("dataNote").textContent = `Danh sách biển công bố đấu giá trên VPA — cập nhật lúc ${data.updated}.` + (member ? "" : " Bạn đang xem biển mẫu.");
   const provs = [...new Set(ALL.map(p=>p.prov))].sort((a,b)=>a.localeCompare(b,"vi"));
-  $("fProv").insertAdjacentHTML("beforeend", provs.map(p=>`<option>${esc(p)}</option>`).join(""));
+  $("fProv").length = 1; $("fProv").insertAdjacentHTML("beforeend", provs.map(p=>`<option>${esc(p)}</option>`).join(""));
   const letters = [...new Set(ALL.map(p=>p.letter))].sort();
-  $("fLetter").insertAdjacentHTML("beforeend", letters.map(l=>`<option>${l}</option>`).join(""));
-  $("statCount").textContent = ALL.length.toLocaleString("vi-VN");
-  $("statProv").textContent = provs.length;
+  $("fLetter").length = 1; $("fLetter").insertAdjacentHTML("beforeend", letters.map(l=>`<option>${l}</option>`).join(""));
+  $("statCount").textContent = total.toLocaleString("vi-VN");
+  $("statProv").textContent = (data.provs || provs).length;
   let top = null; for (const p of ALL) if (p.score >= 9 && (!top || p.score > top.score || (p.score === top.score && p.cnt > top.cnt))) top = p;
   if (top) $("heroPlate").innerHTML = `<span class="l1">${esc(head_(top))}</span><span class="l2">${esc(tail_(top))}</span>`;
   if (!ALL.length) { $("grid").innerHTML = `<div class="empty">Danh sách đang được cập nhật, vui lòng quay lại sau hoặc gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`; $("count").textContent = ""; return; }
   apply();
+  if (!member) $("count").innerHTML = `Đang xem <b>${ALL.length}</b> biển mẫu / ${total.toLocaleString("vi-VN")} biển`;
 }
 
-initUI(); load();
+initUI(); initAuth(); load();
 </script>
 </body>
 </html>
