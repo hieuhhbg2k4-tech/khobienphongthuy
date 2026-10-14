@@ -255,13 +255,13 @@ async function start(){
   $("tb").innerHTML = `<tr><td colspan="12" class="loadmsg">Đang tải dữ liệu…</td></tr>`;
   // Biển VPA hằng ngày: chỉ trả về khi phiên đăng nhập hợp lệ (đồng thời là bước kiểm tra tài khoản)
   const pLive = api({ action:"member_data", token: s.token }).catch(() => ({ ok:false, error:"Không kết nối được máy chủ." }));
-  const pEx = loadExcel();
+  const pEx = loadExcel(), pGia = fetch("/assets/gia.json", {cache:"no-cache"}).then(r => r.json()).then(KE.setGia).catch(() => {});
   const live = await pLive;
   if (!live.ok){
     if (live.relogin){ sess.clear(); return showLogin(live.error || "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại."); }
     toast(live.error || "Không tải được biển VPA hằng ngày");
   }
-  const ex = await pEx;
+  const ex = await pEx; await pGia;
   SRC = [live.ok ? KE.fromLive(live) : null, ...ex].filter(Boolean);
   KE.markDups(SRC);
   const keep = $("fSrc").value;
@@ -279,7 +279,7 @@ function stats(){
 
 function head(){
   $("thead").innerHTML = `<th style="width:36px"><input type="checkbox" id="selAll" aria-label="Chọn tất cả đang hiện"></th>
-    <th>Biển số</th><th>Dạng số</th><th>Loại xe</th><th>Kho</th><th>Tỉnh/TP</th><th class="num">Nút</th><th>Lịch ĐG</th>`
+    <th>Biển số</th><th>Dạng số</th><th>Loại xe</th><th>Kho</th><th>Tỉnh/TP</th><th class="num">Nút</th><th class="num">Giá tham khảo</th><th>Lịch ĐG</th>`
     + (OWNER_ON ? `<th class="num">Giá thu</th><th class="num">Lãi</th><th>Người bán / ghi chú</th><th>Nhóm (sheet)</th>` : "");
   $("selAll").addEventListener("change", e => {
     RES.slice(0, shown).forEach(v => { const [s, i] = KE.unpack(LIST, v), t = s.text(i); e.target.checked ? SEL.add(t) : SEL.delete(t); });
@@ -333,7 +333,7 @@ function rowHtml(v){
     <td><span class="tag t-fmt">${KE.mainOf(s.tag[i])}</span></td>
     <td><span class="tag ${moto?"t-moto":"t-car"}">${moto?"Xe máy":"Ô tô"}</span></td>
     <td><span class="dim">${esc(s.live ? "VPA hằng ngày" : s.name)}</span></td>
-    <td>${esc(s.prov(i))}</td><td class="num">${s.nut[i]}</td>
+    <td>${esc(s.prov(i))}</td><td class="num">${s.nut[i]}</td><td class="num price">${(g => g == null ? '<span class="dim">—</span>' : esc(KE.giaText(g)))(KE.giaOf(s, i))}</td>
     <td>${date ? KE.fmtDate(date) + (cnt >= 0 ? ` <span class="dim">· ${cnt} ĐK</span>` : "") : '<span class="dim">—</span>'}</td>${owner}</tr>`;
 }
 function render(){
@@ -343,7 +343,7 @@ function render(){
   $("more").textContent = `Xem thêm (còn ${N(RES.length - shown)})`;
 }
 
-function lineOf(v){ const [s, i] = KE.unpack(LIST, v), p = s.price ? s.price[i] : NaN; return s.text(i) + (isNaN(p) ? "" : " - " + moneyTxt(p)); }
+function lineOf(v){ const [s, i] = KE.unpack(LIST, v), g = KE.giaText(KE.giaOf(s, i)); return s.text(i) + (g ? " - " + g : ""); }
 async function copyList(lines){
   if (!lines.length) return toast("Không có biển để chép");
   if (lines.length > 200000 && !confirm(`Chép ${N(lines.length)} biển có thể làm máy chậm. Nên lọc bớt hoặc dùng Xuất CSV. Vẫn chép?`)) return;
@@ -383,10 +383,10 @@ $("tb").addEventListener("change", e => {
 $("copySel").addEventListener("click", () => copyList([...SEL]));
 $("copyAll").addEventListener("click", () => copyList(RES.map(lineOf)));
 $("csv").addEventListener("click", () => {
-  const h = ["Biển số","Dạng số","Loại xe","Kho","Tỉnh/TP","Nút","Lịch ĐG","Số người ĐK"].concat(OWNER_ON ? ["Giá thu (tr)","Lãi (tr)","Người bán","Nhóm","Dòng"] : []);
+  const h = ["Biển số","Dạng số","Loại xe","Kho","Tỉnh/TP","Nút","Giá tham khảo","Lịch ĐG","Số người ĐK"].concat(OWNER_ON ? ["Giá thu (tr)","Lãi (tr)","Người bán","Nhóm","Dòng"] : []);
   const rows = RES.map(v => {
     const [s, i] = KE.unpack(LIST, v), p = s.price ? s.price[i] : NaN, ex = s.extra ? s.extra[i] : null;
-    const r = [s.text(i), KE.mainOf(s.tag[i]), s.moto[i] ? "Xe máy" : "Ô tô", s.name, s.prov(i), s.nut[i],
+    const r = [s.text(i), KE.mainOf(s.tag[i]), s.moto[i] ? "Xe máy" : "Ô tô", s.name, s.prov(i), s.nut[i], KE.giaText(KE.giaOf(s, i)),
       s.date && s.date[i] ? KE.fmtDate(s.date[i]) : "", s.cnt && s.cnt[i] >= 0 ? s.cnt[i] : ""];
     if (OWNER_ON){ const c = ex && ex.cost != null ? ex.cost : ""; r.push(c, c !== "" && !isNaN(p) ? p - c : "", ex && ex.seller || "", ex && ex.group || "", ex && ex.row || ""); }
     return r;
