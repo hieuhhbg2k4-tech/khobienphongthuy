@@ -537,11 +537,12 @@ function card(v){
   const head = moto ? p.slice(0,2) + "-" + p.slice(2) : p;
   const tags = KE.tagsOf(m).slice(0, 2);
   const msg = `Tôi muốn hỏi biển ${t}` + (date ? ` (đấu giá ${KE.fmtDate(date)})` : "");
-  const srcName = s.live ? "VPA" : s.name.split(" – ")[0];
+  const srcName = s.live ? "VPA" : s.name.split(" – ")[0], gia = KE.giaOf(s, i);
   return `<article class="card">
     <div class="card-top"><span class="prov">${esc(s.prov(i))}</span><span class="tag">${esc(tags[0])}</span></div>
     <div class="plate"><span class="kind">${moto?"Xe máy":"Ô tô"}</span><span class="l1">${esc(head)}</span><span class="l2">${n.slice(0,3)}.${n.slice(3)}</span></div>
-    <div class="price" style="font-size:15px">${date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)}</div>
+    <div class="price">${gia != null ? (gia < 0 ? '<span style="font-size:16px">Liên hệ</span>' : esc(KE.giaText(gia))) : '<span style="font-size:15px">' + (date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)) + '</span>'}</div>
+    ${gia != null ? `<div class="meta" style="justify-content:center">${date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)}</div>` : ""}
     <div class="meta"><span>${esc(tags.join(" · "))}</span><span>${cnt >= 0 ? cnt + " người ĐK · " : ""}${s.nut[i]} nút</span></div>
     <div class="card-act">
       <a class="btn btn-ghost" href="tel:${HOTLINE}">Gọi</a>
@@ -656,6 +657,7 @@ async function load(){
   $("prog").hidden = false;
   let idx = null, live = null, done = 0, total = 1;
   const step = () => { done++; $("progBar").style.width = Math.round(done / total * 100) + "%"; };
+  const pGia = fetch("/assets/gia.json", {cache:"no-cache"}).then(r => r.json()).then(KE.setGia).catch(() => {});
   const pLive = fetch(LIVE_URL).then(r => r.json()).then(d => { if (d && d.rows && d.rows.length) live = KE.fromLive(d); }).catch(() => {}).finally(step);
   try { idx = await fetch(VPA_BASE + "index.json", {cache:"no-cache"}).then(r => r.json()); } catch(e) {}
   const metas = idx ? idx.sources.filter(s => s.kind !== "car_yellow") : [];
@@ -663,7 +665,7 @@ async function load(){
   // Thứ tự ưu tiên khi bỏ biển trùng: VPA hằng ngày → file phiên → file kho
   metas.sort((a, b) => (/^Phiên/i.test(b.name) ? 1 : 0) - (/^Phiên/i.test(a.name) ? 1 : 0));
   const ex = await Promise.all(metas.map(m => fetch(VPA_BASE + m.id + ".json").then(r => r.json()).then(d => KE.fromExcel(m, d)).catch(() => null).finally(step)));
-  await pLive;
+  await pLive; await pGia;
   SRC = [live, ...ex].filter(Boolean);
   $("prog").hidden = true;
   if (!SRC.length){
