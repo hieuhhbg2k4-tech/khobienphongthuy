@@ -205,6 +205,16 @@ function sortRes(list, res, how) {
 function heads(list, prov) { const h = new Set(); list.forEach(s => s.pre.forEach(p => { if (!prov || provOf(p.slice(0, 2)) === prov) h.add(p.slice(0, 2)); })); return [...h].sort(); }
 function letters(list, prov, head) { const l = new Set(); list.forEach(s => s.pre.forEach(p => { if ((!prov || provOf(p.slice(0, 2)) === prov) && (!head || p.startsWith(head)) && /[A-Z]/.test(p[2])) l.add(p[2]); })); return [...l].sort(); }
 function provs(list) { const v = new Set(); list.forEach(s => s.pre.forEach(p => v.add(provOf(p.slice(0, 2))))); return [...v].sort((a, b) => a.localeCompare(b, "vi")); }
+// Giá tham khảo (ô tô) theo lịch sử trúng đấu giá VPA cùng 5 số cuối — dữ liệu /assets/gia.json
+let GIA = null; const HN_CODES = new Set(["29","30","31","32","33","40"]);
+const setGia = g => { GIA = g && g.t ? g : null; };
+function giaOf(s, i) {
+  if (!GIA || s.moto[i]) return null;
+  const v = GIA.t[pad5(s.num[i])];
+  if (!v) return GIA.min;
+  return v[HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1];
+}
+const giaText = v => v == null ? "" : v < 0 ? "Liên hệ" : v >= 1000 ? (v / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tỷ" : v + " tr";
 const fmtDate = n => n ? String(n).replace(/^(\d{4})(\d{2})(\d{2})$/, "$3/$2/$1") : "";
 
 async function copyText(t) {
@@ -219,5 +229,5 @@ function downloadCsv(name, head, rows) {
 }
 
 G.KE = { FMT_ORDER, B, MENH, ELEM, NEWPROV, provOf, classify, mainOf, tagsOf, scoreOf, nutOf, pad5, Source, fromExcel, fromLive, fromKho,
-  markDups, filter, unpack, sortRes, heads, letters, provs, fmtDate, copyText, downloadCsv };
+  markDups, filter, unpack, sortRes, heads, letters, provs, fmtDate, copyText, downloadCsv, setGia, giaOf, giaText };
 })(window);
