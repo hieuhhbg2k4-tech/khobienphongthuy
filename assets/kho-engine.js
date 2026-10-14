@@ -209,7 +209,13 @@ function provs(list) { const v = new Set(); list.forEach(s => s.pre.forEach(p =>
 let GIA = null; const HN_CODES = new Set(["29","30","31","32","33","40"]);
 const setGia = g => { GIA = g && g.t ? g : null; };
 function giaOf(s, i) {
-  const g = !GIA ? null : s.moto[i] ? GIA.m : GIA;   // xe máy dùng bảng giá riêng (GIA.m)
+  if (!GIA) return null;
+  // 1) Giá theo từng biển (khobienvietnam + mức cộng thêm)
+  if (GIA.p) { const k = s.pre[s.pi[i]] + pad5(s.num[i]); if (k in GIA.p) return GIA.p[k]; }
+  // 2) Ô tô: không có trong danh sách -> giá sàn
+  if (!s.moto[i] && GIA.car_kbvn) return GIA.min;
+  // 3) Theo lịch sử đấu giá cùng 5 số cuối
+  const g = s.moto[i] ? GIA.m : GIA;   // xe máy dùng bảng giá riêng (GIA.m)
   if (!g) return null;
   const v = g.t[pad5(s.num[i])];
   if (!v) return g.min;
