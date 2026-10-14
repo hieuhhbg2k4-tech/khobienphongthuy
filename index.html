@@ -203,6 +203,16 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
 .src-note{font-size:11px;color:#6f809b;text-align:center;margin-top:-4px}
 .prog{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin:-8px 0 14px}
 .prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .3s}
+.docs{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:36px}
+.docs .box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.docs h3{font-size:16px;margin-bottom:10px;display:flex;gap:10px;align-items:center}
+.docs h3 i{font-style:normal;width:28px;height:28px;border-radius:8px;background:rgba(232,176,75,.14);color:var(--gold2);display:grid;place-items:center;font-size:13px;flex:none}
+.docs ul{margin:0;padding-left:18px;color:var(--mute);font-size:14px}
+.docs li{margin:6px 0}
+.docs li b{color:var(--ink);font-weight:600}
+.docs-note{margin-top:14px;font-size:12px;color:#6f809b}
+.docs-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+@media (max-width:760px){.docs{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -389,6 +399,51 @@ footer{border-top:1px solid var(--line);padding:36px 0 90px;color:var(--mute);fo
         <div><h3>Kiểm tra hồ sơ</h3><p>Đối chiếu giấy tờ, thống nhất giá và cách thanh toán.</p></div>
         <div><h3>Bàn giao</h3><p>Hoàn tất thủ tục và bàn giao biển cho bạn.</p></div>
       </div>
+
+      <h2 style="margin-top:48px">Hồ sơ đăng ký biển số đẹp</h2>
+      <p class="sub">Giấy tờ cần chuẩn bị khi đăng ký xe và gắn biển số đẹp, theo quy định đăng ký xe hiện hành (Thông tư 79/2024/TT-BCA, áp dụng từ 01/01/2025).</p>
+      <div class="docs">
+        <div class="box">
+          <h3><i>1</i>Giấy tờ của chủ xe</h3>
+          <ul>
+            <li><b>Cá nhân:</b> tài khoản định danh điện tử VNeID mức 2, hoặc Căn cước / Căn cước công dân, hoặc hộ chiếu.</li>
+            <li><b>Người nước ngoài:</b> thẻ thường trú hoặc tạm trú còn hạn tối thiểu 6 tháng.</li>
+            <li><b>Doanh nghiệp, tổ chức:</b> tài khoản VNeID của tổ chức, hoặc thông báo mã số thuế / quyết định thành lập.</li>
+            <li><b>Làm thay:</b> người được uỷ quyền mang thêm giấy uỷ quyền có công chứng hoặc chứng thực.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3><i>2</i>Giấy tờ của xe</h3>
+          <ul>
+            <li><b>Nguồn gốc xe:</b> phiếu kiểm tra chất lượng xuất xưởng (xe trong nước) hoặc chứng từ nhập khẩu (xe nhập).</li>
+            <li><b>Chứng từ mua bán:</b> hoá đơn điện tử, hoặc giấy tờ mua bán, cho, tặng, thừa kế.</li>
+            <li><b>Lệ phí trước bạ:</b> chứng từ nộp lệ phí trước bạ (điện tử hoặc giấy).</li>
+            <li><b>Tờ khai đăng ký xe:</b> kê khai trên Cổng dịch vụ công hoặc điền tại cơ quan đăng ký.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3><i>3</i>Biển trúng đấu giá VPA</h3>
+          <ul>
+            <li>Nộp đủ tiền trúng đấu giá trong <b>30 ngày</b> kể từ khi có thông báo kết quả.</li>
+            <li>Nộp đủ tiền xong được cấp <b>Quyết định xác nhận biển số trúng đấu giá</b> (gửi qua email), dùng khi đăng ký xe.</li>
+            <li>Đăng ký xe gắn biển trong <b>12 tháng</b>; có thể được gia hạn thêm 6 tháng nếu có lý do theo quy định.</li>
+            <li>Không chuyển nhượng riêng biển số; được chuyển nhượng, tặng, cho, thừa kế <b>xe gắn biển</b> đó.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3><i>4</i>Cách nộp hồ sơ</h3>
+          <ul>
+            <li><b>Trực tuyến toàn trình:</b> nộp trên Cổng dịch vụ công, không cần đưa xe đến; giấy đăng ký gửi qua bưu điện trong khoảng 2 ngày làm việc.</li>
+            <li><b>Trực tuyến một phần:</b> khai online, sau đó mang xe và giấy tờ đến cơ quan đăng ký theo lịch hẹn.</li>
+            <li><b>Trực tiếp:</b> mang xe và hồ sơ đến cơ quan công an đăng ký xe.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="docs-cta">
+        <a class="btn btn-gold" href="tel:0888188888">☎ Gọi hỗ trợ làm hồ sơ</a>
+        <a class="btn btn-ghost" href="https://zalo.me/0888188888" target="_blank" rel="noopener">Nhắn Zalo</a>
+      </div>
+      <p class="docs-note">Thông tin tham khảo, quy định có thể thay đổi. Vui lòng liên hệ để được kiểm tra hồ sơ cụ thể trước khi làm thủ tục.</p>
     </div>
   </section>
 
