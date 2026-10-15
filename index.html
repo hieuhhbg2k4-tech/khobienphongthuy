@@ -186,6 +186,14 @@ select{width:100%;border:1px solid #ced4da;border-radius:6px;padding:8px 10px;ba
 .card-act .btn{padding:7px 6px;font-size:13px}
 .empty,.loading{grid-column:1/-1;text-align:center;padding:40px 16px;color:var(--mute);background:#fff;border:1px dashed #ccc;border-radius:var(--r)}
 .more{display:flex;justify-content:center;margin-top:20px}
+/* Phân trang số */
+.pager{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:20px}
+.pager button{min-width:34px;height:34px;padding:0 8px;border:0;border-radius:3px;background:#333;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.pager button:hover{background:#555}
+.pager button.on{color:#ffd400;cursor:default}
+.pager button:disabled:not(.on){opacity:.35;cursor:default}
+.pager span{color:#666;align-self:center;padding:0 2px}
+
 @media (max-width:480px){.grid{grid-template-columns:repeat(2,1fr);gap:8px}.plate{font-size:30px}.price{font-size:16px}.card{padding:8px}.card-act .btn{font-size:12px;padding:6px 4px}}
 
 /* ===== Ngũ hành ===== */
@@ -366,7 +374,8 @@ footer p{margin:4px 0}
       <div class="toolbar"><div class="count" id="count" aria-live="polite">Đang tải…</div></div>
       <div class="prog" id="prog" hidden><i id="progBar"></i></div>
       <div class="grid" id="grid"><div class="loading">Đang tải kho biển…</div></div>
-      <div class="more"><button class="btn btn-blue" id="moreBtn" type="button" hidden>Xem thêm biển số</button></div>
+      <div class="pager" id="pager"></div>
+      <button id="moreBtn" type="button" hidden></button>
     </div>
   </section>
 
@@ -528,7 +537,7 @@ const ZALO = "https://zalo.me/0888188888";
 const LIVE_URL = "https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec?action=data";
 const VPA_BASE = "/vpa-data/";
 const LIVE_FILE = VPA_BASE + "live.json";   // file tĩnh do GitHub Action ghi hằng ngày
-const PAGE = 24;
+const PAGE = 40;   // biển mỗi trang (8 hàng x 5)
 // Giao diện kiểu bienxeoto.vn
 const FB_URL = "https://www.facebook.com/thehieu.1811";   // nút "Chat Facebook" (đổi sang fanpage nếu muốn)
 const SLIDES = ["anh1","anh2","anh3","anh4","banner0","banner-thanhdat","banner-nguquy","banner-locphat","banner-thantai","banner-sanhtien"];
@@ -556,7 +565,7 @@ const VIP_MAX = 40;        // số biển chạy trên dòng chữ
 const VIP_MIN_SCORE = 7;   // từ Tam hoa trở lên (Tam hoa 7, Sảnh tiến 8, Tứ quý 9, Ngũ quý 10)
 
 /* ===== State ===== */
-let SRC = [], RES = [], shown = 0;
+let SRC = [], RES = [], shown = 0, pg = 0;
 // Mặc định khi mới vào / xoá lọc: biển Hà Nội, nổi bật trước
 const DEF_PROV = "Hà Nội";
 const S = { q:"", src:"", type:"", prov:DEF_PROV, head:"", letter:"", fmt:"", cf:"", price:"", year:"", menh:"", dated:"", giap:-1, nut:new Set(), avoid:new Set(), digits:new Set(), sort:"hot" };
@@ -591,7 +600,7 @@ function apply(){
     RES.sort((x, y) => { const a = k.get(x), b = k.get(y); if (a == null) return b == null ? 0 : 1; if (b == null) return -1; return (a - b) * dir; });
   } else if (S.sort !== "none") KE.sortRes(list, RES, S.sort);
   apply.list = list;
-  shown = 0; $("grid").innerHTML = ""; render();
+  pg = 0; render();
   $("count").innerHTML = `Tìm thấy <b>${N(RES.length)}</b> biển số` + (S.giap >= 0 ? ` năm sinh tuổi <b>${GIAP[S.giap]}</b>` : "");
   syncChips();
   document.querySelectorAll("#giap button").forEach(b => b.classList.toggle("on", +b.dataset.g === S.giap));
@@ -639,12 +648,23 @@ function card(v){
 }
 
 function render(){
-  if (!RES.length){ $("grid").innerHTML = `<div class="empty">Chưa có biển phù hợp. Thử bỏ bớt bộ lọc, hoặc <a href="#dinhgia" style="color:var(--blue)">gửi yêu cầu tìm biển</a>.</div>`; $("moreBtn").hidden = true; return; }
-  const next = RES.slice(shown, shown + PAGE);
-  $("grid").insertAdjacentHTML("beforeend", next.map(card).join(""));
-  shown += next.length;
-  $("moreBtn").hidden = shown >= RES.length;
-  $("moreBtn").textContent = `Xem thêm biển số (còn ${N(RES.length - shown)})`;
+  if (!RES.length){ $("grid").innerHTML = `<div class="empty">Chưa có biển phù hợp. Thử bỏ bớt bộ lọc, hoặc <a href="#dinhgia" style="color:var(--blue)">gửi yêu cầu tìm biển</a>.</div>`; $("pager").innerHTML = ""; return; }
+  const pages = Math.ceil(RES.length / PAGE); pg = Math.min(pg, pages - 1);
+  $("grid").innerHTML = RES.slice(pg * PAGE, (pg + 1) * PAGE).map(card).join("");
+  $("pager").innerHTML = pagerHtml(pg, pages);
+}
+// Nút trang: « 1 … 4 5 [6] 7 8 … 120 »
+function pagerHtml(cur, pages){
+  if (pages <= 1) return "";
+  const b = (i, t = i + 1) => `<button type="button" data-p="${i}" class="${i === cur ? "on" : ""}">${t}</button>`;
+  const win = innerWidth < 600 ? 2 : 4, out = [];
+  out.push(`<button type="button" data-p="${cur - 1}" ${cur ? "" : "disabled"} aria-label="Trang trước">‹</button>`);
+  for (let i = 0; i < pages; i++){
+    if (i === 0 || i === pages - 1 || Math.abs(i - cur) <= win) out.push(b(i));
+    else if (out[out.length - 1] !== "<span>…</span>") out.push("<span>…</span>");
+  }
+  out.push(`<button type="button" data-p="${cur + 1}" ${cur < pages - 1 ? "" : "disabled"} aria-label="Trang sau">›</button>`);
+  return out.join("");
 }
 
 /* ===== Chips ===== */
@@ -725,7 +745,8 @@ function initUI(){
   $("fDate").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.dated = S.dated === b.dataset.v ? "" : b.dataset.v; syncControls(); apply(); });
   $("sort").addEventListener("change", e => { S.sort = e.target.value; apply(); });
   $("reset").addEventListener("click", () => { Object.assign(S,{q:"",src:"",type:"",prov:DEF_PROV,sort:"hot",head:"",letter:"",fmt:"",cf:"",price:"",year:"",menh:"",dated:"",giap:-1}); S.nut.clear(); S.avoid.clear(); S.digits.clear(); $("q").value=""; fillProvs(); apply(); });
-  $("moreBtn").addEventListener("click", render);
+  $("pager").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled || b.classList.contains("on")) return;
+    pg = +b.dataset.p; render(); $("kho").scrollIntoView(); });
   $("openF").addEventListener("click", () => { const o = !$("filters").classList.contains("open"); toggleFilters(o); $("openF").textContent = o ? "▲ Thu gọn" : "⚙ Thêm bộ lọc"; });
   $("scrim").addEventListener("click", () => toggleFilters(false));
   $("applyF").addEventListener("click", () => { S.q = $("q").value.trim(); apply(); $("kho").scrollIntoView(); });
@@ -897,7 +918,7 @@ async function load(){
 }
 
 initUI(); tickSale(); setInterval(tickSale, 1000);
-{ const q0 = new URLSearchParams(location.search).get("q"); if (q0){ S.q = q0; $("q").value = q0; } }   // /?q=11677 từ trang phong thủy
+{ const q0 = new URLSearchParams(location.search).get("q"); if (q0){ S.q = q0; $("q").value = q0; if (/[A-Z]/i.test(q0)) S.prov = ""; }   // biển đầy đủ (vd 30N11677) -> tìm toàn quốc }   // /?q=11677 từ trang phong thủy
 load();
 </script>
 </body>
