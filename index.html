@@ -124,6 +124,22 @@ select{width:100%;border:1px solid #ced4da;border-radius:6px;padding:8px 10px;ba
   .frow > .lb{min-width:100%}
 }
 .scrim{display:none}
+/* Bộ lọc dạng nút (kiểu bảng tìm biển) */
+.fl-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 6px;margin-top:9px}
+.fl-row .k{font-size:13px;font-weight:500;margin-left:4px}
+.fl-row .k:first-child{margin-left:0}
+.fl-row select{width:auto;padding:4px 6px;font-size:14px}
+.s-prov{min-width:150px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pills button{min-width:30px;padding:4px 10px;border:1px solid #ced4da;border-radius:5px;background:#fff;cursor:pointer;font-size:14px;line-height:1.5}
+.pills button:hover{border-color:#999}
+.pills button.on{border-color:var(--red2);color:var(--red2);box-shadow:inset 0 0 0 1px var(--red2);background:#fff5f5}
+.pills.red button{color:#a4161a}
+.avoid button.on{text-decoration:none}
+.fl-row #applyF{margin-left:4px;padding:5px 14px}
+.pt-row{border-top:1px dashed #ccc;margin-top:10px;padding-top:2px}
+@media (max-width:760px){.fl-row .k{min-width:auto}.s-prov{min-width:0;flex:1}.fl-row .s-sort{flex:1}}
+
 
 /* Cột phải: số ý nghĩa đẹp */
 .side h3{font:700 22px/1.25 "Times New Roman",serif;text-transform:uppercase;color:#1b1b1b}
@@ -280,40 +296,46 @@ footer p{margin:4px 0}
         </div>
         <div class="searchbox" id="searchForm" role="search">
           <input id="q" type="search" placeholder="Số cần tìm: 8888, *68, 30K, AABB, 39*39…" autocomplete="off" aria-label="Tìm biển số">
-          <button class="btn btn-blue" type="submit">Tìm</button>
+          <button class="btn btn-red" type="submit">Tìm</button>
         </div>
-        <div class="selrow">
-          <select id="fProv" aria-label="Tỉnh/TP"><option value="">-Chọn Tỉnh-</option></select>
-          <select id="fHead" aria-label="Đầu biển"><option value="">-Đầu biển-</option></select>
-          <select id="fFmt" aria-label="Định dạng"><option value="">-Loại số đẹp-</option></select>
-          <select id="sort" aria-label="Sắp xếp">
+        <div class="fl-row">
+          <label class="k" for="fProv">Tỉnh:</label><select id="fProv" class="s-prov"><option value="">Toàn quốc</option></select>
+          <label class="k" for="fHead">Đầu:</label><select id="fHead" class="s-head"><option value="">All</option></select>
+          <span class="k">Chữ:</span><div class="pills" id="fLetters"></div>
+        </div>
+        <div class="fl-row">
+          <span class="k">Biển:</span>
+          <div class="pills" id="fType"><button type="button" data-v="0">Ô Tô</button><button type="button" data-v="1">Xe Máy</button></div>
+          <span class="k">Xếp:</span>
+          <div class="pills" id="fSortP"><button type="button" data-v="giaAsc">Giá ↑</button><button type="button" data-v="giaDesc">Giá ↓</button></div>
+          <select id="sort" aria-label="Sắp xếp khác" class="s-sort">
             <option value="hot">Nổi bật</option>
             <option value="date">Ngày đấu giá gần nhất</option>
             <option value="reg">Nhiều người đăng ký</option>
+            <option value="giaAsc">Giá tăng dần</option>
+            <option value="giaDesc">Giá giảm dần</option>
             <option value="none">Theo kho</option>
           </select>
         </div>
-        <div class="frow">
-          <span class="lb">Loại xe:</span>
-          <div class="btns" id="fType"><button type="button" data-v="" class="on">Tất cả</button><button type="button" data-v="0">Ô tô</button><button type="button" data-v="1">Xe máy</button></div>
-          <button class="btn btn-line btn-sm openf" id="openF" type="button">⚙ Thêm bộ lọc</button>
+        <div class="fl-row pills red" id="fForm"></div>
+        <div class="fl-row pills" id="fPrice"></div>
+        <div class="fl-row"><span class="k">Tránh:</span><div class="pills avoid" id="fAvoid"></div></div>
+        <div class="fl-row"><span class="k">Tổng nút:</span><div class="pills" id="fNut"></div>
+          <button class="btn btn-red btn-sm" type="button" id="applyF">Tìm</button></div>
+        <div class="pt-row" id="ptRow" hidden>
+          <div class="fl-row"><span class="k">Năm sinh:</span><select id="fYear" class="s-year"><option value="">Tất cả</option><option value="all">Mọi năm sinh</option></select>
+            <span class="k">Mệnh:</span><select id="fMenh" class="s-year"><option value="">Tất cả</option></select></div>
+          <div class="fl-row"><span class="k">Có các số:</span><div class="pills" id="fDigits"></div></div>
+          <div class="fl-row"><span class="k">Lịch đấu giá:</span><div class="pills" id="fDate"><button type="button" data-v="1">Đã có lịch</button><button type="button" data-v="0">Chưa có</button></div>
+            <span class="k">Kho:</span><select id="fSrc" class="s-src"><option value="">Tất cả (bỏ trùng)</option></select></div>
+          <div class="small">Mệnh theo số cuối: 1-6 Thủy, 2-7 Hỏa, 3-8 Mộc, 4-9 Kim, 5-0 Thổ (gồm hành tương sinh).</div>
         </div>
-        <div class="more-f">
-          <div class="frow pt-only"><span class="lb">Năm sinh:</span><div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <select id="fYear" aria-label="Năm sinh"><option value="">-Năm sinh-</option><option value="all">Mọi năm sinh</option></select>
-            <select id="fMenh" aria-label="Mệnh"><option value="">-Hợp mệnh-</option></select></div></div>
-          <div class="frow"><span class="lb">Chữ cái:</span><div class="btns" id="fLetters"></div></div>
-          <div class="frow"><span class="lb">Tổng nút:</span><div class="btns" id="fNut"></div></div>
-          <div class="frow"><span class="lb">Bỏ số:</span><div class="btns avoid" id="fAvoid"><button type="button" data-v="4">4</button><button type="button" data-v="7">7</button><button type="button" data-v="49">49</button><button type="button" data-v="53">53</button><button type="button" data-v="13">13</button></div></div>
-          <div class="frow"><span class="lb">Có các số:</span><div class="btns" id="fDigits"></div></div>
-          <div class="frow"><span class="lb">Lịch đấu giá:</span><div class="btns" id="fDate"><button type="button" data-v="" class="on">Tất cả</button><button type="button" data-v="1">Đã có lịch</button><button type="button" data-v="0">Chưa có</button></div></div>
-          <div class="frow"><span class="lb">Kho:</span><div style="flex:1"><select id="fSrc" aria-label="Kho"><option value="">Tất cả (bỏ biển trùng)</option></select></div></div>
-        </div>
-        <div class="chips" id="chips"></div>
         <div class="box-foot">
-          <span class="small">Mệnh theo số cuối: 1-6 Thủy, 2-7 Hỏa, 3-8 Mộc, 4-9 Kim, 5-0 Thổ · Nút = tổng 5 số cuối</span>
-          <span><button class="linkbtn" id="reset" type="button">Xóa lọc</button> <button class="btn btn-red btn-sm" type="button" id="applyF">Xem kết quả ↓</button></span>
+          <span class="small">Nút = tổng 5 số cuối, lấy hàng đơn vị</span>
+          <button class="linkbtn" id="reset" type="button">Xóa lọc</button>
         </div>
+        <select id="fFmt" hidden><option value=""></option></select>
+        <div id="chips" hidden></div><button id="openF" type="button" hidden></button>
       </form>
 
       <aside class="side">
@@ -504,6 +526,17 @@ const FB_URL = "https://www.facebook.com/thehieu.1811";   // nút "Chat Facebook
 const SLIDES = ["anh1","anh2","anh3","anh4","banner0","banner-thanhdat","banner-nguquy","banner-locphat","banner-thantai","banner-sanhtien"];
 const NUMS = ["81995","77777","19999","92929","92345","11986","96789","88888","36789","93456","22222","91234","73979","55555","02299","01988"];
 const GIAP = ["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"];   // ảnh cg1..cg12 theo thứ tự này
+// Nút dạng số: fmt = loại của bộ lọc gốc; fn = kiểm tra 5 số cuối [a,b,c,d,e]
+const FORMS = [
+  ["Lộc phát",{fmt:"Lộc phát"}],["Thần tài",{fmt:"Thần tài"}],["Ông địa",{fmt:"Ông địa"}],["Sảnh tiến",{fmt:"Sảnh tiến"}],
+  ["Tam hoa",{fmt:"Tam hoa"}],["Tứ quý",{fmt:"Tứ quý"}],["Ngũ quý",{fmt:"Ngũ quý"}],["Tiến đầu",{fn:([a,b,c,d,e]) => b===a+1 && c===b+1}],
+  ["AB-AB",{fmt:"ABAB"}],["AA-BB",{fmt:"AABB"}],["AB-BA",{fmt:"ABBA"}],
+  ["AAxBB",{fn:([a,b,c,d,e]) => a===b && d===e && a!==d}],["ABxBA",{fn:([a,b,c,d,e]) => a===e && b===d && a!==b}],
+  ["ABxAB",{fn:([a,b,c,d,e]) => a===d && b===e && a!==b}],["2 Phím A&B",{fn:x => new Set(x).size===2}],
+  ["Tam hoa đầu",{fn:([a,b,c,d,e]) => a===b && b===c && !(c===d && d===e)}]
+];
+const PRICES = [["50-100tr",50,100],["100-150tr",100,150],["150-200tr",150,200],["200-500tr",200,500],["500tr - 1 tỷ",500,1000],["trên 1 tỷ",1000,1e12]];   // triệu đồng
+const AVOIDS = [["4",["4"]],["7",["7"]],["4&7",["4","7"]],["49",["49"]],["53",["53"]],["49&53",["49","53"]]];
 const VIP_MAX = 40;        // số biển chạy trên dòng chữ
 const VIP_MIN_SCORE = 7;   // từ Tam hoa trở lên (Tam hoa 7, Sảnh tiến 8, Tứ quý 9, Ngũ quý 10)
 
@@ -511,7 +544,7 @@ const VIP_MIN_SCORE = 7;   // từ Tam hoa trở lên (Tam hoa 7, Sảnh tiến 
 let SRC = [], RES = [], shown = 0;
 // Mặc định khi mới vào / xoá lọc: biển Hà Nội, nổi bật trước
 const DEF_PROV = "Hà Nội";
-const S = { q:"", src:"", type:"", prov:DEF_PROV, head:"", letter:"", fmt:"", year:"", menh:"", dated:"", giap:-1, nut:new Set(), avoid:new Set(), digits:new Set(), sort:"hot" };
+const S = { q:"", src:"", type:"", prov:DEF_PROV, head:"", letter:"", fmt:"", cf:"", price:"", year:"", menh:"", dated:"", giap:-1, nut:new Set(), avoid:new Set(), digits:new Set(), sort:"hot" };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const N = n => n.toLocaleString("vi-VN");
@@ -521,14 +554,23 @@ function active(){ return S.src ? SRC.filter(s => s.id === S.src) : SRC; }
 function apply(){
   if (!SRC.length) return;
   const list = active();
-  RES = KE.filter(list, { q:S.q, fmt:S.fmt, avoid:[...S.avoid], nut:[...S.nut], year:S.year, prov:S.prov, head:S.head, letter:S.letter,
+  const form = S.cf ? (FORMS.find(f => f[0] === S.cf) || [,{}])[1] : {};
+  RES = KE.filter(list, { q:S.q, fmt:form.fmt || "", avoid:[...S.avoid], nut:[...S.nut], year:S.year, prov:S.prov, head:S.head, letter:S.letter,
     digits:[...S.digits], type:S.type, menh:S.menh, dated:S.dated }, !S.src);
   // 12 con giáp: biển có 4 số cuối là năm sinh thuộc tuổi đó (1950–2030)
   if (S.giap >= 0){
     const bit = KE.B["Năm sinh"];
     RES = RES.filter(v => { const [s, i] = KE.unpack(list, v); if (!(s.tag[i] & bit)) return false; const y = s.num[i] % 10000; return ((y - 4) % 12 + 12) % 12 === S.giap; });
   }
-  if (S.sort !== "none") KE.sortRes(list, RES, S.sort);
+  if (form.fn){ RES = RES.filter(v => { const [s, i] = KE.unpack(list, v), n = KE.pad5(s.num[i]); return form.fn([...n].map(Number)); }); }
+  const pr = S.price ? PRICES.find(p => p[0] === S.price) : null;
+  const giaKey = (s, i) => { const g = KE.giaOf(s, i); return g == null ? null : g < 0 ? 1e9 : g; };   // "Liên hệ" = từ 1 tỷ
+  if (pr){ RES = RES.filter(v => { const [s, i] = KE.unpack(list, v), g = giaKey(s, i); return g != null && g >= pr[1] && g < pr[2]; }); }
+  if (S.sort === "giaAsc" || S.sort === "giaDesc"){
+    const dir = S.sort === "giaAsc" ? 1 : -1, k = new Map();
+    for (const v of RES){ const [s, i] = KE.unpack(list, v); k.set(v, giaKey(s, i)); }
+    RES.sort((x, y) => { const a = k.get(x), b = k.get(y); if (a == null) return b == null ? 0 : 1; if (b == null) return -1; return (a - b) * dir; });
+  } else if (S.sort !== "none") KE.sortRes(list, RES, S.sort);
   apply.list = list;
   shown = 0; $("grid").innerHTML = ""; render();
   $("count").innerHTML = `Tìm thấy <b>${N(RES.length)}</b> biển số` + (S.giap >= 0 ? ` năm sinh tuổi <b>${GIAP[S.giap]}</b>` : "");
@@ -582,7 +624,7 @@ function fillHeads(){
   const hs = KE.heads(list, S.prov); if (S.head && !hs.includes(S.head)) S.head = "";
   $("fHead").length = 1; $("fHead").insertAdjacentHTML("beforeend", hs.map(h=>`<option>${h}</option>`).join(""));
   const ls = KE.letters(list, S.prov, S.head); if (S.letter && !ls.includes(S.letter)) S.letter = "";
-  $("fLetters").innerHTML = [`<button type="button" data-l="">Tất cả</button>`].concat(ls.map(l => `<button type="button" data-l="${l}">${l}</button>`)).join("");
+  $("fLetters").innerHTML = ls.map(l => `<button type="button" data-l="${l}">${l}</button>`).join("");
   syncControls();
 }
 function fillProvs(){
@@ -598,7 +640,10 @@ function syncControls(){
   document.querySelectorAll("#fDate button").forEach(b => b.classList.toggle("on", b.dataset.v === S.dated));
   document.querySelectorAll("#fType button").forEach(b => b.classList.toggle("on", b.dataset.v === S.type));
   document.querySelectorAll("#fNut button").forEach(b => b.classList.toggle("on", S.nut.has(+b.dataset.v)));
-  document.querySelectorAll("#fAvoid button").forEach(b => b.classList.toggle("on", S.avoid.has(b.dataset.v)));
+  document.querySelectorAll("#fAvoid button").forEach(b => { const vs = b.dataset.v.split(","); b.classList.toggle("on", vs.every(v => S.avoid.has(v)) && (vs.length > 1 || ![...document.querySelectorAll("#fAvoid button")].some(o => o !== b && o.dataset.v.split(",").length > 1 && o.dataset.v.split(",").includes(vs[0]) && o.dataset.v.split(",").every(v => S.avoid.has(v))))); });
+  document.querySelectorAll("#fForm button").forEach(b => b.classList.toggle("on", b.textContent === S.cf));
+  document.querySelectorAll("#fPrice button").forEach(b => b.classList.toggle("on", b.textContent === S.price));
+  document.querySelectorAll("#fSortP button").forEach(b => b.classList.toggle("on", b.dataset.v === S.sort));
   document.querySelectorAll("#fDigits button").forEach(b => b.classList.toggle("on", S.digits.has(b.dataset.d)));
   document.querySelectorAll("#fLetters button").forEach(b => b.classList.toggle("on", b.dataset.l === S.letter));
 }
@@ -612,7 +657,10 @@ function initUI(){
   $("yr").textContent = new Date().getFullYear();
   $("chips").innerHTML = CHIPS.map(([l,v]) => `<button class="chip" type="button" data-v="${v}">${l}</button>`).join("");
   $("chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (b) setChip(b.dataset.v); });
-  $("fNut").innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-v="${i+1}">${i+1}</button>`).join("");
+  $("fNut").innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-v="${i || 10}">${i}</button>`).join("");   // 0 nút = 10
+  $("fForm").innerHTML = FORMS.map(f => `<button type="button">${f[0]}</button>`).join("");
+  $("fPrice").innerHTML = PRICES.map(p => `<button type="button">${p[0]}</button>`).join("");
+  $("fAvoid").innerHTML = AVOIDS.map(a => `<button type="button" data-v="${a[1].join(",")}">${a[0]}</button>`).join("");
   $("fDigits").innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join("");
   $("fFmt").insertAdjacentHTML("beforeend", KE.FMT_ORDER.map(f=>`<option>${f}</option>`).join(""));
   $("fMenh").insertAdjacentHTML("beforeend", KE.MENH.map(m=>`<option value="${m}">Hợp mệnh ${m}</option>`).join(""));
@@ -620,18 +668,22 @@ function initUI(){
 
   $("filters").addEventListener("submit", e => { e.preventDefault(); S.q = $("q").value.trim(); apply(); $("kho").scrollIntoView(); });
   let tq; $("q").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(()=>{ S.q = $("q").value.trim(); apply(); }, 300); });
-  $("fType").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.type=b.dataset.v; syncControls(); apply(); });
+  $("fType").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.type = S.type === b.dataset.v ? "" : b.dataset.v; syncControls(); apply(); });
+  $("fForm").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.cf = S.cf === b.textContent ? "" : b.textContent; S.fmt = ""; syncControls(); apply(); });
+  $("fPrice").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.price = S.price === b.textContent ? "" : b.textContent; syncControls(); apply(); });
+  $("fSortP").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.sort = S.sort === b.dataset.v ? "hot" : b.dataset.v; syncControls(); apply(); });
   $("fNut").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.nut, +b.dataset.v); syncControls(); apply(); });
-  $("fAvoid").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.avoid, b.dataset.v); syncControls(); apply(); });
+  $("fAvoid").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return;
+    const vs = b.dataset.v.split(","), on = b.classList.contains("on"); vs.forEach(v => on ? S.avoid.delete(v) : S.avoid.add(v)); syncControls(); apply(); });
   $("fDigits").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.digits, b.dataset.d); syncControls(); apply(); });
   $("fLetters").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.letter = S.letter === b.dataset.l ? "" : b.dataset.l; syncControls(); apply(); });
   $("fSrc").addEventListener("change", e => { S.src = e.target.value; fillProvs(); apply(); });
   $("fProv").addEventListener("change", e => { S.prov = e.target.value; fillHeads(); apply(); });
   $("fHead").addEventListener("change", e => { S.head = e.target.value; fillHeads(); apply(); });
   ["fFmt","fYear","fMenh"].forEach(id => $(id).addEventListener("change", e => { S[{fFmt:"fmt",fYear:"year",fMenh:"menh"}[id]] = e.target.value; apply(); }));
-  $("fDate").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.dated=b.dataset.v; syncControls(); apply(); });
+  $("fDate").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.dated = S.dated === b.dataset.v ? "" : b.dataset.v; syncControls(); apply(); });
   $("sort").addEventListener("change", e => { S.sort = e.target.value; apply(); });
-  $("reset").addEventListener("click", () => { Object.assign(S,{q:"",src:"",type:"",prov:DEF_PROV,sort:"hot",head:"",letter:"",fmt:"",year:"",menh:"",dated:"",giap:-1}); S.nut.clear(); S.avoid.clear(); S.digits.clear(); $("q").value=""; fillProvs(); apply(); });
+  $("reset").addEventListener("click", () => { Object.assign(S,{q:"",src:"",type:"",prov:DEF_PROV,sort:"hot",head:"",letter:"",fmt:"",cf:"",price:"",year:"",menh:"",dated:"",giap:-1}); S.nut.clear(); S.avoid.clear(); S.digits.clear(); $("q").value=""; fillProvs(); apply(); });
   $("moreBtn").addEventListener("click", render);
   $("openF").addEventListener("click", () => { const o = !$("filters").classList.contains("open"); toggleFilters(o); $("openF").textContent = o ? "▲ Thu gọn" : "⚙ Thêm bộ lọc"; });
   $("scrim").addEventListener("click", () => toggleFilters(false));
@@ -689,13 +741,13 @@ function initLook(){
 
   // Ngũ hành
   $("hanh").innerHTML = KE.MENH.map(m => `<button type="button" class="${m}">${m}</button>`).join("");
-  $("hanh").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.menh = b.textContent; syncControls(); apply(); goKho(); });
+  $("hanh").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.menh = b.textContent; $("ptRow").hidden = false; document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x.dataset.t === "pt")); syncControls(); apply(); goKho(); });
 
   // Tab Biển Số Đẹp / Phong Thủy
   $("tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
     document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
-    if (b.dataset.t === "pt"){ toggleFilters(true); $("openF").textContent = "▲ Thu gọn"; $("fYear").focus(); }
-    else { S.year = ""; S.menh = ""; syncControls(); apply(); } });
+    const pt = b.dataset.t === "pt"; $("ptRow").hidden = !pt;
+    if (pt) $("fYear").focus(); else { S.year = ""; S.menh = ""; syncControls(); apply(); } });
 
   // Ảnh trụ sở, đánh giá
   const pics = (id, names) => { const box = $(id); box.innerHTML = `<div class="mq">${names.map(n => `<img src="/assets/bx/${n}.webp" alt="" decoding="async">`).join("")}</div>`; marquee(box, box.firstChild, 40); };
