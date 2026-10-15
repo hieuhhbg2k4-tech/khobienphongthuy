@@ -12,19 +12,19 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 // Bảng tra
 const rows = [];
 for (let y = NOW; y >= Y0; y--) { const t = tuoi(y);
-  rows.push(`<tr><td><a href="/phong-thuy/${y}/">${y}</a></td><td>${t.can} ${t.chi}</td><td>${t.napam}</td><td class="m">${t.menh}</td><td>${t.g.join(", ")}</td><td>${t.h.join(", ")}</td><td>${t.k.join(", ")}</td><td>${goiY(t)[0].ex[0].replace(/^(\d{3})/, "$1.")}</td></tr>`); }
-const bang = `<table class="bang"><thead><tr><th>Năm</th><th>Tuổi</th><th>Nạp âm</th><th>Mệnh</th><th>Số tương sinh</th><th>Số tương hợp</th><th>Số khắc</th><th>Ví dụ &lt;100tr</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  rows.push(`<tr><td><a href="/phong-thuy/${y}/">${y}</a></td><td>${t.can} ${t.chi}</td><td>${t.napam}</td><td class="m">${t.menh}</td><td>${t.g.join(", ")}</td><td>${t.h.join(", ")}</td><td>${t.k.join(", ")}</td></tr>`); }
+const bang = `<table class="bang"><thead><tr><th>Năm</th><th>Tuổi</th><th>Nạp âm</th><th>Mệnh</th><th>Số tương sinh</th><th>Số tương hợp</th><th>Số khắc</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
 tpl = tpl.replace(/<!--BANG-->[\s\S]*?<!--\/BANG-->/, `<!--BANG-->${bang}<!--/BANG-->`);
 fs.writeFileSync(TPL, tpl);
 
 // Trang từng năm
 const urls = [`${SITE}/`, `${SITE}/phong-thuy/`];
 for (let y = Y0; y <= NOW; y++) {
-  const t = tuoi(y), ex = goiY(t)[0].ex[0];
+  const t = tuoi(y);
   const title = `Biển số hợp tuổi ${t.can} ${t.chi} ${y}, mệnh ${t.menh} | Kho Biển Phong Thủy`;
-  const desc = `Tuổi ${y} ${t.can} ${t.chi}, nạp âm ${t.napam}, mệnh ${t.menh}: tương sinh số ${t.g.join(", ")}, tương hợp ${t.h.join(", ")}, tránh ${t.k.join(", ")}. Gợi ý biển hợp tuổi theo tài chính, ví dụ ${ex}.`;
+  const desc = `Tuổi ${y} ${t.can} ${t.chi}, nạp âm ${t.napam}, mệnh ${t.menh}: tương sinh số ${t.g.join(", ")}, tương hợp ${t.h.join(", ")}, tránh ${t.k.join(", ")}. Gợi ý biển hợp tuổi theo tài chính, kèm biển đang có trong kho.`;
   const h1 = `Biển số phong thủy hợp tuổi ${t.can} ${t.chi}, mệnh ${t.menh} – biển hợp tuổi ${y}`;
-  const intro = `<img src="/assets/bx/cg${t.chiI + 1}.webp" alt="Tuổi ${t.chi}" width="120" height="120"><div><p>Năm <b>${y}</b> là tuổi <b>${t.can} ${t.chi}</b>, nạp âm <b>${t.napam}</b> (${t.nghia}) – mệnh <b>${t.menh}</b>.</p><p>Theo ngũ hành, tuổi này <b>tương sinh</b> với các số <b>${t.g.join(", ")}</b>, <b>tương hợp</b> với <b>${t.h.join(", ")}</b> và <b>tương khắc</b> với <b>${t.k.join(", ")}</b>.</p><p>Ví dụ dưới 100 triệu có thể chọn biển kiểu <b>${ex}</b>.</p></div>`;
+  const intro = `<img src="/assets/bx/cg${t.chiI + 1}.webp" alt="Tuổi ${t.chi}" width="120" height="120"><div><p>Năm <b>${y}</b> là tuổi <b>${t.can} ${t.chi}</b>, nạp âm <b>${t.napam}</b> (${t.nghia}) – mệnh <b>${t.menh}</b>.</p><p>Theo ngũ hành, tuổi này <b>tương sinh</b> với các số <b>${t.g.join(", ")}</b>, <b>tương hợp</b> với <b>${t.h.join(", ")}</b> và <b>tương khắc</b> với <b>${t.k.join(", ")}</b>.</p><p id="exLine">Đang tìm biển hợp tuổi có sẵn trong kho…</p></div>`;
   let p = tpl
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`)
