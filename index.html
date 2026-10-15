@@ -59,10 +59,10 @@ header{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--blue);box
 }
 
 /* ===== Slider ===== */
-.slider{position:relative;margin-top:16px;border-radius:4px;overflow:hidden;background:#f3dfc3;aspect-ratio:1921/600}
-.slides{display:flex;height:100%;transition:transform .5s ease}
-.slides img{flex:0 0 100%;width:100%;height:100%;object-fit:cover}
-.slides img.bn{object-fit:contain}
+.slider{position:relative;margin-top:16px;border-radius:4px;overflow:hidden;background:#f3dfc3;aspect-ratio:1280/898;transition:height .4s ease}
+.slider.fit{aspect-ratio:auto}
+.slides{display:flex;align-items:flex-start;transition:transform .5s ease}
+.slides img{flex:0 0 100%;width:100%;height:auto}
 .slider .arr{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.28);color:#fff;font-size:22px;cursor:pointer}
 .slider .arr:hover{background:rgba(0,0,0,.5)}
 .slider .prev{left:10px}.slider .next{right:10px}
@@ -74,13 +74,11 @@ header{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--blue);box
 .ticker{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding-bottom:12px;border-bottom:1px solid rgba(0,0,0,.15);overflow:hidden}
 .ticker .lb{flex:none;background:var(--red);color:#fff;font-weight:700;font-size:13px;border-radius:4px;padding:3px 10px;white-space:nowrap}
 .tk-view{flex:1;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
-.tk-track{display:inline-flex;gap:28px;white-space:nowrap;animation:tk 60s linear infinite;padding-right:28px}
-.tk-view:hover .tk-track{animation-play-state:paused}
+.tk-track{display:inline-flex;gap:28px;white-space:nowrap;padding-right:28px;will-change:transform}
 .tk-track button{background:none;border:0;padding:0;cursor:pointer;font-size:15px}
 .tk-track button b{color:var(--red2);font-weight:700}
 .tk-track button span{color:var(--mute);font-size:13px}
 .tk-track button:hover b{text-decoration:underline}
-@keyframes tk{to{transform:translateX(-50%)}}
 
 /* ===== 12 con giáp ===== */
 .giap{background:var(--grey);margin-top:16px;padding:10px 0}
@@ -179,9 +177,10 @@ select{width:100%;border:1px solid #ced4da;border-radius:6px;padding:8px 10px;ba
 @media (max-width:480px){.hanh button{width:60px;height:60px;font-size:15px}}
 
 /* ===== Ảnh trụ sở / đánh giá ===== */
-.strip{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}
-.strip img{flex:none;height:180px;width:auto;border-radius:6px;scroll-snap-align:start;background:#eee}
-.strip.wide img{height:150px}
+.strip{overflow:hidden;padding-bottom:4px}
+.mq{display:flex;gap:12px;width:max-content;will-change:transform}
+.mq img{flex:none;height:180px;width:auto;border-radius:6px;background:#eee}
+.strip.wide .mq img{height:150px}
 .related{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .related div{background:#fff;border-radius:var(--r);overflow:hidden;text-align:center;font-weight:600;padding-bottom:10px}
 .related img{width:100%;aspect-ratio:1;object-fit:cover;margin-bottom:8px}
@@ -664,9 +663,12 @@ function initLook(){
   $("flFb").href = FB_URL;
   // Slider ảnh
   const sl = $("slides"); let cur = 0, tm;
-  sl.innerHTML = SLIDES.map((n, i) => `<img src="/assets/bx/${n}.webp" alt="" class="${n.startsWith("banner") ? "bn" : ""}" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} decoding="async">`).join("");
+  sl.innerHTML = SLIDES.map((n, i) => `<img src="/assets/bx/${n}.webp" alt="" class="${n.startsWith("banner") ? "bn" : ""}" ${i > 1 ? 'loading="lazy"' : i ? '' : 'fetchpriority="high"'} decoding="async">`).join("");
   $("dots").innerHTML = SLIDES.map((_, i) => `<button type="button" aria-label="Ảnh ${i+1}" data-i="${i}"></button>`).join("");
-  const go = i => { cur = (i + SLIDES.length) % SLIDES.length; sl.style.transform = `translateX(-${cur * 100}%)`;
+  const fit = () => { const im = sl.children[cur]; if (im && im.naturalWidth){ $("slider").classList.add("fit"); $("slider").style.height = (sl.clientWidth * im.naturalHeight / im.naturalWidth) + "px"; } };
+  sl.querySelectorAll("img").forEach(im => im.addEventListener("load", () => { if (im === sl.children[cur]) fit(); }));
+  addEventListener("resize", fit);
+  const go = i => { cur = (i + SLIDES.length) % SLIDES.length; sl.style.transform = `translateX(-${cur * 100}%)`; fit();
     document.querySelectorAll("#dots button").forEach((b, k) => b.classList.toggle("on", k === cur)); clearTimeout(tm); tm = setTimeout(() => go(cur + 1), 5000); };
   document.querySelector("#slider .prev").addEventListener("click", () => go(cur - 1));
   document.querySelector("#slider .next").addEventListener("click", () => go(cur + 1));
@@ -696,7 +698,7 @@ function initLook(){
     else { S.year = ""; S.menh = ""; syncControls(); apply(); } });
 
   // Ảnh trụ sở, đánh giá
-  const pics = (id, names) => $(id).innerHTML = names.map(n => `<img src="/assets/bx/${n}.webp" alt="" loading="lazy" decoding="async">`).join("");
+  const pics = (id, names) => { const box = $(id); box.innerHTML = `<div class="mq">${names.map(n => `<img src="/assets/bx/${n}.webp" alt="" decoding="async">`).join("")}</div>`; marquee(box, box.firstChild, 40); };
   pics("tru", ["trusos2","trusos3","trusos5","trusos6","trusos7"]);
   pics("kh", ["kh0","kh1","kh2","kh3"]);
   pics("dg", ["dg4","dg5","dg6","dg7","dg8","dg9","dg10","dg11","dg12","dg13","dg14"]);
@@ -705,6 +707,21 @@ function initLook(){
   $("tkTrack").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
     Object.assign(S, { prov:"", head:"", letter:"", fmt:"", type:"", dated:"", giap:-1 }); S.src = "";
     $("q").value = S.q = b.dataset.q; fillProvs(); apply(); goKho(); });
+}
+
+/* Chạy vòng liên tục (như <marquee> của bienxeoto): nhân đôi nội dung, dừng khi rê chuột/chạm */
+function marquee(view, track, speed){
+  if (!track.dataset.dup){ track.insertAdjacentHTML("beforeend", track.innerHTML.replace(/<(button|img) /g, '<$1 tabindex="-1" aria-hidden="true" ')); track.dataset.dup = 1; }
+  if (track._mq) return; track._mq = true;
+  let x = 0, last = 0, hold = false, t;
+  view.addEventListener("mouseenter", () => hold = true); view.addEventListener("mouseleave", () => hold = false);
+  view.addEventListener("touchstart", () => { hold = true; clearTimeout(t); }, {passive:true});
+  view.addEventListener("touchend", () => { t = setTimeout(() => hold = false, 1500); }, {passive:true});
+  const step = now => {
+    if (last && !hold){ const half = track.scrollWidth / 2; x -= speed * Math.min(100, now - last) / 1000; if (half > 0 && -x >= half) x += half; track.style.transform = `translateX(${x}px)`; }
+    last = now; requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 /* Dòng chữ chạy: biển VIP sắp đấu giá (từ dữ liệu VPA hằng ngày) */
@@ -724,8 +741,8 @@ function buildVip(live){
   if (!top.length) { $("ticker").hidden = true; return; }
   const html = top.map(([, , dt, i]) => { const t = live.text(i);
     return `<button type="button" data-q="${esc(live.pre[live.pi[i]] + KE.pad5(live.num[i]))}" title="Tìm biển ${esc(t)}"><b>${esc(t)}</b> <span>${dt === today ? "đấu hôm nay" : "đấu " + KE.fmtDate(dt)}</span></button>`; }).join("");
-  $("tkTrack").innerHTML = html + html.replace(/<button /g, '<button tabindex="-1" aria-hidden="true" ');   // nhân đôi để chạy liền mạch
-  $("tkTrack").style.animationDuration = Math.max(30, top.length * 4) + "s";
+  $("tkTrack").innerHTML = html; delete $("tkTrack").dataset.dup;
+  marquee(document.querySelector(".tk-view"), $("tkTrack"), 70);
   $("ticker").hidden = false;
 }
 
