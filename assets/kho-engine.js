@@ -206,6 +206,7 @@ function heads(list, prov) { const h = new Set(); list.forEach(s => s.pre.forEac
 function letters(list, prov, head) { const l = new Set(); list.forEach(s => s.pre.forEach(p => { if ((!prov || provOf(p.slice(0, 2)) === prov) && (!head || p.startsWith(head)) && /[A-Z]/.test(p[2])) l.add(p[2]); })); return [...l].sort(); }
 function provs(list) { const v = new Set(); list.forEach(s => s.pre.forEach(p => v.add(provOf(p.slice(0, 2))))); return [...v].sort((a, b) => a.localeCompare(b, "vi")); }
 // Giá tham khảo (ô tô + xe máy) theo lịch sử trúng đấu giá VPA cùng 5 số cuối — dữ liệu /assets/gia.json
+const KEP_MIN = 100;   // giá tối thiểu (tr) cho tam hoa kép có số ngoài 0,1,2,4
 let GIA = null; const HN_CODES = new Set(["29","30","31","32","33","40"]);
 const setGia = g => { GIA = g && g.t ? g : null; };
 function giaOf(s, i) {
@@ -213,7 +214,15 @@ function giaOf(s, i) {
   // 1) Giá theo từng biển (khobienvietnam + mức cộng thêm)
   if (GIA.p) { const k = s.pre[s.pi[i]] + pad5(s.num[i]); if (k in GIA.p) return GIA.p[k]; }
   // 2) Ô tô: không có trong danh sách -> giá sàn
-  if (!s.moto[i] && GIA.car_kbvn) return GIA.min;
+  if (!s.moto[i] && GIA.car_kbvn) {
+    // Tam hoa kép (AA-BBB / AAA-BB) có số ngoài 0,1,2,4 không bán dưới 100 tr: lấy giá lịch sử VPA nếu có, tối thiểu 100 tr
+    const n = pad5(s.num[i]);
+    if (/^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) {
+      const v = GIA.t && GIA.t[n] ? GIA.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : GIA.min;
+      return v < 0 ? v : Math.max(KEP_MIN, v);
+    }
+    return GIA.min;
+  }
   // 3) Theo lịch sử đấu giá cùng 5 số cuối
   const g = s.moto[i] ? GIA.m : GIA;   // xe máy dùng bảng giá riêng (GIA.m)
   if (!g) return null;
