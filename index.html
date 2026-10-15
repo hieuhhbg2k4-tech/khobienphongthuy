@@ -545,7 +545,7 @@ const FORMS = [
 const PRICES = [["50-100tr",50,100],["100-150tr",100,150],["150-200tr",150,200],["200-500tr",200,500],["500tr - 1 tỷ",500,1000],["trên 1 tỷ",1000,1e12]];   // triệu đồng
 const AVOIDS = [["4",["4"]],["7",["7"]],["4&7",["4","7"]],["49",["49"]],["53",["53"]],["49&53",["49","53"]]];
 // Giờ vàng mỗi ngày (giờ Việt Nam): giảm SALE.pct% cho mọi biển có giá, từ SALE.from giờ đến SALE.to giờ
-const SALE = { on:true, pct:5, from:20, to:22 };
+const SALE = { on:true, pct:5, from:20, to:22, fixed:{ 79:68 } };   // fixed: giá gốc (tr) -> giá giờ vàng (tr)
 const VIP_MAX = 40;        // số biển chạy trên dòng chữ
 const VIP_MIN_SCORE = 7;   // từ Tam hoa trở lên (Tam hoa 7, Sảnh tiến 8, Tứ quý 9, Ngũ quý 10)
 
@@ -589,7 +589,8 @@ function apply(){
 
 function vnNow(){ const d = new Date(Date.now() + 7 * 3600e3); return { h: d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600, d }; }
 function saleActive(){ if (!SALE.on) return false; const { h } = vnNow(); return h >= SALE.from && h < SALE.to; }
-const salePrice = g => Math.round(g * (100 - SALE.pct) / 100);
+const salePrice = g => (SALE.fixed && SALE.fixed[g] != null) ? SALE.fixed[g] : Math.round(g * (100 - SALE.pct) / 100);
+const saleOff = g => Math.round((g - salePrice(g)) / g * 100);
 function hms(ms){ const s = Math.max(0, Math.floor(ms / 1000)); return [s / 3600 | 0, (s / 60 | 0) % 60, s % 60].map(x => String(x).padStart(2, "0")).join(":"); }
 function saleLeftMs(){ const { h } = vnNow(); return ((SALE.to - h + (h < SALE.to ? 0 : 24)) * 3600e3); }
 function saleStartMs(){ const { h } = vnNow(); return ((SALE.from - h + (h < SALE.from ? 0 : 24)) * 3600e3); }
@@ -601,9 +602,9 @@ function tickSale(){
   bar.hidden = false; bar.classList.toggle("wait", !on);
   const p2 = n => String(n).padStart(2, "0");
   if (on){ const t = hms(saleLeftMs());
-    bar.innerHTML = `⚡ GIỜ VÀNG: GIẢM ${SALE.pct}% TẤT CẢ BIỂN CÓ GIÁ · Kết thúc ${p2(SALE.to)}:00 hôm nay · còn <b>${t}</b>`;
+    bar.innerHTML = `⚡ GIỜ VÀNG: GIẢM ${SALE.pct}% TẤT CẢ BIỂN CÓ GIÁ · Biển 79tr chỉ còn 68tr · Kết thúc ${p2(SALE.to)}:00 hôm nay · còn <b>${t}</b>`;
     document.querySelectorAll(".cd").forEach(e => e.textContent = "⏱ Sale còn " + t); }
-  else bar.innerHTML = `Giờ vàng giảm ${SALE.pct}% mở mỗi ngày ${p2(SALE.from)}:00 – ${p2(SALE.to)}:00 · bắt đầu sau <b>${hms(saleStartMs())}</b>`;
+  else bar.innerHTML = `Giờ vàng giảm ${SALE.pct}% (biển 79tr còn 68tr) mở mỗi ngày ${p2(SALE.from)}:00 – ${p2(SALE.to)}:00 · bắt đầu sau <b>${hms(saleStartMs())}</b>`;
 }
 
 function card(v){
@@ -612,12 +613,12 @@ function card(v){
   const head = moto ? p.slice(0,2) + "-" + p.slice(2) : p;
   const tags = KE.tagsOf(m).slice(0, 2);
   const gia0 = KE.giaOf(s, i), onSale = gia0 != null && gia0 > 0 && saleActive();
-  const msg = `Tôi muốn hỏi biển ${t}` + (onSale ? ` — giá giờ vàng ${KE.giaText(salePrice(gia0))} (giảm ${SALE.pct}% đến ${SALE.to}:00 hôm nay)` : "") + (date ? ` (đấu giá ${KE.fmtDate(date)})` : "");
+  const msg = `Tôi muốn hỏi biển ${t}` + (onSale ? ` — giá giờ vàng ${KE.giaText(salePrice(gia0))} (giảm ${saleOff(gia0)}% đến ${SALE.to}:00 hôm nay)` : "") + (date ? ` (đấu giá ${KE.fmtDate(date)})` : "");
   const srcName = s.live ? "VPA" : s.name.split(" – ")[0], gia = KE.giaOf(s, i);
   return `<article class="card">
     <div class="card-top"><span class="prov">${esc(s.prov(i))}</span><span class="tag">${esc(tags[0])}</span></div>
     <div class="plate"><span class="kind">${moto?"Xe máy":"Ô tô"}</span><span class="l1">${esc(head)}</span><span class="l2">${n.slice(0,3)}.${n.slice(3)}</span></div>
-    <div class="price">${gia != null ? (gia < 0 ? '<span style="font-size:16px">Liên hệ</span>' : onSale ? `<s>${esc(KE.giaText(gia))}</s>${esc(KE.giaText(salePrice(gia)))}<span class="off">-${SALE.pct}%</span>` : esc(KE.giaText(gia))) : '<span style="font-size:15px">' + (date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)) + '</span>'}</div>
+    <div class="price">${gia != null ? (gia < 0 ? '<span style="font-size:16px">Liên hệ</span>' : onSale ? `<s>${esc(KE.giaText(gia))}</s>${esc(KE.giaText(salePrice(gia)))}<span class="off">-${saleOff(gia)}%</span>` : esc(KE.giaText(gia))) : '<span style="font-size:15px">' + (date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)) + '</span>'}</div>
     ${onSale ? `<div class="cd">⏱ Sale còn ${hms(saleLeftMs())}</div>` : ""}
     ${gia != null ? `<div class="meta" style="justify-content:center">${date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)}</div>` : ""}
     <div class="meta"><span>${esc(tags.join(" · "))}</span><span>${cnt >= 0 ? cnt + " người ĐK · " : ""}${s.nut[i]} nút</span></div>
