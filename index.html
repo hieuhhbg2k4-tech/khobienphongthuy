@@ -918,7 +918,7 @@ async function load(){
 }
 
 initUI(); tickSale(); setInterval(tickSale, 1000);
-{ const q0 = new URLSearchParams(location.search).get("q"); if (q0){ S.q = q0; $("q").value = q0; if (/[A-Z]/i.test(q0)) S.prov = ""; }   // biển đầy đủ (vd 30N11677) -> tìm toàn quốc }   // /?q=11677 từ trang phong thủy
+{ const q0 = new URLSearchParams(location.search).get("q"); if (q0){ S.q = q0; $("q").value = q0; if (/[A-Z]/i.test(q0)) S.prov = ""; /* biển đầy đủ (vd 30N11677) -> tìm toàn quốc */ } }   // /?q=11677 từ trang phong thủy
 load();
 </script>
 </body>
