@@ -263,7 +263,7 @@ footer p{margin:4px 0}
     <nav class="menu" id="menu">
       <a href="#top" class="on">Trang Chủ</a>
       <a href="#kho">Kho Biển Số</a>
-      <a href="#nguhanh">Xem Phong Thủy</a>
+      <a href="/phong-thuy/">Xem Phong Thủy</a>
       <a href="#dinhgia">Định Giá</a>
       <a href="#quytrinh">Quy Trình</a>
       <a href="#lienhe">Liên Hệ</a>
@@ -376,6 +376,7 @@ footer p{margin:4px 0}
         <h2 class="sec-title">Biển số xe hợp mệnh chủ</h2>
         <div class="hanh" id="hanh"></div>
         <p>Chọn mệnh của bạn để xem biển có số cuối cùng hành hoặc hành tương sinh.</p>
+        <a class="btn btn-red" href="/phong-thuy/" style="margin-top:12px">Xem biển hợp tuổi theo năm sinh →</a>
       </div>
     </div>
   </section>
@@ -886,7 +887,9 @@ async function load(){
   }
 }
 
-initUI(); tickSale(); setInterval(tickSale, 1000); load();
+initUI(); tickSale(); setInterval(tickSale, 1000);
+{ const q0 = new URLSearchParams(location.search).get("q"); if (q0){ S.q = q0; $("q").value = q0; } }   // /?q=11677 từ trang phong thủy
+load();
 </script>
 </body>
 </html>
