@@ -183,6 +183,7 @@ footer{background:#aba6a7;padding:30px 0 110px;text-align:center;margin-top:30px
 
 <script>window.NAM = 2008;</script>
 <script src="/assets/kho-engine.js?v=5"></script>
+<script src="/assets/y-nghia.js?v=1"></script>
 <script>
 const HOTLINE = "0888188888", ZALO = "https://zalo.me/0888188888";
 const VPA_BASE = "/vpa-data/", LIVE_FILE = VPA_BASE + "live.json";
@@ -287,7 +288,7 @@ function card({ s, i, gk }){
   return `<article class="card"><div class="card-top"><span>${esc(s.prov(i))}</span><span class="tag">${esc(tags[0] || "Hợp tuổi")}</span></div>
     ${plateHtml(s, i)}<div class="price">${price}</div>
     <div class="meta"><span>${good}/5 số tương sinh</span><span>${s.nut[i]} nút</span></div>
-    <div class="act"><a class="btn btn-red" href="tel:${HOTLINE}">Gọi</a><a class="btn btn-blue" href="${ZALO}" target="_blank" rel="noopener" data-copy="${esc(msg)}">Zalo</a></div></article>`;
+    <div class="act"><a class="btn btn-tv" href="tel:${HOTLINE}" title="Gọi tư vấn ${HOTLINE}">Tư vấn</a><button class="btn btn-yn" type="button" data-yn data-plate="${esc(t)}" data-n="${KE.pad5(s.num[i])}" data-tags="${esc(KE.tagsOf(s.tag[i]).join(", "))}" data-nut="${s.nut[i]}" data-price="${g == null ? "" : g < 0 ? "Liên hệ" : esc(KE.giaText(on ? salePrice(g) : g))}" data-msg="${esc(msg)}">Ý nghĩa</button></div></article>`;
 }
 function render(){
   if (!RES.length){ $("grid").innerHTML = `<div class="empty">Chưa có biển hợp tuổi ở mức giá này. Thử mức giá khác, đổi tỉnh, hoặc gọi <a href="tel:${HOTLINE}" style="color:var(--blue)">0888.188.888</a> để được tìm giúp.</div>`; $("pager").innerHTML = ""; return; }

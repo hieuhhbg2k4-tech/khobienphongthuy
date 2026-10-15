@@ -529,6 +529,7 @@ footer p{margin:4px 0}
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/assets/kho-engine.js?v=5"></script>
+<script src="/assets/y-nghia.js?v=1"></script>
 <script>
 /* ===== CẤU HÌNH ===== */
 const HOTLINE = "0888188888";
@@ -642,8 +643,8 @@ function card(v){
     ${gia != null ? `<div class="meta" style="justify-content:center">${date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)}</div>` : ""}
     <div class="meta"><span>${esc(tags.join(" · "))}</span><span>${cnt >= 0 ? cnt + " người ĐK · " : ""}${s.nut[i]} nút</span></div>
     <div class="card-act">
-      <a class="btn btn-red" href="tel:${HOTLINE}">Gọi</a>
-      <a class="btn btn-blue" href="${ZALO}" target="_blank" rel="noopener" data-copy="${esc(msg)}">Zalo</a>
+      <a class="btn btn-tv" href="tel:${HOTLINE}" title="Gọi tư vấn ${HOTLINE}">Tư vấn</a>
+      <button class="btn btn-yn" type="button" data-yn data-plate="${esc(t)}" data-n="${n}" data-tags="${esc(KE.tagsOf(m).join(", "))}" data-nut="${s.nut[i]}" data-price="${gia == null ? "" : gia < 0 ? "Liên hệ" : esc(KE.giaText(onSale ? salePrice(gia) : gia))}" data-msg="${esc(msg)}">Ý nghĩa</button>
     </div></article>`;
 }
 
