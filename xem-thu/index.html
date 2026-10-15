@@ -47,11 +47,11 @@ header{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--blue);box
 .brand b{display:block;font-size:26px;font-weight:800;letter-spacing:.01em}
 .brand small{display:block;font-size:12px;font-weight:500;opacity:.95;padding-left:4px}
 .menu{display:flex;gap:2px}
-.menu a{color:#fff;padding:8px 10px;border-radius:6px;font-size:15px}
+.menu a{color:#fff;padding:8px 10px;border-radius:6px;font-size:15px;white-space:nowrap}
 .menu a:hover,.menu a.on{background:rgba(255,255,255,.14)}
 .nav .hot{margin-left:auto;color:#fff;font-weight:700;border:1px solid rgba(255,255,255,.55);border-radius:6px;padding:6px 12px}
 .burger{display:none;margin-left:auto;background:none;border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:600;font-size:13px;align-items:center;gap:8px}
-@media (max-width:900px){
+@media (max-width:1180px){
   .brand b{font-size:20px}
   .menu{display:none;position:absolute;top:72px;left:0;right:0;flex-direction:column;background:var(--blue2);padding:8px 16px 14px}
   .menu.open{display:flex}
@@ -75,13 +75,13 @@ header{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--blue);box
 .ticker{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding-bottom:12px;border-bottom:1px solid rgba(0,0,0,.15);overflow:hidden}
 .ticker .lb{flex:none;background:var(--red);color:#fff;font-weight:700;font-size:13px;border-radius:4px;padding:3px 10px;white-space:nowrap}
 .tk-view{flex:1;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
-.tk-track{display:inline-flex;gap:28px;white-space:nowrap;animation:tk 60s linear infinite;padding-left:100%}
+.tk-track{display:inline-flex;gap:28px;white-space:nowrap;animation:tk 60s linear infinite;padding-right:28px}
 .tk-view:hover .tk-track{animation-play-state:paused}
 .tk-track button{background:none;border:0;padding:0;cursor:pointer;font-size:15px}
 .tk-track button b{color:var(--red2);font-weight:700}
 .tk-track button span{color:var(--mute);font-size:13px}
 .tk-track button:hover b{text-decoration:underline}
-@keyframes tk{to{transform:translateX(-100%)}}
+@keyframes tk{to{transform:translateX(-50%)}}
 
 /* ===== 12 con giáp ===== */
 .giap{background:var(--grey);margin-top:16px;padding:10px 0}
@@ -227,7 +227,7 @@ footer p{margin:4px 0}
 .fl.zl{bottom:68px;background:#2196f3}.fl.zl i{background-image:url(/assets/bx/ic-zalo.webp)}
 .fl.ph{bottom:20px;background:#333}.fl.ph i{background:url(/assets/bx/ic-phone.webp) center no-repeat var(--gold);width:32px;height:32px;top:2px;left:3px}
 @keyframes rot{0%,60%{transform:rotate(0)}70%{transform:rotate(-15deg)}80%{transform:rotate(15deg)}90%{transform:rotate(-15deg)}100%{transform:rotate(0)}}
-@media (max-width:900px){.fl{font-size:0;padding:0;width:39px;left:12px}.fl.ph{width:37px}.fl.fb{bottom:112px}.fl.zl{bottom:64px}}
+@media (max-width:1320px){.fl{font-size:0;padding:0;width:39px;left:12px}.fl.ph{width:37px}.fl.fb{bottom:112px}.fl.zl{bottom:64px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#212529;color:#fff;padding:10px 16px;border-radius:8px;font-weight:600;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
@@ -673,7 +673,7 @@ function initLook(){
   // 12 con giáp -> biển năm sinh theo tuổi
   $("giap").innerHTML = GIAP.map((g, i) => `<button type="button" data-g="${i}" title="Biển năm sinh tuổi ${g}"><img src="/assets/bx/cg${i+1}.webp" alt="Tuổi ${g}" loading="lazy" width="84" height="84"><span>${g}</span></button>`).join("");
   $("giap").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
-    const g = +b.dataset.g; S.giap = S.giap === g ? -1 : g; apply(); goKho(); });
+    const g = +b.dataset.g; S.giap = S.giap === g ? -1 : g; if (S.giap >= 0){ S.q = ""; $("q").value = ""; } apply(); goKho(); });
 
   // Biển số xe có ý nghĩa đẹp -> tìm theo 5 số
   $("nums").innerHTML = NUMS.map(n => `<button type="button">${n}</button>`).join("");
@@ -717,8 +717,9 @@ function buildVip(live){
   const days = [...new Set(cand.map(c => c[2]))].slice(0, 3), per = Math.ceil(VIP_MAX / Math.max(1, days.length));
   const top = days.flatMap(dt => cand.filter(c => c[2] === dt).slice(0, per));
   if (!top.length) { $("ticker").hidden = true; return; }
-  $("tkTrack").innerHTML = top.map(([, , dt, i]) => { const t = live.text(i);
+  const html = top.map(([, , dt, i]) => { const t = live.text(i);
     return `<button type="button" data-q="${esc(live.pre[live.pi[i]] + KE.pad5(live.num[i]))}" title="Tìm biển ${esc(t)}"><b>${esc(t)}</b> <span>${dt === today ? "đấu hôm nay" : "đấu " + KE.fmtDate(dt)}</span></button>`; }).join("");
+  $("tkTrack").innerHTML = html + html.replace(/<button /g, '<button tabindex="-1" aria-hidden="true" ');   // nhân đôi để chạy liền mạch
   $("tkTrack").style.animationDuration = Math.max(30, top.length * 4) + "s";
   $("ticker").hidden = false;
 }
