@@ -60,9 +60,10 @@ header{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--blue);box
 }
 
 /* ===== Slider ===== */
-.slider{position:relative;margin-top:16px;border-radius:4px;overflow:hidden;background:#ddd;aspect-ratio:1921/600}
+.slider{position:relative;margin-top:16px;border-radius:4px;overflow:hidden;background:#f3dfc3;aspect-ratio:1921/600}
 .slides{display:flex;height:100%;transition:transform .5s ease}
 .slides img{flex:0 0 100%;width:100%;height:100%;object-fit:cover}
+.slides img.bn{object-fit:contain}
 .slider .arr{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.28);color:#fff;font-size:22px;cursor:pointer}
 .slider .arr:hover{background:rgba(0,0,0,.5)}
 .slider .prev{left:10px}.slider .next{right:10px}
@@ -226,7 +227,7 @@ footer p{margin:4px 0}
 .fl.zl{bottom:68px;background:#2196f3}.fl.zl i{background-image:url(/assets/bx/ic-zalo.webp)}
 .fl.ph{bottom:20px;background:#333}.fl.ph i{background:url(/assets/bx/ic-phone.webp) center no-repeat var(--gold);width:32px;height:32px;top:2px;left:3px}
 @keyframes rot{0%,60%{transform:rotate(0)}70%{transform:rotate(-15deg)}80%{transform:rotate(15deg)}90%{transform:rotate(-15deg)}100%{transform:rotate(0)}}
-@media (max-width:600px){.fl{font-size:0;padding:0;width:39px}.fl.ph{width:37px}}
+@media (max-width:900px){.fl{font-size:0;padding:0;width:39px;left:12px}.fl.ph{width:37px}.fl.fb{bottom:112px}.fl.zl{bottom:64px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#212529;color:#fff;padding:10px 16px;border-radius:8px;font-weight:600;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
@@ -658,7 +659,7 @@ function initLook(){
   $("flFb").href = FB_URL;
   // Slider ảnh
   const sl = $("slides"); let cur = 0, tm;
-  sl.innerHTML = SLIDES.map((n, i) => `<img src="/assets/bx/${n}.webp" alt="" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} decoding="async">`).join("");
+  sl.innerHTML = SLIDES.map((n, i) => `<img src="/assets/bx/${n}.webp" alt="" class="${n.startsWith("banner") ? "bn" : ""}" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} decoding="async">`).join("");
   $("dots").innerHTML = SLIDES.map((_, i) => `<button type="button" aria-label="Ảnh ${i+1}" data-i="${i}"></button>`).join("");
   const go = i => { cur = (i + SLIDES.length) % SLIDES.length; sl.style.transform = `translateX(-${cur * 100}%)`;
     document.querySelectorAll("#dots button").forEach((b, k) => b.classList.toggle("on", k === cur)); clearTimeout(tm); tm = setTimeout(() => go(cur + 1), 5000); };
@@ -711,11 +712,13 @@ function buildVip(live){
     const sc = KE.scoreOf(live.tag[i]); if (sc < VIP_MIN_SCORE) continue;
     cand.push([sc, Math.max(0, live.cnt[i]), dt, i]);
   }
-  cand.sort((a, b) => b[0] - a[0] || b[1] - a[1] || a[2] - b[2]);
-  const top = cand.slice(0, VIP_MAX).sort((a, b) => a[2] - b[2] || b[0] - a[0]);
+  // Chia đều cho tối đa 3 ngày đấu giá gần nhất, mỗi ngày lấy các biển đẹp nhất (điểm cao, nhiều người ĐK)
+  cand.sort((a, b) => a[2] - b[2] || b[0] - a[0] || b[1] - a[1]);
+  const days = [...new Set(cand.map(c => c[2]))].slice(0, 3), per = Math.ceil(VIP_MAX / Math.max(1, days.length));
+  const top = days.flatMap(dt => cand.filter(c => c[2] === dt).slice(0, per));
   if (!top.length) { $("ticker").hidden = true; return; }
   $("tkTrack").innerHTML = top.map(([, , dt, i]) => { const t = live.text(i);
-    return `<button type="button" data-q="${esc(live.pre[live.pi[i]] + KE.pad5(live.num[i]))}" title="Tìm biển ${esc(t)}"><b>${esc(t)}</b> <span>${KE.fmtDate(dt)}</span></button>`; }).join("");
+    return `<button type="button" data-q="${esc(live.pre[live.pi[i]] + KE.pad5(live.num[i]))}" title="Tìm biển ${esc(t)}"><b>${esc(t)}</b> <span>${dt === today ? "đấu hôm nay" : "đấu " + KE.fmtDate(dt)}</span></button>`; }).join("");
   $("tkTrack").style.animationDuration = Math.max(30, top.length * 4) + "s";
   $("ticker").hidden = false;
 }
