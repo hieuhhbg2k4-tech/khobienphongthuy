@@ -1,0 +1,61 @@
+# Lấy biển VPA hằng ngày từ Google Sheet BIENSOVP (qua Apps Script) và lưu thành file tĩnh
+# vpa-data/live.json, để trang chủ không phải gọi Apps Script mỗi lần có người xem.
+name: Cap nhat bien VPA (live.json)
+
+on:
+  schedule:
+    - cron: "40 2 * * *"   # 09:40 giờ VN, sau khi BIENSOVP đồng bộ buổi sáng
+    - cron: "40 8 * * *"   # 15:40 giờ VN, lần cập nhật dự phòng
+  workflow_dispatch:        # bấm chạy tay trong tab Actions
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: vpa-live
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tải dữ liệu từ Apps Script
+        env:
+          LIVE_URL: https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec?action=data
+        run: |
+          set -e
+          for i in 1 2 3; do
+            if curl -fsSL --max-time 180 "$LIVE_URL" -o /tmp/live.json; then break; fi
+            echo "Lần $i lỗi, thử lại sau 30s"; sleep 30
+          done
+          python3 - <<'PY'
+          import json, sys
+          d = json.load(open("/tmp/live.json", encoding="utf-8"))
+          rows = d.get("rows") or []
+          # Chặn ghi đè file tốt bằng dữ liệu hỏng (Apps Script lỗi, sheet đang đồng bộ dở...)
+          if not d.get("ok", True) or len(rows) < 1000:
+              sys.exit(f"Dữ liệu bất thường: ok={d.get('ok')} rows={len(rows)} — giữ nguyên file cũ")
+          json.dump(d, open("vpa-data/live.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+          print("OK", len(rows), "biển, cập nhật", d.get("updated"))
+          PY
+
+      - name: Commit nếu có thay đổi
+        id: commit
+        run: |
+          git config user.name "vpa-bot"
+          git config user.email "vpa-bot@users.noreply.github.com"
+          git add vpa-data/live.json
+          if git diff --cached --quiet; then echo "Không có gì mới"; exit 0; fi
+          git commit -m "Cap nhat bien VPA hang ngay (live.json)"
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 10; done
+          echo "changed=1" >> "$GITHUB_OUTPUT"
+
+      - name: Cap nhat trang web
+        if: steps.commit.outputs.changed == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
