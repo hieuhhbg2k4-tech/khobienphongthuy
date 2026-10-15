@@ -334,7 +334,7 @@ footer p{margin:4px 0}
           <div class="fl-row"><span class="k">Có các số:</span><div class="pills" id="fDigits"></div></div>
           <div class="fl-row"><span class="k">Lịch đấu giá:</span><div class="pills" id="fDate"><button type="button" data-v="1">Đã có lịch</button><button type="button" data-v="0">Chưa có</button></div>
             <span class="k">Kho:</span><select id="fSrc" class="s-src"><option value="">Tất cả (bỏ trùng)</option></select></div>
-          <div class="small">Mệnh theo số cuối: 1-6 Thủy, 2-7 Hỏa, 3-8 Mộc, 4-9 Kim, 5-0 Thổ (gồm hành tương sinh).</div>
+          <div class="small">Hợp mệnh: không chứa số tương khắc, số cuối và ít nhất 3/5 số là số tương sinh (0,1 Thủy · 3,4 Mộc · 9 Hỏa · 2,5,8 Thổ · 6,7 Kim). <a href="/phong-thuy/" style="color:var(--blue)">Xem theo năm sinh →</a></div>
         </div>
         <div class="box-foot">
           <span class="small">Nút = tổng 5 số cuối, lấy hàng đơn vị</span>
@@ -547,6 +547,11 @@ const PRICES = [["50-100tr",50,100],["100-150tr",100,150],["150-200tr",150,200],
 const AVOIDS = [["4",["4"]],["7",["7"]],["4&7",["4","7"]],["49",["49"]],["53",["53"]],["49&53",["49","53"]]];
 // Giờ vàng mỗi ngày (giờ Việt Nam): giảm SALE.pct% cho mọi biển có giá, từ SALE.from giờ đến SALE.to giờ
 const SALE = { on:true, pct:5, from:20, to:22, fixed:{ 79:68 } };   // fixed: giá gốc (tr) -> giá giờ vàng (tr)
+// Ngũ hành chữ số (giống trang /phong-thuy/): 0,1 Thủy · 3,4 Mộc · 9 Hỏa · 2,5,8 Thổ · 6,7 Kim
+const NH = (() => { const SO = { Kim:[6,7], Thủy:[0,1], Mộc:[3,4], Hỏa:[9], Thổ:[2,5,8] };
+  const SINH = { Kim:"Thủy", Thủy:"Mộc", Mộc:"Hỏa", Hỏa:"Thổ", Thổ:"Kim" }, KHAC = { Kim:"Mộc", Mộc:"Thổ", Thổ:"Thủy", Thủy:"Hỏa", Hỏa:"Kim" };
+  const me = m => Object.keys(SINH).find(k => SINH[k] === m), bi = m => Object.keys(KHAC).find(k => KHAC[k] === m);
+  return { sinh: m => [...SO[m], ...SO[me(m)]], hop: m => [...SO[SINH[m]]], khac: m => [...SO[bi(m)], ...SO[KHAC[m]]] }; })();
 const VIP_MAX = 40;        // số biển chạy trên dòng chữ
 const VIP_MIN_SCORE = 7;   // từ Tam hoa trở lên (Tam hoa 7, Sảnh tiến 8, Tứ quý 9, Ngũ quý 10)
 
@@ -566,7 +571,11 @@ function apply(){
   const list = active();
   const form = S.cf ? (FORMS.find(f => f[0] === S.cf) || [,{}])[1] : {};
   RES = KE.filter(list, { q:S.q, fmt:form.fmt || "", avoid:[...S.avoid], nut:[...S.nut], year:S.year, prov:S.prov, head:S.head, letter:S.letter,
-    digits:[...S.digits], type:S.type, menh:S.menh, dated:S.dated }, !S.src);
+    digits:[...S.digits], type:S.type, menh:"", dated:S.dated }, !S.src);
+  // Hợp mệnh (cùng cách tính với trang /phong-thuy/)
+  if (S.menh){ const G = new Set(NH.sinh(S.menh)), K = new Set(NH.khac(S.menh));
+    RES = RES.filter(v => { const [s, i] = KE.unpack(list, v), d = [...KE.pad5(s.num[i])].map(Number);
+      if (!G.has(d[4]) || d.some(x => K.has(x))) return false; return d.filter(x => G.has(x)).length >= 3; }); }
   // 12 con giáp: biển có 4 số cuối là năm sinh thuộc tuổi đó (1950–2030)
   if (S.giap >= 0){
     const bit = KE.B["Năm sinh"];
