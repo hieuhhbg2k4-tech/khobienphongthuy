@@ -506,6 +506,7 @@ const ZALO = "https://zalo.me/0888188888";
 // Biển VPA cập nhật hằng ngày (Google Sheet BIENSOVP qua Apps Script) + danh sách VPA từ file Excel (/vpa-data)
 const LIVE_URL = "https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec?action=data";
 const VPA_BASE = "/vpa-data/";
+const LIVE_FILE = VPA_BASE + "live.json";   // file tĩnh do GitHub Action ghi hằng ngày
 const PAGE = 24;
 
 /* ===== State ===== */
@@ -652,36 +653,59 @@ function initUI(){
 }
 
 /* ===== Tải dữ liệu ===== */
+// Hiện kho ngay từ các file tĩnh; biển VPA hằng ngày (live) về sau thì ghép vào, không bắt người xem chờ.
 async function load(){
   $("grid").innerHTML = `<div class="loading">Đang tải kho biển…</div>`; $("count").textContent = "Đang tải…";
   $("prog").hidden = false;
-  let idx = null, live = null, done = 0, total = 1;
+  let idx = null, live = null, ex = [], done = 0, total = 1, liveDone = false, shown = false;
   const step = () => { done++; $("progBar").style.width = Math.round(done / total * 100) + "%"; };
-  const pGia = fetch("/assets/gia.json", {cache:"no-cache"}).then(r => r.json()).then(KE.setGia).catch(() => {});
-  const pLive = fetch(LIVE_URL).then(r => r.json()).then(d => { if (d && d.rows && d.rows.length) live = KE.fromLive(d); }).catch(() => {}).finally(step);
-  try { idx = await fetch(VPA_BASE + "index.json", {cache:"no-cache"}).then(r => r.json()); } catch(e) {}
+  const getJson = (u, o) => fetch(u, o).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  const okLive = d => d && d.rows && d.rows.length;
+  const pGia = getJson("/assets/gia.json", {cache:"no-cache"}).then(KE.setGia).catch(() => {});
+  // Ưu tiên file tĩnh live.json (GitHub Action ghi mỗi ngày); thiếu/lỗi mới gọi Apps Script
+  const pLive = getJson(LIVE_FILE, {cache:"no-cache"}).then(d => okLive(d) ? d : Promise.reject(new Error("empty")))
+    .catch(() => getJson(LIVE_URL))
+    .then(d => { if (okLive(d)) live = KE.fromLive(d); })
+    .catch(() => {})
+    .finally(() => { liveDone = true; step(); });
+  try { idx = await getJson(VPA_BASE + "index.json", {cache:"no-cache"}); } catch(e) {}
   const metas = idx ? idx.sources.filter(s => s.kind !== "car_yellow") : [];
   total = 1 + metas.length;
   // Thứ tự ưu tiên khi bỏ biển trùng: VPA hằng ngày → file phiên → file kho
   metas.sort((a, b) => (/^Phiên/i.test(b.name) ? 1 : 0) - (/^Phiên/i.test(a.name) ? 1 : 0));
-  const ex = await Promise.all(metas.map(m => fetch(VPA_BASE + m.id + ".json").then(r => r.json()).then(d => KE.fromExcel(m, d)).catch(() => null).finally(step)));
-  await pLive; await pGia;
-  SRC = [live, ...ex].filter(Boolean);
+  ex = (await Promise.all(metas.map(m => getJson(VPA_BASE + m.id + ".json").then(d => KE.fromExcel(m, d)).catch(() => null).finally(step)))).filter(Boolean);
+  await pGia;
+
+  const show = () => {
+    SRC = [live, ...ex].filter(Boolean);
+    if (!SRC.length) return false;
+    KE.markDups(SRC);
+    $("fSrc").length = 1;
+    $("fSrc").insertAdjacentHTML("beforeend", SRC.map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${N(s.len)})</option>`).join(""));
+    if (S.src && !SRC.some(s => s.id === S.src)) S.src = "";
+    let uniq = 0; SRC.forEach(s => { for (let i = 0; i < s.len; i++) if (!s.dup[i]) uniq++; });
+    $("statCount").textContent = N(uniq);
+    $("statProv").textContent = KE.provs(SRC).length;
+    $("dataNote").textContent = "Biển VPA công bố đấu giá" + (live && live.updated ? ` — cập nhật lúc ${live.updated}` : "") + (idx && idx.updated ? ` · file VPA: ${idx.updated}` : "") + ".";
+    if (live){ let top = -1, best = -1; for (let i = 0; i < live.len; i++){ const sc = KE.scoreOf(live.tag[i]) * 1000 + Math.max(0, live.cnt[i]); if (sc > best){ best = sc; top = i; } }
+      if (top >= 0){ const p = live.pre[live.pi[top]], n = KE.pad5(live.num[top]); $("heroPlate").innerHTML = `<span class="l1">${esc(p)}</span><span class="l2">${n.slice(0,3)}.${n.slice(3)}</span>`; } }
+    fillProvs();
+    if (shown) syncControls();   // lần ghép thứ 2: giữ nguyên bộ lọc khách đang chọn
+    apply();
+    shown = true;
+    return true;
+  };
+
+  // Phương án 2: chưa có live thì hiện các file kho trước
+  if (!liveDone && ex.length) show();
+  await pLive;
   $("prog").hidden = true;
-  if (!SRC.length){
-    $("grid").innerHTML = `<div class="empty">Không tải được danh sách biển. Vui lòng gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`;
-    $("count").textContent = ""; return;
+  if (live || !shown) {
+    if (!show()){
+      $("grid").innerHTML = `<div class="empty">Không tải được danh sách biển. Vui lòng gọi <a href="tel:${HOTLINE}" style="color:var(--gold2)">0888.188.888</a>.</div>`;
+      $("count").textContent = "";
+    }
   }
-  KE.markDups(SRC);
-  $("fSrc").length = 1;
-  $("fSrc").insertAdjacentHTML("beforeend", SRC.map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${N(s.len)})</option>`).join(""));
-  let uniq = 0; SRC.forEach(s => { for (let i = 0; i < s.len; i++) if (!s.dup[i]) uniq++; });
-  $("statCount").textContent = N(uniq);
-  $("statProv").textContent = KE.provs(SRC).length;
-  $("dataNote").textContent = "Biển VPA công bố đấu giá" + (live && live.updated ? ` — cập nhật lúc ${live.updated}` : "") + (idx && idx.updated ? ` · file VPA: ${idx.updated}` : "") + ".";
-  if (live){ let top = -1, best = -1; for (let i = 0; i < live.len; i++){ const sc = KE.scoreOf(live.tag[i]) * 1000 + Math.max(0, live.cnt[i]); if (sc > best){ best = sc; top = i; } }
-    if (top >= 0){ const p = live.pre[live.pi[top]], n = KE.pad5(live.num[top]); $("heroPlate").innerHTML = `<span class="l1">${esc(p)}</span><span class="l2">${n.slice(0,3)}.${n.slice(3)}</span>`; } }
-  fillProvs(); apply();
 }
 
 initUI(); load();
