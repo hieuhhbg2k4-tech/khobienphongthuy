@@ -80,6 +80,8 @@ def main(car_src, moto_src, out, kbvn_src=None):
         # {"30N13658": [giá đồng, "car"|"moto", nguồn], ...}  — chỉ các biển giá >= 100 tr
         kb = json.load(open(kbvn_src, encoding="utf-8"))
         res["p"] = {k: kbvn_markup(v[0] / 1e6) for k, v in kb.items() if v and v[0]}
+        # Giá gốc khobienvietnam (triệu, -1 = từ 1 tỷ). Web bán = max(giá lịch sử VPA, giá này x 1,1)
+        res["k"] = {k: (-1 if v[0] >= 1e9 else round(v[0] / 1e6)) for k, v in kb.items() if v and v[0]}
         res["car_kbvn"] = True   # ô tô: chỉ dùng giá khobienvietnam (không có trong danh sách = giá sàn)
         print(f"Giá theo khobienvietnam: {len(res['p'])} biển")
     json.dump(res, open(out, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
