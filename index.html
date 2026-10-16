@@ -78,19 +78,8 @@ header{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--blue);box
 .tk-track button{background:none;border:0;padding:0;cursor:pointer;font-size:15px}
 .tk-track button b{color:var(--red2);font-weight:700}
 .tk-track button span{color:var(--mute);font-size:13px}
+.tk-track button:hover b{text-decoration:underline}
 .ticker[hidden]{display:none}
-.ticker{padding:14px 0;gap:16px}
-.ticker .lb{padding:9px 12px;border-radius:6px}
-.tk-view{min-width:0;padding:5px 0}
-.tk-track{align-items:center;gap:22px;padding-right:22px}
-.tk-track button{display:flex;align-items:center;gap:10px;text-align:left;border-radius:6px}
-.tk-track .tk-plate{display:inline-block;position:relative;background:#fff;color:#171717;border:2px solid #242424;border-radius:6px;padding:7px 12px;font-family:Arial,sans-serif;font-size:21px;font-weight:800;letter-spacing:1px;line-height:1.15;box-shadow:0 2px 4px #0002,inset 0 0 0 2px #fff}
-.tk-track .tk-date{font-size:12px;line-height:1.5;color:var(--mute)}
-.tk-track .tk-date strong{display:block;color:var(--red2);font-size:13px}
-.tk-track button:hover .tk-plate{border-color:var(--red2);color:var(--red2)}
-.tk-track button:focus-visible{outline:2px solid var(--red2);outline-offset:3px}
-@media(max-width:600px){.ticker{gap:8px}.ticker .lb{font-size:11px;white-space:normal;max-width:90px}.tk-track .tk-plate{font-size:18px;padding:6px 9px}}
-@media(prefers-reduced-motion:reduce){.ticker .tk-view{overflow-x:auto;mask-image:none}.ticker .tk-track{transform:none!important}.ticker .tk-track [aria-hidden="true"]{display:none}}
 
 /* ===== 12 con giáp ===== */
 .giap{background:var(--grey);margin-top:16px;padding:10px 0}
@@ -877,8 +866,12 @@ function buildVip(live){
   const top = days.flatMap(dt => cand.filter(c => c[2] === dt).slice(0, per)).slice(0, VIP_MAX);
   if (!top.length) { $("ticker").hidden = true; return; }
   const html = top.map(([, , dt, i]) => { const t = live.text(i);
-    return `<button type="button" data-q="${esc(live.pre[live.pi[i]] + KE.pad5(live.num[i]))}" title="Tìm biển ${esc(t)}"><b class="tk-plate">${esc(t)}</b><span class="tk-date">${dt === today ? "Đấu giá hôm nay" : "Ngày đấu giá"}<strong>${KE.fmtDate(dt)}</strong></span></button>`; }).join("");
-  $("tkTrack").innerHTML = html; delete $("tkTrack").dataset.dup;
+    return `<button type="button" data-q="${esc(live.pre[live.pi[i]] + KE.pad5(live.num[i]))}" title="Tìm biển ${esc(t)}"><b>${esc(t)}</b> <span>${dt === today ? "đấu hôm nay" : "đấu " + KE.fmtDate(dt)}</span></button>`; }).join("");
+  $("ticker").hidden = false;
+  const view = document.querySelector(".tk-view");
+  $("tkTrack").innerHTML = html;
+  while ($("tkTrack").scrollWidth < view.clientWidth && $("tkTrack").children.length < 80) $("tkTrack").insertAdjacentHTML("beforeend", html);
+  delete $("tkTrack").dataset.dup;
   marquee(document.querySelector(".tk-view"), $("tkTrack"), 70);
   $("ticker").hidden = false;
 }
