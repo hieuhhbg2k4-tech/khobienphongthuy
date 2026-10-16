@@ -209,26 +209,25 @@ function provs(list) { const v = new Set(); list.forEach(s => s.pre.forEach(p =>
 const KEP_MIN = 100;   // giá tối thiểu (tr) cho tam hoa kép có số ngoài 0,1,2,4
 let GIA = null; const HN_CODES = new Set(["29","30","31","32","33","40"]);
 const setGia = g => { GIA = g && g.t ? g : null; };
+// Giá bán = giá theo lịch sử trúng đấu giá VPA (cùng 5 số cuối), nhưng KHÔNG thấp hơn giá khobienvietnam + 10%.
+// Từ 1 tỷ -> "Liên hệ" (-1). Số đẹp (sảnh, tứ quý, ngũ quý) không có dữ liệu -> "Liên hệ".
+const KB_MARKUP = 1.10, CONTACT_FROM = 1000;
 function giaOf(s, i) {
   if (!GIA) return null;
-  // 1) Giá theo từng biển (khobienvietnam + mức cộng thêm)
-  if (GIA.p) { const k = s.pre[s.pi[i]] + pad5(s.num[i]); if (k in GIA.p) return GIA.p[k]; }
-  // 2) Ô tô KHÔNG có trong danh sách khobienvietnam: không được rơi về giá sàn nếu là số đẹp
-  if (!s.moto[i] && GIA.car_kbvn) {
-    const n = pad5(s.num[i]), tag = s.tag[i], sc = scoreOf(tag);
-    const hv = GIA.t && GIA.t[n] ? GIA.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : null;   // giá lịch sử VPA cùng đuôi
-    if (sc >= 8) return -1;                                   // sảnh tiến, tứ quý, ngũ quý chưa có giá -> "Liên hệ"
-    // Tam hoa kép (AA-BBB / AAA-BB) có số ngoài 0,1,2,4: tối thiểu 100 tr
-    if (/^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) return hv != null && hv < 0 ? -1 : Math.max(KEP_MIN, hv || 0);
-    if (hv != null && (hv < 0 || hv > GIA.min)) return hv;    // có lịch sử đấu giá cao hơn giá sàn
-    return GIA.min;
+  const n = pad5(s.num[i]), key = s.pre[s.pi[i]] + n, moto = s.moto[i];
+  const tbl = moto ? GIA.m : GIA; if (!tbl) return null;
+  const floor = tbl.min;
+  const hv = tbl.t && tbl.t[n] ? tbl.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : null;   // lịch sử VPA
+  const kb = GIA.k && key in GIA.k ? GIA.k[key] : null;                                              // khobienvietnam
+  if (kb === -1 || hv === -1) return -1;
+  let v;
+  if (kb != null) v = Math.max(hv || floor, Math.round(kb * KB_MARKUP));
+  else {
+    if (!moto && scoreOf(s.tag[i]) >= 8) return -1;          // chưa có giá khobienvietnam để so -> Liên hệ
+    v = hv != null ? Math.max(floor, hv) : floor;
+    if (!moto && /^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) v = Math.max(KEP_MIN, v);   // tam hoa kép
   }
-  // 3) Theo lịch sử đấu giá cùng 5 số cuối
-  const g = s.moto[i] ? GIA.m : GIA;   // xe máy dùng bảng giá riêng (GIA.m)
-  if (!g) return null;
-  const v = g.t[pad5(s.num[i])];
-  if (!v) return g.min;
-  return v[HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1];
+  return v >= CONTACT_FROM ? -1 : v;
 }
 const giaText = v => v == null ? "" : v < 0 ? "Liên hệ" : v >= 1000 ? (v / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tỷ" : v + " tr";
 const fmtDate = n => n ? String(n).replace(/^(\d{4})(\d{2})(\d{2})$/, "$3/$2/$1") : "";
