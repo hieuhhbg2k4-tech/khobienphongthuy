@@ -213,14 +213,14 @@ function giaOf(s, i) {
   if (!GIA) return null;
   // 1) Giá theo từng biển (khobienvietnam + mức cộng thêm)
   if (GIA.p) { const k = s.pre[s.pi[i]] + pad5(s.num[i]); if (k in GIA.p) return GIA.p[k]; }
-  // 2) Ô tô: không có trong danh sách -> giá sàn
+  // 2) Ô tô KHÔNG có trong danh sách khobienvietnam: không được rơi về giá sàn nếu là số đẹp
   if (!s.moto[i] && GIA.car_kbvn) {
-    // Tam hoa kép (AA-BBB / AAA-BB) có số ngoài 0,1,2,4 không bán dưới 100 tr: lấy giá lịch sử VPA nếu có, tối thiểu 100 tr
-    const n = pad5(s.num[i]);
-    if (/^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) {
-      const v = GIA.t && GIA.t[n] ? GIA.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : GIA.min;
-      return v < 0 ? v : Math.max(KEP_MIN, v);
-    }
+    const n = pad5(s.num[i]), tag = s.tag[i], sc = scoreOf(tag);
+    const hv = GIA.t && GIA.t[n] ? GIA.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : null;   // giá lịch sử VPA cùng đuôi
+    if (sc >= 8) return -1;                                   // sảnh tiến, tứ quý, ngũ quý chưa có giá -> "Liên hệ"
+    // Tam hoa kép (AA-BBB / AAA-BB) có số ngoài 0,1,2,4: tối thiểu 100 tr
+    if (/^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) return hv != null && hv < 0 ? -1 : Math.max(KEP_MIN, hv || 0);
+    if (hv != null && (hv < 0 || hv > GIA.min)) return hv;    // có lịch sử đấu giá cao hơn giá sàn
     return GIA.min;
   }
   // 3) Theo lịch sử đấu giá cùng 5 số cuối
