@@ -208,7 +208,20 @@ function provs(list) { const v = new Set(); list.forEach(s => s.pre.forEach(p =>
 // Giá tham khảo (ô tô + xe máy) theo lịch sử trúng đấu giá VPA cùng 5 số cuối — dữ liệu /assets/gia.json
 const KEP_MIN = 100;   // giá tối thiểu (tr) cho tam hoa kép có số ngoài 0,1,2,4
 let GIA = null; const HN_CODES = new Set(["29","30","31","32","33","40"]);
-const setGia = g => { GIA = g && g.t ? g : null; };
+let GROUP_KB = new Map();
+const setGia = g => {
+  GIA = g && g.t ? g : null; GROUP_KB = new Map();
+  if (!GIA || !GIA.k) return;
+  for (const [plate, value] of Object.entries(GIA.k)) {
+    const match = plate.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
+    if (!match || !Number.isFinite(value)) continue;
+    // Dữ liệu giá hiện có: seri 1 chữ cho ô tô, 2 ký tự cho xe máy.
+    const moto = GIA.kt && plate in GIA.kt ? +GIA.kt[plate] : +(match[1].length > 3);
+    const group = moto + "|" + provOf(match[1].slice(0, 2)) + "|" + match[2];
+    const old = GROUP_KB.get(group);
+    GROUP_KB.set(group, old === -1 || value === -1 ? -1 : old == null ? value : Math.max(old, value));
+  }
+};
 // Giá bán = giá theo lịch sử trúng đấu giá VPA (cùng 5 số cuối), nhưng KHÔNG thấp hơn giá khobienvietnam + 10%.
 // Từ 1 tỷ -> "Liên hệ" (-1). Số đẹp (sảnh, tứ quý, ngũ quý) không có dữ liệu -> "Liên hệ".
 const KB_MARKUP = 1.10, CONTACT_FROM = 1000;
@@ -218,7 +231,8 @@ function giaOf(s, i) {
   const tbl = moto ? GIA.m : GIA; if (!tbl) return null;
   const floor = tbl.min;
   const hv = tbl.t && tbl.t[n] ? tbl.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : null;   // lịch sử VPA
-  const kb = GIA.k && key in GIA.k ? GIA.k[key] : null;                                              // khobienvietnam
+  const grouped = GROUP_KB.get(moto + "|" + provOf(s.pre[s.pi[i]].slice(0, 2)) + "|" + n);
+  const kb = grouped != null ? grouped : GIA.k && key in GIA.k ? GIA.k[key] : null;                                              // khobienvietnam
   if (kb === -1 || hv === -1) return -1;
   let v;
   if (kb != null) v = Math.max(hv || floor, Math.round(kb * KB_MARKUP));
@@ -227,7 +241,19 @@ function giaOf(s, i) {
     v = hv != null ? Math.max(floor, hv) : floor;
     if (!moto && /^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) v = Math.max(KEP_MIN, v);   // tam hoa kép
   }
-  return v >= CONTACT_FROM ? -1 : v;
+  if (v >= CONTACT_FROM) return -1;
+  // Bảng tam hoa ô tô; tứ quý/ngũ quý và các nhóm 666/888/999 giữ nguyên.
+  if (!moto && (s.tag[i] & B["Tam hoa"]) && !(s.tag[i] & (B["Tứ quý"] | B["Ngũ quý"]))) {
+    const tail = n.match(/(\d)\1\1$/), head = n.match(/^(\d)\1\1/);
+    const digit = (tail || head || [])[1];
+    if (digit === "1" || digit === "4") v = 79;
+    else if (digit === "2") v = 99;
+    else if (digit === "3" || digit === "5" || digit === "7") {
+      const reference = grouped != null && grouped >= 0 ? Math.max(hv || floor, Math.round(grouped * KB_MARKUP)) : v;
+      v = digit === "7" ? (reference >= 109 ? 109 : reference >= 99 ? 99 : 89) : (reference >= 119 ? 119 : reference >= 109 ? 109 : 99);
+    }
+  }
+  return v;
 }
 const giaText = v => v == null ? "" : v < 0 ? "Liên hệ" : v >= 1000 ? (v / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tỷ" : v + " tr";
 const fmtDate = n => n ? String(n).replace(/^(\d{4})(\d{2})(\d{2})$/, "$3/$2/$1") : "";
