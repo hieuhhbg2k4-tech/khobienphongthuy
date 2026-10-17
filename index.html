@@ -302,7 +302,7 @@ footer p{margin:4px 0}
     <a class="brand" href="/" aria-label="Kho Biển Phong Thủy - Trang chủ"><b>KHOBIENPHONGTHUY.VN</b><small>Kho Biển Số Đẹp Toàn Quốc</small></a>
     <nav class="menu" id="menu">
       <a href="/" class="on">Trang Chủ</a>
-      <a href="/?page=kho">Kho Biển Số</a>
+      <a href="/#kho">Kho Biển Số</a>
       <a href="/phong-thuy/">Xem Phong Thủy</a>
       <a href="/?page=dinhgia">Định Giá</a>
       <a href="/?page=quytrinh">Quy Trình</a>
@@ -773,7 +773,7 @@ function initUI(){
 }
 
 /* ===== Giao diện kiểu bienxeoto: slider, 12 con giáp, số đẹp, ngũ hành, ảnh ===== */
-function goKho(){ if (document.body.dataset.page !== "kho") navigatePage("kho"); $("kho").scrollIntoView(); }
+function goKho(){ if (document.body.dataset.page !== "home") navigatePage("home"); $("kho").scrollIntoView(); }
 function initLook(){
   $("flFb").href = FB_URL;
   // Slider ảnh
@@ -933,7 +933,7 @@ function currentPage(){
   const q = new URLSearchParams(location.search);
   const legacy = {"#kho":"kho","#dinhgia":"dinhgia","#quytrinh":"quytrinh","#lienhe":"lienhe"};
   const page = q.get("page") || legacy[location.hash] || (q.has("q") ? "kho" : "home");
-  return Object.hasOwn(PAGE_NAMES, page) ? page : "home";
+  return page === "kho" ? "home" : Object.hasOwn(PAGE_NAMES, page) ? page : "home";
 }
 function showPage(){
   const page = currentPage(); document.body.dataset.page = page;
@@ -941,11 +941,11 @@ function showPage(){
     let owner = "home";
     if (el.matches(".giap, #kho-tim, #kho, #nguhanh")) owner = "kho";
     else if (["dinhgia","quytrinh","lienhe"].includes(el.id)) owner = el.id;
-    el.classList.toggle("page-hidden", owner !== page);
+    el.classList.toggle("page-hidden", owner !== page && !(page === "home" && owner === "kho"));
   });
   document.querySelectorAll("#menu a").forEach(a => {
     const target = new URL(a.href, location.href);
-    const selected = target.pathname === "/" && (target.searchParams.get("page") || "home") === page;
+    const selected = target.pathname === "/" && !target.hash && (target.searchParams.get("page") || "home") === page;
     a.classList.toggle("on", selected);
     if (selected) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
