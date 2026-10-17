@@ -329,6 +329,8 @@ footer p{margin:4px 0}
 
 
 .terms-article .about-body h3{font-size:18px;line-height:1.6;color:#214c70;margin:24px 0 12px}.terms-article .about-body h2:last-of-type{padding-top:22px;border-top:1px solid #e1eaf1}
+
+#dataNote{display:none}
 </style>
 </head>
 <body>
@@ -392,8 +394,6 @@ footer p{margin:4px 0}
           <div class="pills" id="fSortP"><button type="button" data-v="giaAsc">Giá ↑</button><button type="button" data-v="giaDesc">Giá ↓</button></div>
           <select id="sort" aria-label="Sắp xếp khác" class="s-sort">
             <option value="hot">Nổi bật</option>
-            <option value="date">Ngày đấu giá gần nhất</option>
-            <option value="reg">Nhiều người đăng ký</option>
             <option value="giaAsc">Giá tăng dần</option>
             <option value="giaDesc">Giá giảm dần</option>
             <option value="none">Theo kho</option>
@@ -402,6 +402,7 @@ footer p{margin:4px 0}
         <div class="fl-row pills red" id="fForm"></div>
         <div class="fl-row pills" id="fPrice"></div>
         <div class="fl-row"><span class="k">Tránh:</span><div class="pills avoid" id="fAvoid"></div></div>
+        <div class="fl-row"><span class="k">Tránh chữ số:</span><div class="pills avoid" id="fAvoidDigits" role="group" aria-label="Tránh chữ số trong 5 số cuối"></div></div>
         <div class="fl-row"><span class="k">Tổng nút:</span><div class="pills" id="fNut"></div>
           <button class="btn btn-red btn-sm" type="button" id="applyF">Tìm</button></div>
         <div class="pt-row" id="ptRow" hidden>
@@ -437,7 +438,7 @@ footer p{margin:4px 0}
   <section class="store" id="kho">
     <div class="wrap">
       <h2 class="sec-title">Biển số xe đẹp</h2>
-      <p class="note" id="dataNote">Danh sách biển công bố đấu giá trên VPA, cập nhật hằng ngày.</p>
+      <p class="note" id="dataNote" hidden>Danh sách biển công bố đấu giá trên VPA, cập nhật hằng ngày.</p>
       <div class="salebar" id="saleBar" hidden></div>
       <div class="toolbar"><div class="count" id="count" aria-live="polite">Đang tải…</div></div>
       <div class="prog" id="prog" hidden><i id="progBar"></i></div>
@@ -767,6 +768,7 @@ function syncControls(){
   document.querySelectorAll("#fAvoid button").forEach(b => { const vs = b.dataset.v.split(","); b.classList.toggle("on", vs.every(v => S.avoid.has(v)) && (vs.length > 1 || ![...document.querySelectorAll("#fAvoid button")].some(o => o !== b && o.dataset.v.split(",").length > 1 && o.dataset.v.split(",").includes(vs[0]) && o.dataset.v.split(",").every(v => S.avoid.has(v))))); });
   document.querySelectorAll("#fForm button").forEach(b => b.classList.toggle("on", b.textContent === S.cf));
   document.querySelectorAll("#fPrice button").forEach(b => b.classList.toggle("on", b.textContent === S.price));
+  document.querySelectorAll("#fAvoidDigits button").forEach(b => { const on = S.avoid.has(b.dataset.v); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   document.querySelectorAll("#fSortP button").forEach(b => b.classList.toggle("on", b.dataset.v === S.sort));
   document.querySelectorAll("#fDigits button").forEach(b => b.classList.toggle("on", S.digits.has(b.dataset.d)));
   document.querySelectorAll("#fLetters button").forEach(b => b.classList.toggle("on", b.dataset.l === S.letter));
@@ -785,6 +787,7 @@ function initUI(){
   $("fForm").innerHTML = FORMS.map(f => `<button type="button">${f[0]}</button>`).join("");
   $("fPrice").innerHTML = PRICES.map(p => `<button type="button">${p[0]}</button>`).join("");
   $("fAvoid").innerHTML = AVOIDS.map(a => `<button type="button" data-v="${a[1].join(",")}">${a[0]}</button>`).join("");
+  $("fAvoidDigits").innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-v="${i}" aria-pressed="false" aria-label="Tránh số ${i}">${i}</button>`).join("");
   $("fDigits").innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-d="${i}">${i}</button>`).join("");
   $("fFmt").insertAdjacentHTML("beforeend", KE.FMT_ORDER.map(f=>`<option>${f}</option>`).join(""));
   $("fMenh").insertAdjacentHTML("beforeend", KE.MENH.map(m=>`<option value="${m}">Hợp mệnh ${m}</option>`).join(""));
@@ -799,6 +802,7 @@ function initUI(){
   $("fNut").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.nut, +b.dataset.v); syncControls(); apply(); });
   $("fAvoid").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return;
     const vs = b.dataset.v.split(","), on = b.classList.contains("on"); vs.forEach(v => on ? S.avoid.delete(v) : S.avoid.add(v)); syncControls(); apply(); });
+  $("fAvoidDigits").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.avoid,b.dataset.v); syncControls(); apply(); });
   $("fDigits").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; toggle(S.digits, b.dataset.d); syncControls(); apply(); });
   $("fLetters").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; S.letter = S.letter === b.dataset.l ? "" : b.dataset.l; syncControls(); apply(); });
   $("fSrc").addEventListener("change", e => { S.src = e.target.value; fillProvs(); apply(); });
