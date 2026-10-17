@@ -266,6 +266,33 @@ footer p{margin:4px 0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#212529;color:#fff;padding:10px 16px;border-radius:8px;font-weight:600;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%)}
 [hidden]{display:none!important}
+
+/* Hướng dẫn thủ tục — Kho Biển Phong Thủy */
+.procedure-hero{background:linear-gradient(120deg,#eaf4ff,#f4faf7);border:1px solid #d8e7f4;border-radius:18px;padding:34px;margin-bottom:24px}
+.procedure-hero .eyebrow{color:#477492;font-size:12px;letter-spacing:2px;font-weight:700}
+.procedure-hero h1{font-size:32px;max-width:720px;margin:10px 0;color:#173e63}
+.procedure-hero p{max-width:720px;color:#536a7c;margin:12px 0 20px}
+.procedure-links{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 26px}
+.procedure-links a{padding:10px 16px;border:1px solid #cbdde9;border-radius:30px;background:#fff;color:#245d86;font-weight:600;font-size:13px}
+.procedure-block{margin:28px 0;padding:26px;background:#fff;border:1px solid #dce7ee;border-radius:16px;scroll-margin-top:90px}
+.procedure-block h2{color:#173e63;font-size:23px;margin:0 0 10px}
+.procedure-block p{color:#546a7d}
+.doc-guide{margin:24px 0;border:1px solid #cddfea;border-radius:16px;overflow:hidden;background:#f7fbfe}
+.doc-guide-head{padding:22px 24px;background:#e5f0fa;border-bottom:1px solid #cddfea;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.doc-guide-head b{color:#174b72;font-size:18px}.doc-guide-head span{color:#617e92;font-size:12px}
+.doc-guide-grid{padding:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.doc-guide-card{background:white;border:1px solid #dce7ee;border-radius:12px;padding:20px;display:grid;grid-template-columns:42px 1fr;gap:12px;align-content:start}
+.doc-guide-card .doc-num{background:#dfeef9;color:#245d86;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800}
+.doc-guide-card h3{font-size:15px;color:#244a68;margin:3px 0 8px}.doc-guide-card p{font-size:13px;margin:0;line-height:1.7}
+.doc-guide-card svg{display:block;width:120px;height:76px;margin-top:18px;color:#87adc7}
+.doc-guide-foot{padding:13px 20px;background:#e9f3f5;color:#265b6e;font-size:13px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.procedure-note{padding:16px 20px;background:#fff8e9;border-left:3px solid #d5b577;border-radius:6px;color:#6f5d3b;font-size:13px}
+.procedure-block li{margin:8px 0;color:#435b70}
+.procedure-cta{background:#e9f3fc;border-radius:16px;padding:28px;margin-top:28px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.procedure-cta h2{color:#173e63;font-size:23px}.procedure-cta p{margin:8px 0 0;color:#546a7d}
+.procedure-source{font-size:12px;color:#738391;line-height:1.8;margin-top:22px}.procedure-source a{text-decoration:underline}
+@media(max-width:650px){.procedure-hero{padding:22px}.procedure-hero h1{font-size:25px}.procedure-block{padding:18px}.doc-guide-grid{grid-template-columns:1fr;padding:12px}.doc-guide-head{align-items:flex-start;flex-direction:column;padding:18px}.procedure-block h2{font-size:20px}.doc-guide-card{padding:16px}}
+
 </style>
 </head>
 <body>
@@ -425,54 +452,17 @@ footer p{margin:4px 0}
 
   <section class="band" id="quytrinh" style="padding-top:0">
     <div class="wrap">
-      <h2 class="sec-title">Mua biển trong 4 bước</h2>
-      <div class="steps">
-        <div><h3>Chọn biển</h3><p>Lọc theo tỉnh, dạng số, mệnh và chọn biển ưng ý.</p></div>
-        <div><h3>Liên hệ giữ biển</h3><p>Gọi hoặc nhắn Zalo để kiểm tra tình trạng và giữ biển.</p></div>
-        <div><h3>Kiểm tra hồ sơ</h3><p>Đối chiếu giấy tờ, thống nhất giá và cách thanh toán.</p></div>
-        <div><h3>Bàn giao</h3><p>Hoàn tất thủ tục và bàn giao biển cho bạn.</p></div>
-      </div>
-
-      <h2 class="sec-title" style="margin-top:20px">Hồ sơ đăng ký biển số đẹp</h2>
-      <p style="margin:0">Giấy tờ cần chuẩn bị khi đăng ký xe và gắn biển số đẹp, theo quy định đăng ký xe hiện hành (Thông tư 79/2024/TT-BCA, áp dụng từ 01/01/2025).</p>
-      <div class="docs">
-        <div class="d">
-          <h3>1. Giấy tờ của chủ xe</h3>
-          <ul>
-            <li><b>Cá nhân:</b> tài khoản định danh điện tử VNeID mức 2, hoặc Căn cước / Căn cước công dân, hoặc hộ chiếu.</li>
-            <li><b>Người nước ngoài:</b> thẻ thường trú hoặc tạm trú còn hạn tối thiểu 6 tháng.</li>
-            <li><b>Doanh nghiệp, tổ chức:</b> tài khoản VNeID của tổ chức, hoặc thông báo mã số thuế / quyết định thành lập.</li>
-            <li><b>Làm thay:</b> người được uỷ quyền mang thêm giấy uỷ quyền có công chứng hoặc chứng thực.</li>
-          </ul>
-        </div>
-        <div class="d">
-          <h3>2. Giấy tờ của xe</h3>
-          <ul>
-            <li><b>Nguồn gốc xe:</b> phiếu kiểm tra chất lượng xuất xưởng (xe trong nước) hoặc chứng từ nhập khẩu (xe nhập).</li>
-            <li><b>Chứng từ mua bán:</b> hoá đơn điện tử, hoặc giấy tờ mua bán, cho, tặng, thừa kế.</li>
-            <li><b>Lệ phí trước bạ:</b> chứng từ nộp lệ phí trước bạ (điện tử hoặc giấy).</li>
-            <li><b>Tờ khai đăng ký xe:</b> kê khai trên Cổng dịch vụ công hoặc điền tại cơ quan đăng ký.</li>
-          </ul>
-        </div>
-        <div class="d">
-          <h3>3. Biển trúng đấu giá VPA</h3>
-          <ul>
-            <li>Nộp đủ tiền trúng đấu giá trong <b>30 ngày</b> kể từ khi có thông báo kết quả.</li>
-            <li>Nộp đủ tiền xong được cấp <b>Quyết định xác nhận biển số trúng đấu giá</b> (gửi qua email), dùng khi đăng ký xe.</li>
-            <li>Đăng ký xe gắn biển trong <b>12 tháng</b>; có thể được gia hạn thêm 6 tháng nếu có lý do theo quy định.</li>
-            <li>Không chuyển nhượng riêng biển số; được chuyển nhượng, tặng, cho, thừa kế <b>xe gắn biển</b> đó.</li>
-          </ul>
-        </div>
-        <div class="d">
-          <h3>4. Cách nộp hồ sơ</h3>
-          <ul>
-            <li><b>Trực tuyến toàn trình:</b> nộp trên Cổng dịch vụ công, không cần đưa xe đến; giấy đăng ký gửi qua bưu điện trong khoảng 2 ngày làm việc.</li>
-            <li><b>Trực tuyến một phần:</b> khai online, sau đó mang xe và giấy tờ đến cơ quan đăng ký theo lịch hẹn.</li>
-            <li><b>Trực tiếp:</b> mang xe và hồ sơ đến cơ quan công an đăng ký xe.</li>
-          </ul>
-        </div>
-      </div>
-      <p class="small" style="margin-top:10px">Thông tin tham khảo, quy định có thể thay đổi. Vui lòng liên hệ để được kiểm tra hồ sơ cụ thể trước khi làm thủ tục.</p>
+      <div class="procedure-hero"><span class="eyebrow">KHO BIỂN PHONG THỦY · HƯỚNG DẪN HỒ SƠ</span><h1>Chuẩn bị đúng hồ sơ.<br>An tâm đăng ký biển số.</h1><p>Hướng dẫn dành cho cá nhân và doanh nghiệp khi tìm hiểu đăng ký xe, biển định danh và biển trúng đấu giá. Chọn nhóm phù hợp để xem các giấy tờ cần đối chiếu.</p><a class="btn btn-blue" href="tel:0888188888">Gọi tư vấn 0888.188.888</a> <a class="btn btn-line" href="https://zalo.me/0888188888" target="_blank" rel="noopener">Trao đổi qua Zalo</a></div>
+      <nav class="procedure-links" aria-label="Mục lục thủ tục"><a href="#hs-canhan">Cá nhân chưa kết hôn</a><a href="#hs-giadinh">Cá nhân đã kết hôn</a><a href="#hs-doanhnghiep">Doanh nghiệp</a><a href="#hs-daugia">Biển trúng đấu giá</a><a href="#hs-cacbuoc">Các bước thực hiện</a></nav>
+      <p class="procedure-note">Danh sách dưới đây giúp chuẩn bị và kiểm tra hồ sơ. Giấy tờ cho việc đăng ký xe và giấy tờ phục vụ giao dịch, công chứng có thể khác nhau; không phải mọi mục đều bắt buộc trong mọi trường hợp.</p>
+      <article class="procedure-block" id="hs-canhan"><h2>01. Cá nhân chưa kết hôn</h2><p>Bắt đầu từ thông tin chủ xe và giấy tờ của xe. Nếu có giao dịch chuyển quyền sở hữu, xác nhận thêm bộ hồ sơ phù hợp trước khi ký.</p><div class="doc-guide"><div class="doc-guide-head"><b>HỒ SƠ CÁ NHÂN · CHƯA KẾT HÔN</b><span>KHOBIENPHONGTHUY.VN<br>Hướng dẫn chuẩn bị hồ sơ</span></div><div class="doc-guide-grid"><div class="doc-guide-card"><span class="doc-num">01</span><div><h3>Thông tin định danh</h3><p>Chuẩn bị căn cước còn giá trị sử dụng và thông tin định danh điện tử theo thủ tục áp dụng. Khi cần ảnh, chụp riêng từng mặt, đủ bốn góc.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="6" y="8" width="108" height="60" rx="9"/><circle cx="34" cy="31" r="10"/><path d="M19 55q15-25 30 0M64 25h34M64 36h25M64 48h30"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">02</span><div><h3>Thông tin cư trú</h3><p>Đối chiếu thông tin của chủ xe trên VNeID. Chỉ cung cấp phần thông tin cần thiết sau khi đã xác nhận hồ sơ với người hỗ trợ.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="35" y="2" width="50" height="72" rx="8"/><path d="M51 10h18M48 27h24M48 37h24M48 47h18M56 65h8"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">03</span><div><h3>Giấy tờ của xe</h3><p>Tập hợp giấy tờ nguồn gốc, chuyển quyền sở hữu và lệ phí trước bạ; xe đã đăng ký chuẩn bị đăng ký xe và biển số theo trường hợp.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 49V32h12l12-18h45l13 18h11v24H14zM26 32h70"/><circle cx="34" cy="56" r="9"/><circle cx="88" cy="56" r="9"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">04</span><div><h3>Giấy tờ bổ sung theo giao dịch</h3><p>Giấy xác nhận tình trạng hôn nhân, ảnh chân dung hoặc chữ ký mẫu chỉ chuẩn bị khi thủ tục hay giao dịch cụ thể cần đến.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M30 4h44l17 18v50H30zM74 4v20h17M42 36h36M42 47h36M42 58h23"/></svg></div></div></div><div class="doc-guide-foot"><span>Chụp rõ nội dung · Đủ bốn góc · Không lóa sáng</span><a href="tel:0888188888"><b>Hỗ trợ: 0888.188.888</b></a></div></div></article>
+      <article class="procedure-block" id="hs-giadinh"><h2>02. Cá nhân đã kết hôn</h2><p>Hồ sơ đăng ký xe cần khớp với người đứng tên. Trường hợp giao dịch liên quan tài sản chung, giấy tờ bổ sung được xác định theo từng hồ sơ.</p><div class="doc-guide"><div class="doc-guide-head"><b>HỒ SƠ CÁ NHÂN · ĐÃ KẾT HÔN</b><span>KHOBIENPHONGTHUY.VN<br>Hướng dẫn chuẩn bị hồ sơ</span></div><div class="doc-guide-grid"><div class="doc-guide-card"><span class="doc-num">01</span><div><h3>Thông tin định danh</h3><p>Chuẩn bị căn cước còn giá trị sử dụng và thông tin định danh điện tử theo thủ tục áp dụng. Khi cần ảnh, chụp riêng từng mặt, đủ bốn góc.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="6" y="8" width="108" height="60" rx="9"/><circle cx="34" cy="31" r="10"/><path d="M19 55q15-25 30 0M64 25h34M64 36h25M64 48h30"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">02</span><div><h3>Thông tin cư trú</h3><p>Đối chiếu thông tin của chủ xe trên VNeID. Chỉ cung cấp phần thông tin cần thiết sau khi đã xác nhận hồ sơ với người hỗ trợ.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="35" y="2" width="50" height="72" rx="8"/><path d="M51 10h18M48 27h24M48 37h24M48 47h18M56 65h8"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">03</span><div><h3>Giấy tờ của xe</h3><p>Tập hợp giấy tờ nguồn gốc, chuyển quyền sở hữu và lệ phí trước bạ; xe đã đăng ký chuẩn bị đăng ký xe và biển số theo trường hợp.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 49V32h12l12-18h45l13 18h11v24H14zM26 32h70"/><circle cx="34" cy="56" r="9"/><circle cx="88" cy="56" r="9"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">04</span><div><h3>Trường hợp liên quan tài sản chung</h3><p>Trao đổi với đơn vị công chứng về giấy kết hôn, giấy tờ của vợ/chồng, văn bản thỏa thuận hoặc ủy quyền nếu giao dịch có yêu cầu.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M30 4h44l17 18v50H30zM74 4v20h17M42 36h36M42 47h36M42 58h23"/></svg></div></div></div><div class="doc-guide-foot"><span>Chụp rõ nội dung · Đủ bốn góc · Không lóa sáng</span><a href="tel:0888188888"><b>Hỗ trợ: 0888.188.888</b></a></div></div></article>
+      <article class="procedure-block" id="hs-doanhnghiep"><h2>03. Doanh nghiệp và tổ chức</h2><p>Đối chiếu tên pháp lý, mã số thuế và thẩm quyền của người thực hiện để tránh sai thông tin giữa hồ sơ xe và hồ sơ đơn vị.</p><div class="doc-guide"><div class="doc-guide-head"><b>HỒ SƠ DOANH NGHIỆP · TỔ CHỨC</b><span>KHOBIENPHONGTHUY.VN<br>Hướng dẫn chuẩn bị hồ sơ</span></div><div class="doc-guide-grid"><div class="doc-guide-card"><span class="doc-num">01</span><div><h3>Thông tin của tổ chức</h3><p>Chuẩn bị thông tin đăng ký doanh nghiệp, mã số thuế hoặc quyết định thành lập phù hợp loại hình tổ chức.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M30 4h44l17 18v50H30zM74 4v20h17M42 36h36M42 47h36M42 58h23"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">02</span><div><h3>Người đại diện / người được ủy quyền</h3><p>Đối chiếu căn cước của người thực hiện. Chuẩn bị giấy giới thiệu hoặc văn bản ủy quyền theo trường hợp.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="6" y="8" width="108" height="60" rx="9"/><circle cx="34" cy="31" r="10"/><path d="M19 55q15-25 30 0M64 25h34M64 36h25M64 48h30"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">03</span><div><h3>Bộ giấy tờ của xe</h3><p>Kiểm tra thông tin người mua trên hóa đơn, chứng từ nguồn gốc xe, lệ phí trước bạ hoặc hồ sơ chuyển quyền sở hữu.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 49V32h12l12-18h45l13 18h11v24H14zM26 32h70"/><circle cx="34" cy="56" r="9"/><circle cx="88" cy="56" r="9"/></svg></div></div><div class="doc-guide-card"><span class="doc-num">04</span><div><h3>Xác nhận và ký hồ sơ</h3><p>Người có thẩm quyền ký, đóng dấu khi thủ tục yêu cầu. Không mặc định yêu cầu giấy tờ của vợ/chồng giám đốc.</p><svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 52q22-45 25-21t16-6q-4 35 16 9t10 3q8 8 27-3M14 65h93"/></svg></div></div></div><div class="doc-guide-foot"><span>Chụp rõ nội dung · Đủ bốn góc · Không lóa sáng</span><a href="tel:0888188888"><b>Hỗ trợ: 0888.188.888</b></a></div></div></article>
+      <article class="procedure-block" id="hs-daugia"><h2>04. Đăng ký xe với biển trúng đấu giá</h2><div class="docs"><div class="d"><h3>Xe chưa đăng ký</h3><p>Chuẩn bị hồ sơ đăng ký xe cùng quyết định xác nhận biển số trúng đấu giá còn thời hạn. Nếu đã được gia hạn, bổ sung quyết định gia hạn.</p></div><div class="d"><h3>Xe đã đăng ký chính chủ</h3><p>Đối chiếu giấy khai đăng ký xe, đăng ký xe, biển số hiện có và quyết định xác nhận trúng đấu giá; thực hiện theo hướng dẫn của cơ quan đăng ký.</p></div></div><p>Mẫu giấy khai và cách nộp hồ sơ cần theo thủ tục đang áp dụng trên Cổng dịch vụ công Bộ Công an.</p><a class="btn btn-line" href="https://dichvucong.bocongan.gov.vn/" target="_blank" rel="noopener">Tra cứu thủ tục chính thức ↗</a></article>
+      <article class="procedure-block" id="hs-cacbuoc"><h2>05. Từ kiểm tra hồ sơ đến nhận kết quả</h2><div class="steps"><div><h3>Xác định trường hợp</h3><p>Cho biết xe mới hay xe đã đăng ký, cá nhân hay tổ chức, biển thông thường hay trúng đấu giá.</p></div><div><h3>Đối chiếu giấy tờ</h3><p>Kiểm tra người đứng tên, tình trạng xe, quyền sở hữu và các giấy tờ liên quan.</p></div><div><h3>Thực hiện thủ tục</h3><p>Kê khai, nộp hồ sơ; đưa xe kiểm tra và nộp các khoản theo thông báo nếu thủ tục yêu cầu.</p></div><div><h3>Nhận kết quả</h3><p>Theo dõi giấy hẹn, nhận đăng ký và biển số, kiểm tra thông tin trước khi hoàn tất.</p></div></div></article>
+      <article class="procedure-block"><h2>Chụp hồ sơ rõ, trao đổi đúng người</h2><ul><li>Đặt giấy tờ trên mặt phẳng, chụp thẳng; tránh bóng tay và ánh đèn phản chiếu.</li><li>Chỉ gửi giấy tờ cần thiết qua kênh đã xác nhận. Không cung cấp mật khẩu, mã OTP hoặc mã đăng nhập VNeID.</li><li>Phí, thời gian và giấy tờ phát sinh phụ thuộc hồ sơ và cơ quan tiếp nhận; xác nhận trước khi thực hiện.</li></ul></article>
+      <div class="procedure-cta"><div><h2>Cần kiểm tra trường hợp của bạn?</h2><p>Liên hệ Kho Biển Phong Thủy để trao đổi trước khi chuẩn bị hồ sơ.</p></div><a class="btn btn-blue" href="tel:0888188888">☎ 0888.188.888</a></div>
+      <p class="procedure-source">Nguồn đối chiếu: <a href="https://bocongan.gov.vn/hoi-dap/chi-tiet-cau-hoi/bd06de0c-c526-4f74-8ed9-7602363fc644?page=/bo-voi-cu-tri" target="_blank" rel="noopener">Cổng Thông tin điện tử Bộ Công an — hướng dẫn cấp biển số trúng đấu giá cho xe đã đăng ký, 03/09/2026</a>. Nội dung hướng dẫn chuẩn bị, cập nhật ngày 17/10/2026.</p>
     </div>
   </section>
 
