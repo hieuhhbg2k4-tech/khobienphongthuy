@@ -331,6 +331,9 @@ footer p{margin:4px 0}
 .terms-article .about-body h3{font-size:18px;line-height:1.6;color:#214c70;margin:24px 0 12px}.terms-article .about-body h2:last-of-type{padding-top:22px;border-top:1px solid #e1eaf1}
 
 #dataNote{display:none}
+
+.valuation-panel{background:#fff;border:1px solid #dce7ee;border-radius:15px;padding:30px;margin-bottom:24px}.valuation-label{color:#477492;font-size:12px;font-weight:700;letter-spacing:1px}.valuation-panel h1{font-size:29px;color:#173e63;margin:8px 0 12px}.valuation-panel p{color:#526b80;font-size:14px}.valuation-fields{display:flex;gap:12px;margin-top:8px}.valuation-fields .in{padding:12px 14px;border:1px solid #cbd9e4;border-radius:8px;background:#fff;font:inherit}.valuation-fields .in:focus{outline:2px solid #7db7ef;outline-offset:1px}.valuation-fields input{flex:1;min-width:0}.valuation-fields select{width:125px}.valuation-panel label{font-size:13px;font-weight:600}.valuation-result{margin-top:22px;padding:22px;background:#edf6ff;border:1px solid #cbdfee;border-radius:12px}.valuation-result[hidden]{display:none}.valuation-plate{display:block;font-size:22px;color:#173e63;font-weight:800}.valuation-province{display:block;color:#617b8f;font-size:12px;margin-top:6px}.valuation-result>strong{display:block;font-size:32px;color:var(--red2);margin-top:10px}.valuation-panel .valuation-law{margin:22px 0 0;padding-top:18px;border-top:1px solid #e2ebf2;font-size:12px;line-height:1.8}.valuation-law a{color:#1766a0;text-decoration:underline}@media(max-width:650px){.valuation-panel{padding:22px}.valuation-fields{flex-wrap:wrap}.valuation-fields input{flex-basis:100%}.valuation-fields select{flex:1}.valuation-panel h1{font-size:25px}}
+
 </style>
 </head>
 <body>
@@ -459,6 +462,8 @@ footer p{margin:4px 0}
   </section>
 
   <section class="band" id="dinhgia">
+    <div class="wrap"><div class="valuation-panel"><div><span class="valuation-label">TRA CỨU GIÁ THEO KHO</span><h1>Định giá biển số</h1><p>Lấy giá cao nhất trong kho của cùng tỉnh/thành, loại xe và 5 số cuối; không phân biệt chữ seri. Giá từ 1 tỷ đồng hiển thị “Liên hệ”.</p></div><form id="valuationForm"><label for="valuationPlate">Biển số cần định giá</label><div class="valuation-fields"><input class="in" id="valuationPlate" placeholder="VD: 30H-862.22" autocomplete="off" required><select class="in" id="valuationType" aria-label="Loại xe định giá"><option value="0">Ô tô</option><option value="1">Xe máy</option></select><button class="btn btn-blue" id="valuationSubmit" type="submit">Định giá</button></div></form><div id="valuationResult" class="valuation-result" role="status" hidden></div><p class="valuation-law"><b>Lưu ý về đấu giá và sang tên:</b> Biển số trong diện đấu giá được tổ chức đấu giá qua Công ty Đấu giá hợp danh Việt Nam (VPA). Biển số trúng đấu giá được chuyển nhượng cùng xe gắn biển khi đáp ứng điều kiện pháp luật; không chuyển nhượng riêng biển số. Giá tham khảo không phải cam kết sang tên thành công 100%. <a href="https://congbaocdn.chinhphu.vn/180507251028987904/2026/4/9/469185-1775546423_v1_1775697063_signed.pdf" target="_blank" rel="noopener">Xem Điều 38 ↗</a></p></div></div>
+
     <div class="wrap panel quote">
       <div>
         <h2 class="sec-title" style="padding:0">Gửi biển số, nhận báo giá</h2>
@@ -585,7 +590,7 @@ footer p{margin:4px 0}
 <a class="fl ph" href="tel:0888188888"><i></i>0888.188.888</a>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="/assets/kho-engine.js?v=7"></script>
+<script src="/assets/kho-engine.js?v=8"></script>
 <script src="/assets/y-nghia.js?v=1"></script>
 <script>
 /* ===== CẤU HÌNH ===== */
@@ -628,7 +633,7 @@ function isVipPlate(num){
 }
 
 /* ===== State ===== */
-let SRC = [], RES = [], shown = 0, pg = 0;
+let SRC = [], RES = [], shown = 0, pg = 0, giaReady;
 // Mặc định khi mới vào / xoá lọc: biển Hà Nội, nổi bật trước
 const DEF_PROV = "Hà Nội";
 const S = { q:"", src:"", type:"", prov:DEF_PROV, head:"", letter:"", fmt:"", cf:"", price:"", year:"", menh:"", dated:"", giap:-1, nut:new Set(), avoid:new Set(), digits:new Set(), sort:"hot" };
@@ -826,6 +831,26 @@ function initUI(){
     if (await KE.copyText(a.dataset.copy)) toast("Đã chép tên biển — dán vào Zalo để hỏi nhanh");
   });
 
+  $("valuationForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const box = $("valuationResult"), btn = $("valuationSubmit"); box.hidden = false;
+    const raw = $("valuationPlate").value.toUpperCase().replace(/[\s.\-]/g, "");
+    const match = raw.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
+    if (!match || !KE.NEWPROV[raw.slice(0,2)]) { box.textContent = "Vui lòng nhập biển số đầy đủ, ví dụ 30H-862.22."; return; }
+    btn.disabled = true; box.textContent = "Đang đối chiếu giá trong kho…";
+    try {
+      if (!await giaReady) { box.textContent = "Chưa tải được bảng giá. Vui lòng thử lại hoặc gọi 0888.188.888."; return; }
+      const source = new KE.Source({id:"valuation",kind:"mix",keepYellow:true,cap:1});
+      const index = source.add(match[1], +match[2], +$("valuationType").value);
+      if (index < 0) { box.textContent = "Vui lòng liên hệ để định giá biển thuộc seri này."; return; }
+      const value = KE.giaOf(source,index), province = source.prov(index), plate = source.text(index);
+      if (value == null) { box.textContent = "Chưa có giá tham khảo. Vui lòng liên hệ 0888.188.888."; return; }
+      const sale = value > 0 && saleActive(), shownPrice = sale ? salePrice(value) : value;
+      box.innerHTML = `<span class="valuation-plate">${esc(plate)}</span><span class="valuation-province">${esc(province)} · ${source.moto[index] ? "Xe máy" : "Ô tô"}</span><strong>${esc(KE.giaText(shownPrice))}</strong>${sale ? `<span class="valuation-province">Giá giờ vàng · Giá thường: ${esc(KE.giaText(value))}</span>` : ""}<span class="valuation-province">Giá chung theo nhóm cùng tỉnh/thành, loại xe và 5 số cuối.</span>`;
+      $("qPlate").value = plate;
+    } finally { btn.disabled = false; }
+  });
+
   $("quoteForm").addEventListener("submit", async e => {
     e.preventDefault();
     const plate = $("qPlate").value.trim();
@@ -944,7 +969,7 @@ async function load(){
   const step = () => { done++; $("progBar").style.width = Math.round(done / total * 100) + "%"; };
   const getJson = (u, o) => fetch(u, o).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
   const okLive = d => d && d.rows && d.rows.length;
-  const pGia = getJson("/assets/gia.json", {cache:"no-cache"}).then(KE.setGia).catch(() => {});
+  const pGia = giaReady = getJson("/assets/gia.json", {cache:"no-cache"}).then(g => { KE.setGia(g); return true; }).catch(() => false);
   // Ưu tiên file tĩnh live.json (GitHub Action ghi mỗi ngày); thiếu/lỗi mới gọi Apps Script
   const pLive = getJson(LIVE_FILE, {cache:"no-cache"}).then(d => okLive(d) ? d : Promise.reject(new Error("empty")))
     .catch(() => getJson(LIVE_URL))
