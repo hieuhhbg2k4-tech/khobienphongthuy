@@ -15,6 +15,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="/assets/bx/anh1.webp">
 <style>
+.page-hidden{display:none!important}
+main{min-height:calc(100vh - 150px)}
+body[data-page]:not([data-page="home"]) main{padding-top:24px}
+
 :root{
   --blue:#0d6efd; --blue2:#0b5ed7; --cream:#faebd7; --grey:#aba6a7; --red:#dc3545; --red2:#c1121f;
   --ink:#212529; --mute:#6c757d; --line:#dee2e6; --card:#fff; --gold:#fdb719; --ok:#198754;
@@ -268,14 +272,14 @@ footer p{margin:4px 0}
 
 <header>
   <div class="nav">
-    <a class="brand" href="#top" aria-label="Kho Biển Phong Thủy - Trang chủ"><b>KHOBIENPHONGTHUY.VN</b><small>Kho Biển Số Đẹp Toàn Quốc</small></a>
+    <a class="brand" href="/" aria-label="Kho Biển Phong Thủy - Trang chủ"><b>KHOBIENPHONGTHUY.VN</b><small>Kho Biển Số Đẹp Toàn Quốc</small></a>
     <nav class="menu" id="menu">
-      <a href="#top" class="on">Trang Chủ</a>
-      <a href="#kho">Kho Biển Số</a>
+      <a href="/" class="on">Trang Chủ</a>
+      <a href="/?page=kho">Kho Biển Số</a>
       <a href="/phong-thuy/">Xem Phong Thủy</a>
-      <a href="#dinhgia">Định Giá</a>
-      <a href="#quytrinh">Quy Trình</a>
-      <a href="#lienhe">Liên Hệ</a>
+      <a href="/?page=dinhgia">Định Giá</a>
+      <a href="/?page=quytrinh">Quy Trình</a>
+      <a href="/?page=lienhe">Liên Hệ</a>
     </nav>
     <a class="hot" href="tel:0888188888">☎ 0888.188.888</a>
     <button class="burger" id="burger" aria-label="Mở menu" aria-expanded="false">MENU
@@ -490,7 +494,7 @@ footer p{margin:4px 0}
       <details><summary>Giá trên web đã là giá cuối chưa?</summary><p>Giá trên web là giá niêm yết hiện tại. Biển số có thể được bán bất cứ lúc nào, vui lòng gọi hoặc nhắn Zalo để kiểm tra biển còn hay không trước khi đặt cọc.</p></details>
       <details><summary>“Tổng nút” được tính thế nào?</summary><p>Cộng 5 chữ số cuối của biển, lấy hàng đơn vị. Ví dụ 136.99 → 1+3+6+9+9 = 28 → 8 nút. Nếu bằng 0 thì tính là 10 nút.</p></details>
       <details><summary>Tôi ở tỉnh khác có mua được không?</summary><p>Được. Hãy liên hệ để được hướng dẫn thủ tục phù hợp với biển và nơi bạn đăng ký xe.</p></details>
-      <details><summary>Tôi muốn bán biển của mình?</summary><p>Dùng mục <a href="#dinhgia" style="color:var(--blue)">Gửi biển số, nhận báo giá</a> hoặc gọi trực tiếp hotline.</p></details>
+      <details><summary>Tôi muốn bán biển của mình?</summary><p>Dùng mục <a href="/?page=dinhgia" style="color:var(--blue)">Gửi biển số, nhận báo giá</a> hoặc gọi trực tiếp hotline.</p></details>
     </div>
   </section>
 
@@ -655,7 +659,7 @@ function card(v){
 }
 
 function render(){
-  if (!RES.length){ $("grid").innerHTML = `<div class="empty">Chưa có biển phù hợp. Thử bỏ bớt bộ lọc, hoặc <a href="#dinhgia" style="color:var(--blue)">gửi yêu cầu tìm biển</a>.</div>`; $("pager").innerHTML = ""; return; }
+  if (!RES.length){ $("grid").innerHTML = `<div class="empty">Chưa có biển phù hợp. Thử bỏ bớt bộ lọc, hoặc <a href="/?page=dinhgia" style="color:var(--blue)">gửi yêu cầu tìm biển</a>.</div>`; $("pager").innerHTML = ""; return; }
   const pages = Math.ceil(RES.length / PAGE); pg = Math.min(pg, pages - 1);
   $("grid").innerHTML = RES.slice(pg * PAGE, (pg + 1) * PAGE).map(card).join("");
   $("pager").innerHTML = pagerHtml(pg, pages);
@@ -779,7 +783,7 @@ function initUI(){
 }
 
 /* ===== Giao diện kiểu bienxeoto: slider, 12 con giáp, số đẹp, ngũ hành, ảnh ===== */
-function goKho(){ $("kho").scrollIntoView(); }
+function goKho(){ if (document.body.dataset.page !== "kho") navigatePage("kho"); $("kho").scrollIntoView(); }
 function initLook(){
   $("flFb").href = FB_URL;
   // Slider ảnh
@@ -841,7 +845,7 @@ function marquee(view, track, speed){
   view.addEventListener("focusin", () => hold = true);
   view.addEventListener("focusout", e => { if (!view.contains(e.relatedTarget)) hold = false; });
   const step = now => {
-    if (last && !hold && !(view.closest(".ticker") && matchMedia("(prefers-reduced-motion: reduce)").matches)){ const half = track.scrollWidth / 2; x -= speed * Math.min(100, now - last) / 1000; if (half > 0 && -x >= half) x += half; track.style.transform = `translateX(${x}px)`; }
+    if (last && !hold){ const half = track.scrollWidth / 2; x -= speed * Math.min(100, now - last) / 1000; if (half > 0 && -x >= half) x += half; track.style.transform = `translateX(${x}px)`; }
     last = now; requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -932,6 +936,48 @@ async function load(){
     }
   }
 }
+
+/* Mỗi mục menu có địa chỉ và nội dung riêng; hỗ trợ Quay lại / Tiến tới. */
+const PAGE_NAMES = {home:"Trang Chủ",kho:"Kho Biển Số",dinhgia:"Định Giá",quytrinh:"Quy Trình",lienhe:"Liên Hệ"};
+function currentPage(){
+  const q = new URLSearchParams(location.search);
+  const legacy = {"#kho":"kho","#dinhgia":"dinhgia","#quytrinh":"quytrinh","#lienhe":"lienhe"};
+  const page = q.get("page") || legacy[location.hash] || (q.has("q") ? "kho" : "home");
+  return Object.hasOwn(PAGE_NAMES, page) ? page : "home";
+}
+function showPage(){
+  const page = currentPage(); document.body.dataset.page = page;
+  document.querySelectorAll("main > *").forEach(el => {
+    let owner = "home";
+    if (el.matches(".giap, #kho-tim, #kho, #nguhanh")) owner = "kho";
+    else if (["dinhgia","quytrinh","lienhe"].includes(el.id)) owner = el.id;
+    el.classList.toggle("page-hidden", owner !== page);
+  });
+  document.querySelectorAll("#menu a").forEach(a => {
+    const target = new URL(a.href, location.href);
+    const selected = target.pathname === "/" && (target.searchParams.get("page") || "home") === page;
+    a.classList.toggle("on", selected);
+    if (selected) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  document.title = PAGE_NAMES[page] + " | Kho Biển Phong Thủy";
+  $("menu").classList.remove("open"); $("burger").setAttribute("aria-expanded", "false");
+}
+function navigatePage(page){
+  history.pushState({}, "", page === "home" ? "/" : "/?page=" + page);
+  showPage(); window.scrollTo({top:0,behavior:"instant"});
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("a[href]");
+  if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || a.target || a.hasAttribute("download")) return;
+  const url = new URL(a.href, location.href);
+  if (url.origin !== location.origin || url.pathname !== "/" || url.hash || url.searchParams.has("q")) return;
+  const page = url.searchParams.get("page") || "home";
+  if (!Object.hasOwn(PAGE_NAMES, page)) return;
+  e.preventDefault(); navigatePage(page);
+});
+window.addEventListener("popstate", showPage);
+window.addEventListener("hashchange", showPage);
+showPage();
 
 initUI(); tickSale(); setInterval(tickSale, 1000);
 { const q0 = new URLSearchParams(location.search).get("q"); if (q0){ S.q = q0; $("q").value = q0; if (/[A-Z]/i.test(q0)) S.prov = ""; /* biển đầy đủ (vd 30N11677) -> tìm toàn quốc */ } }   // /?q=11677 từ trang phong thủy
