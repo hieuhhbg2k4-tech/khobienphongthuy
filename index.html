@@ -297,6 +297,21 @@ footer p{margin:4px 0}
 .support-badge{display:inline-flex;align-items:center;gap:12px;margin:8px 0 14px;padding:14px 19px;background:linear-gradient(120deg,#087fba,#0d6efd);border-radius:12px;color:#fff;text-align:left;box-shadow:0 3px 10px #0d6efd20;max-width:calc(100% - 24px)}
 .support-badge svg{width:42px;height:42px;flex:none}.support-badge strong{display:block;font-size:14px;line-height:1.4;color:#fff}.support-badge span{display:block;font-size:12px;letter-spacing:1px;margin-top:2px;color:#e7f6ff}.support-badge small{display:block;font-size:11px;margin-top:5px;color:#fff}
 @media(max-width:400px){.support-badge{gap:9px;padding:12px}.support-badge strong{font-size:12px}.support-badge svg{width:34px;height:34px}}
+
+.site-footer{padding:0;background:#fff;text-align:left;color:#293e50;margin-top:24px}
+.footer-grid{display:grid;grid-template-columns:1fr 1.15fr 1.1fr;gap:36px;padding-top:36px;padding-bottom:32px}
+.footer-grid h2{font-size:20px;color:#b91c1c;line-height:1.4;margin:0 0 18px}
+.footer-grid h2:after{content:"";display:block;width:84px;height:3px;background:#3e4750;margin-top:9px}
+.footer-grid ul{list-style:none;padding:0;margin:0 0 15px}
+.footer-grid li{margin:12px 0;padding-left:14px;position:relative;font-size:13px}
+.footer-grid li:before{content:"›";position:absolute;left:0;font-weight:800;color:#25364a}
+.footer-grid a:hover{text-decoration:underline}.footer-grid p{font-size:13px;margin:12px 0}
+.footer-grid li a,.store-link{color:#b91c1c}.footer-phone{font-weight:800;color:#b91c1c;font-size:18px}.store-link{display:inline-flex;align-items:center;gap:8px;margin-top:3px;font-size:16px}.store-link span{font-size:27px;color:#087fba}
+.footer-grid .support-badge{margin:12px 0 0;max-width:100%;padding:12px;gap:9px}.footer-grid .support-badge strong{font-size:12px}.footer-grid .support-badge span{font-size:10px}.footer-grid .support-badge svg{width:34px;height:34px}.footer-grid .support-badge:hover{text-decoration:none}
+.footer-bottom{background:#a90f18;color:#fff;text-align:center;padding:16px 0}.footer-bottom b{font-size:15px}.footer-bottom p{margin:4px 0;font-size:12px}.footer-bottom a{color:#fff}
+.info-page{padding:28px 0 40px}.info-panel{padding:30px;background:#fff;border:1px solid #dce7ee;border-radius:14px}.info-panel h1{color:#173e63;font-size:28px;margin-bottom:14px}.info-panel p{color:#52677b}.store-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:24px 0}.store-card{border:1px solid #d8e5ef;background:#f7fbfe;border-radius:12px;padding:22px}.store-card .store-number{color:#7194ae;font-size:12px;font-weight:700;letter-spacing:1px}.store-card h2{font-size:21px;color:#173e63;margin:10px 0 18px}.store-card .btn{font-size:13px}.info-panel .small{font-size:13px}
+@media(max-width:800px){.footer-grid{grid-template-columns:1fr;gap:25px;padding-top:28px;padding-bottom:28px}.footer-grid h2{font-size:18px}.store-grid{grid-template-columns:1fr}.info-panel{padding:22px}.info-panel h1{font-size:24px}}
+
 </style>
 </head>
 <body>
@@ -505,8 +520,8 @@ footer p{margin:4px 0}
         <p><b>Zalo:</b> <a href="https://zalo.me/0888188888" target="_blank" rel="noopener" style="color:var(--blue)">0888.188.888</a></p>
         <p><b>Website:</b> khobienphongthuy.vn</p>
         <h3 style="font-size:15px;margin:12px 0 4px">Miền Bắc</h3>
-        <p><b>Trụ sở chính:</b> 326 Phạm Văn Đồng, Xuân Đỉnh, Hà Nội</p>
-        <p>451 Đội Cấn, Ba Đình, Hà Nội</p>
+        <p><b>Trụ sở chính:</b> <a href="https://share.google/C2QQutXpQvs8iDXbf" target="_blank" rel="noopener">326 Phạm Văn Đồng · Google Maps ↗</a></p>
+        <p><a href="https://share.google/MdhDbQejAgTTUvlFc" target="_blank" rel="noopener">451 Đội Cấn · Google Maps ↗</a><br><a href="https://share.google/lX5eBJeIvt4iK1hWh" target="_blank" rel="noopener">61 Cổ Linh · Google Maps ↗</a></p>
         <h3 style="font-size:15px;margin:10px 0 4px">Miền Trung</h3>
         <p>110 Lê Độ, Chính Gián, Thanh Khê, Đà Nẵng</p>
         <p>17 Phan Đình Phùng, Cửa Nam, TP Vinh, Nghệ An</p>
@@ -514,14 +529,24 @@ footer p{margin:4px 0}
       </div>
     </div>
   </section>
+
+  <section class="info-page" id="cuahang"><div class="wrap"><div class="info-panel"><h1>Danh sách cửa hàng</h1><p>Chọn địa điểm để xem vị trí và chỉ đường trên Google Maps.</p><div class="store-grid"><article class="store-card"><span class="store-number">ĐỊA ĐIỂM 01</span><h2>451 Đội Cấn</h2><a class="btn btn-blue" href="https://share.google/MdhDbQejAgTTUvlFc" target="_blank" rel="noopener">Mở Google Maps ↗</a></article><article class="store-card"><span class="store-number">ĐỊA ĐIỂM 02</span><h2>326 Phạm Văn Đồng</h2><a class="btn btn-blue" href="https://share.google/C2QQutXpQvs8iDXbf" target="_blank" rel="noopener">Mở Google Maps ↗</a></article><article class="store-card"><span class="store-number">ĐỊA ĐIỂM 03</span><h2>61 Cổ Linh</h2><a class="btn btn-blue" href="https://share.google/lX5eBJeIvt4iK1hWh" target="_blank" rel="noopener">Mở Google Maps ↗</a></article></div><p class="small">Gọi trước khi đến để được hỗ trợ: <a href="tel:0888188888"><b>0888.188.888</b></a>.</p></div></div></section>
+  <section class="info-page" id="gioithieu"><div class="wrap"><div class="info-panel"><h1>Giới thiệu Kho Biển Phong Thủy</h1><p>Kho Biển Phong Thủy là nơi tìm kiếm biển số ô tô, xe máy theo tỉnh thành, dạng số và nhu cầu của bạn.</p><p>Trao đổi về biển số và thủ tục qua hotline <a href="tel:0888188888"><b>0888.188.888</b></a> hoặc <a href="https://zalo.me/0888188888" target="_blank" rel="noopener">Zalo</a>.</p><a class="btn btn-line" href="/?page=cuahang">Xem danh sách cửa hàng</a></div></div></section>
+<section class="info-page" id="baomat"><div class="wrap"><div class="info-panel"><h1>Chính sách bảo mật</h1><p>Nội dung đang được cập nhật.</p><p>Trong thời gian chờ cập nhật, vui lòng liên hệ <a href="tel:0888188888"><b>0888.188.888</b></a> để được hỗ trợ.</p><a class="btn btn-line" href="/">Về trang chủ</a></div></div></section>
+<section class="info-page" id="thanhtoan"><div class="wrap"><div class="info-panel"><h1>Chính sách thanh toán &amp; giao hàng</h1><p>Nội dung đang được cập nhật.</p><p>Trong thời gian chờ cập nhật, vui lòng liên hệ <a href="tel:0888188888"><b>0888.188.888</b></a> để được hỗ trợ.</p><a class="btn btn-line" href="/">Về trang chủ</a></div></div></section>
+<section class="info-page" id="hoantra"><div class="wrap"><div class="info-panel"><h1>Chính sách hoàn trả</h1><p>Nội dung đang được cập nhật.</p><p>Trong thời gian chờ cập nhật, vui lòng liên hệ <a href="tel:0888188888"><b>0888.188.888</b></a> để được hỗ trợ.</p><a class="btn btn-line" href="/">Về trang chủ</a></div></div></section>
+<section class="info-page" id="dieukhoan"><div class="wrap"><div class="info-panel"><h1>Điều khoản &amp; Điều kiện</h1><p>Nội dung đang được cập nhật.</p><p>Trong thời gian chờ cập nhật, vui lòng liên hệ <a href="tel:0888188888"><b>0888.188.888</b></a> để được hỗ trợ.</p><a class="btn btn-line" href="/">Về trang chủ</a></div></div></section>
+<section class="info-page" id="mientru"><div class="wrap"><div class="info-panel"><h1>Tuyên bố miễn trừ trách nhiệm</h1><p>Nội dung đang được cập nhật.</p><p>Trong thời gian chờ cập nhật, vui lòng liên hệ <a href="tel:0888188888"><b>0888.188.888</b></a> để được hỗ trợ.</p><a class="btn btn-line" href="/">Về trang chủ</a></div></div></section>
+<section class="info-page" id="dichvu"><div class="wrap"><div class="info-panel"><h1>Hỗ Trợ Dịch Vụ Liên Quan Đến Biển Số</h1><p>Nội dung đang được cập nhật.</p><p>Trong thời gian chờ cập nhật, vui lòng liên hệ <a href="tel:0888188888"><b>0888.188.888</b></a> để được hỗ trợ.</p><a class="btn btn-line" href="/">Về trang chủ</a></div></div></section>
 </main>
 
-<footer>
-  <a class="support-badge" href="tel:0888188888" aria-label="Kho Biển Phong Thủy, hỗ trợ toàn quốc, gọi 0888.188.888"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="21" stroke="white" stroke-width="2.5"/><path d="m13 24 8 8 15-17" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><strong>KHO BIỂN PHONG THỦY</strong><span>HỖ TRỢ TOÀN QUỐC</span><small>Hotline: 0888.188.888</small></div></a><br>
-
-  <b>Kho Biển Phong Thủy</b>
-  <p>Kho biển số đẹp ô tô, xe máy toàn quốc · Hotline <a href="tel:0888188888"><b style="font-size:inherit">0888.188.888</b></a></p>
-  <p class="small" style="color:#333">© <span id="yr"></span> khobienphongthuy.vn · Giá có thể thay đổi, vui lòng liên hệ để xác nhận.</p>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <section aria-labelledby="footer-contact"><h2 id="footer-contact">LIÊN HỆ HỖ TRỢ</h2><ul><li><a href="/?page=gioithieu">Giới thiệu</a></li><li><a href="/?page=lienhe">Liên hệ</a></li></ul><p>Gọi mua biển:<br><a class="footer-phone" href="tel:0888188888">0888.188.888</a></p><p>Khiếu nại dịch vụ:<br><a class="footer-phone" href="tel:0888188888">0888.188.888</a></p><a class="store-link" href="/?page=cuahang"><span aria-hidden="true">⌖</span> Danh sách cửa hàng</a></section>
+    <section aria-labelledby="footer-policy"><h2 id="footer-policy">CHÍNH SÁCH QUY ĐỊNH</h2><ul><li><a href="/?page=baomat">Chính sách bảo mật</a></li><li><a href="/?page=thanhtoan">Chính sách thanh toán &amp; giao hàng</a></li><li><a href="/?page=hoantra">Chính sách hoàn trả</a></li><li><a href="/?page=dieukhoan">Điều khoản &amp; Điều kiện</a></li><li><a href="/?page=mientru">Tuyên bố miễn trừ trách nhiệm</a></li></ul></section>
+    <section aria-labelledby="footer-help"><h2 id="footer-help">HỖ TRỢ CHUNG</h2><ul><li><a href="/?page=dichvu">Hỗ Trợ Dịch Vụ Liên Quan Đến Biển Số</a></li></ul>  <a class="support-badge" href="tel:0888188888" aria-label="Kho Biển Phong Thủy, hỗ trợ toàn quốc, gọi 0888.188.888"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="21" stroke="white" stroke-width="2.5"/><path d="m13 24 8 8 15-17" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><strong>KHO BIỂN PHONG THỦY</strong><span>HỖ TRỢ TOÀN QUỐC</span><small>Hotline: 0888.188.888</small></div></a></section>
+  </div>
+  <div class="footer-bottom"><div class="wrap"><b>Kho Biển Phong Thủy</b><p>Kho biển số đẹp ô tô, xe máy toàn quốc · Hotline <a href="tel:0888188888">0888.188.888</a></p><p>© <span id="yr"></span> khobienphongthuy.vn · Giá có thể thay đổi, vui lòng liên hệ để xác nhận.</p></div></div>
 </footer>
 
 <a class="fl fb" id="flFb" href="#" target="_blank" rel="noopener"><i></i>Chat Facebook</a>
@@ -934,7 +959,7 @@ async function load(){
 }
 
 /* Mỗi mục menu có địa chỉ và nội dung riêng; hỗ trợ Quay lại / Tiến tới. */
-const PAGE_NAMES = {home:"Trang Chủ",kho:"Kho Biển Số",dinhgia:"Định Giá",quytrinh:"Quy Trình",lienhe:"Liên Hệ"};
+const PAGE_NAMES = {home:"Trang Chủ",kho:"Kho Biển Số",dinhgia:"Định Giá",quytrinh:"Quy Trình",lienhe:"Liên Hệ",cuahang:"Danh sách cửa hàng",gioithieu:"Giới thiệu",baomat:"Chính sách bảo mật",thanhtoan:"Chính sách thanh toán & giao hàng",hoantra:"Chính sách hoàn trả",dieukhoan:"Điều khoản & Điều kiện",mientru:"Tuyên bố miễn trừ trách nhiệm",dichvu:"Hỗ Trợ Dịch Vụ Liên Quan Đến Biển Số"};
 function currentPage(){
   const q = new URLSearchParams(location.search);
   const legacy = {"#kho":"kho","#dinhgia":"dinhgia","#quytrinh":"quytrinh","#lienhe":"lienhe"};
@@ -946,7 +971,7 @@ function showPage(){
   document.querySelectorAll("main > *").forEach(el => {
     let owner = "home";
     if (el.matches(".giap, #kho-tim, #kho, #nguhanh")) owner = "kho";
-    else if (["dinhgia","quytrinh","lienhe"].includes(el.id)) owner = el.id;
+    else if (Object.hasOwn(PAGE_NAMES, el.id)) owner = el.id;
     el.classList.toggle("page-hidden", owner !== page && !(page === "home" && owner === "kho"));
   });
   document.querySelectorAll("#menu a").forEach(a => {
