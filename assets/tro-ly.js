@@ -93,7 +93,7 @@
   document.body.append(btn, box);
   const log = box.querySelector(".tl-log"), form = box.querySelector("form"), input = form.querySelector("input");
   // Hiển thị chữ an toàn + **đậm** và gạch đầu dòng "* " của AI
-  const fmt = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/^\s*[*-]\s+/gm, "• ").replace(/(\d{2}[A-Z]{1,2}\d?-\d{3}\.\d{2})/g, '<a href="/?q=$1#kho" style="color:#c1121f;font-weight:600">$1</a>');
+  const fmt = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/^\s*[*-]\s+/gm, "• ").replace(/^#{1,6}\s*(.+)$/gm, "<b>$1</b>").replace(/(\d{2}[A-Z]{1,2}\d?-\d{3}\.\d{2})/g, '<a href="/?q=$1#kho" style="color:#c1121f;font-weight:600">$1</a>');
   const add = (cls, text) => { const d = document.createElement("div"); d.className = "tl-m " + cls; if (cls === "a") d.innerHTML = fmt(text); else d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
   let history = [], busy = false, greeted = false;
   try { history = JSON.parse(sessionStorage.getItem("tl-h") || "[]"); } catch (e) {}
