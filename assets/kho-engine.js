@@ -238,6 +238,14 @@ function giaOf(s, i) {
   const kb = grouped != null ? grouped : GIA.k && key in GIA.k ? GIA.k[key] : null;                                              // khobienvietnam
   if (kb === -1 || hv === -1) return -1;
   let v;
+  // Tam hoa đầu + đuôi đẹp (111.68, 222.99...): giá theo kết quả trúng đấu giá VPA gần đây, không thấp hơn kbvn +10%
+  const th = !moto && GIA.th && GIA.th[n];
+  if (th) {
+    v = th[HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1];
+    v = Math.max(v, { "2": 99, "3": 99, "5": 99, "6": 99, "7": 89, "8": 99, "9": 99 }[n[0]] || floor);   // sàn theo bảng tam hoa
+    if (kb != null) v = Math.max(v, Math.round(kb * KB_MARKUP));
+    return v >= CONTACT_FROM ? -1 : v;
+  }
   if (kb != null) v = Math.max(hv || floor, Math.round(kb * KB_MARKUP));
   else {
     if (!moto && scoreOf(s.tag[i]) >= 8) return -1;          // chưa có giá khobienvietnam để so -> Liên hệ
