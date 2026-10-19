@@ -216,6 +216,11 @@ select{width:100%;border:1px solid #ced4da;border-radius:6px;padding:8px 10px;ba
 .mq{display:flex;gap:12px;width:max-content;will-change:transform}
 .mq img{flex:none;height:180px;width:auto;border-radius:6px;background:#eee}
 .strip.wide .mq img{height:150px}
+.feedback-intro{color:var(--muted);margin:0 0 16px;font-size:14px}
+.customer-feedback{padding:8px 0 16px;scroll-margin-top:180px}
+.customer-feedback .mq{align-items:center;gap:16px}
+.customer-feedback .mq img{height:300px;max-width:440px;object-fit:contain;border-radius:12px;background:#fff;box-shadow:0 3px 14px #18344a18}
+@media(max-width:650px){.customer-feedback .mq img{height:230px;max-width:85vw}}
 .related{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .related div{background:#fff;border-radius:var(--r);overflow:hidden;text-align:center;font-weight:600;padding-bottom:10px}
 .related img{width:100%;aspect-ratio:1;object-fit:cover;margin-bottom:8px}
@@ -486,8 +491,8 @@ footer p{margin:4px 0}
       <h2 class="sec-title">Trụ sở uy tín - Yên tâm giao dịch</h2>
       <div class="strip" id="tru"></div>
       <h2 class="sec-title" style="margin-top:14px">Khách hàng đánh giá</h2>
-      <div class="strip" id="kh"></div>
-      <div class="strip wide" id="dg" style="margin-top:8px"></div>
+      <p class="feedback-intro">Hình ảnh khách hàng nhận xe và biển số tại Kho Biển Phong Thủy.</p>
+      <div class="strip customer-feedback" id="kh" role="region" aria-label="Hình ảnh khách hàng và phản hồi"></div>
     </div>
   </section>
 
@@ -905,8 +910,9 @@ function initLook(){
   // Ảnh trụ sở, đánh giá
   const pics = (id, names) => { const box = $(id); box.innerHTML = `<div class="mq">${names.map(n => `<img src="/assets/bx/${n}.webp" alt="" decoding="async">`).join("")}</div>`; marquee(box, box.firstChild, 40); };
   pics("tru", ["trusos2","trusos3","trusos5","trusos6","trusos7"]);
-  pics("kh", ["kh0","kh1","kh2","kh3"]);
-  pics("dg", ["dg4","dg5","dg6","dg7","dg8","dg9","dg10","dg11","dg12","dg13","dg14"]);
+  const feedback = $("kh");
+  feedback.innerHTML = '<div class="mq">' + Array.from({length:17}, (_,i) => '<img src="/assets/khach-hang-' + String(i+1).padStart(2,"0") + '.jpg" alt="Khách hàng nhận xe và biển số — ảnh ' + (i+1) + '" loading="lazy" decoding="async">').join("") + '</div>';
+  marquee(feedback, feedback.firstChild, 32);
 
   // Bấm biển trên dòng chữ chạy -> tìm biển đó
   $("tkTrack").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
