@@ -47,9 +47,9 @@
       const lo = a.gia_tu || 0, hi = a.gia_den || Infinity;
       if (a.gia_tu || a.gia_den) res = res.filter(v => { const [s, i] = KE.unpack(src, v), g = KE.giaOf(s, i); const t = g == null ? null : g < 0 ? 1e9 : g; return t != null && t >= lo && t <= hi; });
       const total = res.length; KE.sortRes(src, res, "hot");
-      const n = Math.min(10, Math.max(1, a.so_luong || 6));
+      const n = Math.min(10, Math.max(8, a.so_luong || 10));   // luôn 8–10 biển
       return { tong_so_bien_phu_hop: total, bien: res.slice(0, n).map(v => { const [s, i] = KE.unpack(src, v); return info(s, i); }),
-        ghi_chu: total ? "Giá là giá bán trên web hiện tại." : "Không có biển phù hợp; gợi ý nới điều kiện hoặc gọi 0888.188.888 để được tìm." };
+        ghi_chu: total ? "Giá là giá bán trên web hiện tại. Liệt kê đủ tất cả các biển trong danh sách này cho khách." : "Không có biển phù hợp. Chỉ nới điều kiện thêm tối đa 1 lần rồi trả lời khách ngay; có thể giải thích lý do (vd số khắc mệnh) và mời gọi 0888.188.888." };
     },
     async phong_thuy_tuoi(a) { const y = +a.nam_sinh; if (!(y >= 1900 && y <= 2100)) return { loi: "Năm sinh không hợp lệ" }; return tuoi(y); },
     async y_nghia_bien(a) {
@@ -117,7 +117,7 @@
     box.querySelector(".tl-sug").hidden = true;
     const wait = add("t", "Trợ lý đang trả lời…");
     try {
-      for (let round = 0; round < 5; round++) {
+      for (let round = 0; round < 4; round++) {
         const res = await callAI();
         const content = res.content || []; history.push({ role: "assistant", content });
         const text = content.filter(c => c.type === "text").map(c => c.text).join("\n").trim();
@@ -130,7 +130,8 @@
         history.push({ role: "user", content: results });
       }
     } catch (err) {
-      add("a", "Xin lỗi, trợ lý đang bận. Anh/chị gọi hoặc nhắn Zalo 0888.188.888 để được tư vấn ngay ạ.");
+      add("a", /429|quota|RESOURCE_EXHAUSTED/i.test(String(err)) ? "Dạ trợ lý AI đã hết lượt trả lời miễn phí hôm nay. Anh/chị gọi hoặc nhắn Zalo 0888.188.888, nhân viên tư vấn ngay ạ."
+        : "Xin lỗi, trợ lý đang bận. Anh/chị thử lại sau ít phút, hoặc gọi/nhắn Zalo 0888.188.888 để được tư vấn ngay ạ.");
       history = history.filter(m => typeof m.content === "string");
     } finally { wait.remove(); busy = false; save(); }
   });
