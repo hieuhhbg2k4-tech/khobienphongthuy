@@ -118,7 +118,7 @@
   }
   form.addEventListener("submit", async e => {
     e.preventDefault(); const q = input.value.trim(); if (!q || busy) return;
-    busy = true; input.value = ""; add("u", q); history.push({ role: "user", content: q });
+    busy = true; input.value = ""; add("u", q); const before = history.length; history.push({ role: "user", content: q });
     box.querySelector(".tl-sug").hidden = true;
     const wait = add("t", "Trợ lý đang trả lời…");
     try {
@@ -137,7 +137,7 @@
     } catch (err) {
       add("a", /429|quota|RESOURCE_EXHAUSTED/i.test(String(err)) ? "Dạ trợ lý AI đã hết lượt trả lời miễn phí hôm nay. Anh/chị gọi hoặc nhắn Zalo 0888.188.888, nhân viên tư vấn ngay ạ."
         : "Xin lỗi, trợ lý đang bận. Anh/chị thử lại sau ít phút, hoặc gọi/nhắn Zalo 0888.188.888 để được tư vấn ngay ạ.");
-      history = history.filter(m => typeof m.content === "string");
+      history = history.slice(0, before);   // bỏ câu hỏi lỗi, không để AI trả lời dồn lần sau
     } finally { wait.remove(); busy = false; save(); }
   });
   window.TroLy = { TOOLS, tuoi };
