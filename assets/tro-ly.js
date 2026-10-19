@@ -105,9 +105,9 @@
   box.querySelector(".tl-sug").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { input.value = b.textContent; form.requestSubmit(); } });
 
   async function callAI() {
-    const r = await fetch(URL_, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history }) });
+    const r = await fetch(URL_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ messages: history }) });
     if (!r.ok) throw new Error("HTTP " + r.status);
-    return r.json();
+    const j = await r.json(); if (j.error) throw new Error(typeof j.error === "string" ? j.error : JSON.stringify(j.error)); return j;
   }
   form.addEventListener("submit", async e => {
     e.preventDefault(); const q = input.value.trim(); if (!q || busy) return;
