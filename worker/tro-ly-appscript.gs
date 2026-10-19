@@ -83,14 +83,20 @@ function gemini_(key, model, msgs, system) {
     });
     if (parts.length) contents.push({ role: m.role === "assistant" ? "model" : "user", parts: parts });
   });
-  var payload = JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: contents,
+  var body = { systemInstruction: { parts: [{ text: system }] }, contents: contents,
       tools: [{ functionDeclarations: TOOLS.map(function (t) { return { name: t.name, description: t.description, parameters: cleanSchema_(t.input_schema) }; }) }],
-      generationConfig: { maxOutputTokens: 900, temperature: 0.4 } });
+      generationConfig: { maxOutputTokens: 900, temperature: 0.4 } };
+  // Giảm "suy nghĩ" của mô hình để trả lời nhanh hơn (Gemini 3: thinkingLevel low; 2.5: tắt suy nghĩ)
+  function payloadFor(m, think) { var g = JSON.parse(JSON.stringify(body));
+    if (think) { if (/gemini-3/.test(m)) g.generationConfig.thinkingConfig = { thinkingLevel: "low" };
+      else if (/2\.5-flash/.test(m)) g.generationConfig.thinkingConfig = { thinkingBudget: 0 }; }
+    return JSON.stringify(g); }
   // Thử lần lượt các mô hình: quá tải (503) / hết lượt miễn phí (429) / không có (404) -> chuyển mô hình khác
   var chain = [model].concat((PropertiesService.getScriptProperties().getProperty("GEMINI_FALLBACKS") || "gemini-flash-lite-latest,gemini-flash-latest,gemini-2.5-flash-lite").split(",").map(function (s) { return s.trim(); }).filter(function (s) { return s && s !== model; }));
   var res;
   for (var mi = 0; mi < chain.length; mi++) {
-    res = callModel_(key, chain[mi], payload);
+    res = callModel_(key, chain[mi], payloadFor(chain[mi], true));
+    if (res.getResponseCode() === 400 && /thinking/i.test(res.getContentText())) res = callModel_(key, chain[mi], payloadFor(chain[mi], false));
     var c = res.getResponseCode();
     if (c === 200 || [429, 503, 404, 500].indexOf(c) < 0) break;
   }
