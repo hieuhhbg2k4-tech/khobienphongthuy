@@ -146,8 +146,9 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
       <div class="row">
         <span class="pill">Kết quả: <b id="cnt">0</b></span>
         <span class="pill">Đã chọn: <b id="selCnt">0</b></span>
-        <button class="btn" id="copySel" type="button">Chép biển đã chọn</button>
-        <button class="btn" id="copyAll" type="button">Chép tất cả kết quả</button>
+        <button class="btn" id="selClear" type="button">Bỏ chọn</button>
+        <button class="btn" id="copyGia" type="button" title="Đã tích chọn biển thì chép biển đã chọn, chưa chọn thì chép tất cả kết quả">Chép kèm giá</button>
+        <button class="btn" id="copyNoGia" type="button" title="Đã tích chọn biển thì chép biển đã chọn, chưa chọn thì chép tất cả kết quả">Chép không giá</button>
         <button class="btn" id="csv" type="button">Xuất CSV</button>
       </div>
       <div class="tbl-wrap">
@@ -346,7 +347,15 @@ function render(){
   $("more").textContent = `Xem thêm (còn ${N(RES.length - shown)})`;
 }
 
-function lineOf(v){ const [s, i] = KE.unpack(LIST, v), g = KE.giaText(KE.giaOf(s, i)); return s.text(i) + (g ? " - " + g : ""); }
+function lineOf(v, gia = true){ const [s, i] = KE.unpack(LIST, v), t = s.text(i); if (!gia) return t; const g = KE.giaText(KE.giaOf(s, i)); return t + (g ? " - " + g : ""); }
+// Có biển đã chọn -> chép biển đã chọn; chưa chọn -> chép tất cả kết quả
+function copyLines(gia){
+  if (!SEL.size) return RES.map(v => lineOf(v, gia));
+  if (!gia) return [...SEL];
+  const m = new Map(); RES.forEach(v => { const [s, i] = KE.unpack(LIST, v), t = s.text(i); if (SEL.has(t) && !m.has(t)) m.set(t, lineOf(v)); });
+  return [...SEL].map(t => m.get(t) || t);
+}
+function copyLabels(){ const w = SEL.size ? ` (${N(SEL.size)} biển đã chọn)` : " (tất cả kết quả)"; $("copyGia").textContent = "Chép kèm giá" + w; $("copyNoGia").textContent = "Chép không giá" + w; }
 async function copyList(lines){
   if (!lines.length) return toast("Không có biển để chép");
   if (lines.length > 200000 && !confirm(`Chép ${N(lines.length)} biển có thể làm máy chậm. Nên lọc bớt hoặc dùng Xuất CSV. Vẫn chép?`)) return;
@@ -382,8 +391,11 @@ $("tb").addEventListener("change", e => {
   const tr = e.target.closest("tr"), p = tr.dataset.p; e.target.checked ? SEL.add(p) : SEL.delete(p);
   tr.classList.toggle("sel", e.target.checked); $("selCnt").textContent = N(SEL.size);
 });
-$("copySel").addEventListener("click", () => copyList([...SEL]));
-$("copyAll").addEventListener("click", () => copyList(RES.map(lineOf)));
+$("selClear").addEventListener("click", () => { SEL.clear(); $("selCnt").textContent = "0"; if ($("selAll")) $("selAll").checked = false;
+  document.querySelectorAll("#tb .pick").forEach(c => { c.checked = false; c.closest("tr").classList.remove("sel"); }); });
+$("copyGia").addEventListener("click", () => copyList(copyLines(true)));
+$("copyNoGia").addEventListener("click", () => copyList(copyLines(false)));
+copyLabels(); new MutationObserver(copyLabels).observe($("selCnt"), { childList: true, characterData: true, subtree: true });
 $("csv").addEventListener("click", () => {
   const h = ["Biển số","Dạng số","Loại xe","Kho","Tỉnh/TP","Nút","Giá tham khảo","Lịch ĐG","Số người ĐK"].concat(OWNER_ON ? ["Giá thu (tr)","Lãi (tr)","Người bán","Nhóm","Dòng"] : []);
   const rows = RES.map(v => {
