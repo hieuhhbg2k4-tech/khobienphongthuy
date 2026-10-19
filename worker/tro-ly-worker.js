@@ -5,7 +5,7 @@
    Biến môi trường (Secret) trong Cloudflare — chọn MỘT:
      GEMINI_API_KEY     : Google Gemini (có gói miễn phí, lấy tại aistudio.google.com)
      ANTHROPIC_API_KEY  : Claude (trả phí theo lượt)
-   Tùy chọn: GEMINI_MODEL (mặc định gemini-2.5-flash). */
+   Tùy chọn: GEMINI_MODEL (mặc định gemini-3.8-flash). */
 
 const MODEL = "claude-haiku-5-5";
 const ALLOWED = ["https://khobienphongthuy.vn", "https://www.khobienphongthuy.vn"];
@@ -98,7 +98,7 @@ async function gemini(env, msgs, system, origin) {
     }
     if (parts.length) contents.push({ role: m.role === "assistant" ? "model" : "user", parts });
   }
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = env.GEMINI_MODEL || "gemini-3.8-flash";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents,
