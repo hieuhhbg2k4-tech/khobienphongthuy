@@ -2,7 +2,10 @@
    Nhiệm vụ: giữ khóa API bí mật, gắn hướng dẫn + danh sách công cụ, chuyển hội thoại tới mô hình AI.
    Công cụ (tìm biển, phong thủy, ý nghĩa biển) chạy ngay trên trình duyệt của khách bằng dữ liệu kho trên web,
    nên AI chỉ báo đúng biển + đúng giá đang hiển thị.
-   Biến môi trường cần đặt trong Cloudflare: ANTHROPIC_API_KEY (Secret). */
+   Biến môi trường (Secret) trong Cloudflare — chọn MỘT:
+     GEMINI_API_KEY     : Google Gemini (có gói miễn phí, lấy tại aistudio.google.com)
+     ANTHROPIC_API_KEY  : Claude (trả phí theo lượt)
+   Tùy chọn: GEMINI_MODEL (mặc định gemini-2.5-flash). */
 
 const MODEL = "claude-haiku-5-5";
 const ALLOWED = ["https://khobienphongthuy.vn", "https://www.khobienphongthuy.vn"];
@@ -63,6 +66,7 @@ export default {
     while (msgs.length && (msgs[0].role !== "user" || Array.isArray(msgs[0].content) && msgs[0].content.some(c => c.type === "tool_result"))) msgs.shift();
     if (!msgs.length) return new Response("Empty", { status: 400, headers: cors(origin) });
     const now = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 16).replace("T", " ");
+    if (env.GEMINI_API_KEY) return gemini(env, msgs, SYSTEM + `\nGiờ hiện tại ở Việt Nam: ${now}.`, origin);
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
@@ -72,3 +76,44 @@ export default {
     return new Response(data, { status: r.status, headers: { ...cors(origin), "Content-Type": "application/json" } });
   }
 };
+
+/* ===== Google Gemini: đổi hội thoại sang định dạng Gemini và trả về đúng dạng khung chat đang dùng ===== */
+function cleanSchema(s) {           // Gemini không nhận enum có chuỗi rỗng
+  if (!s || typeof s !== "object") return s;
+  const o = Array.isArray(s) ? s.map(cleanSchema) : {};
+  if (!Array.isArray(s)) for (const [k, v] of Object.entries(s)) o[k] = k === "enum" ? v.filter(x => x !== "") : cleanSchema(v);
+  return o;
+}
+async function gemini(env, msgs, system, origin) {
+  const names = {};                 // id công cụ -> tên công cụ
+  const contents = [];
+  for (const m of msgs) {
+    const parts = [];
+    if (typeof m.content === "string") parts.push({ text: m.content });
+    else for (const c of m.content) {
+      if (c.type === "text" && c.text) parts.push({ text: c.text });
+      else if (c.type === "tool_use") { names[c.id] = c.name; const fp = { functionCall: { name: c.name, args: c.input || {} } }; if (c.sig) fp.thoughtSignature = c.sig; parts.push(fp); }
+      else if (c.type === "tool_result") { let r; try { r = JSON.parse(c.content); } catch (e) { r = { ket_qua: c.content }; }
+        parts.push({ functionResponse: { name: names[c.tool_use_id] || "tim_bien", response: { ket_qua: r } } }); }
+    }
+    if (parts.length) contents.push({ role: m.role === "assistant" ? "model" : "user", parts });
+  }
+  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+    body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents,
+      tools: [{ functionDeclarations: TOOLS.map(t => ({ name: t.name, description: t.description, parameters: cleanSchema(t.input_schema) })) }],
+      generationConfig: { maxOutputTokens: 900, temperature: 0.4 } })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) return new Response(JSON.stringify({ error: data.error || data }), { status: r.status, headers: { ...cors(origin), "Content-Type": "application/json" } });
+  const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+  const content = [];
+  parts.forEach((p, k) => {
+    if (p.text) content.push({ type: "text", text: p.text });
+    if (p.functionCall) content.push({ type: "tool_use", id: "g" + Date.now().toString(36) + k, name: p.functionCall.name, input: p.functionCall.args || {}, ...(p.thoughtSignature ? { sig: p.thoughtSignature } : {}) });
+  });
+  if (!content.length) content.push({ type: "text", text: "Dạ em chưa trả lời được câu này, anh/chị gọi 0888.188.888 để được tư vấn ngay ạ." });
+  return new Response(JSON.stringify({ content, stop_reason: content.some(c => c.type === "tool_use") ? "tool_use" : "end_turn" }),
+    { headers: { ...cors(origin), "Content-Type": "application/json" } });
+}
