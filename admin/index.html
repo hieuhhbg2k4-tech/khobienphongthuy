@@ -77,6 +77,7 @@ tr.sel td{background:rgba(232,176,75,.07)}
 .t-kho{background:rgba(245,201,107,.18);color:#ffd66b}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 .price{font-weight:700;color:var(--gold2)}
+#fAvoid .pop label.d{display:inline-flex;width:20%;gap:4px}
 .cost{color:var(--mute)}
 .profit{color:var(--ok);font-weight:600}
 .neg{color:var(--bad)}
@@ -132,8 +133,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         <div class="multi" id="fAvoid">
           <button type="button" aria-haspopup="true" aria-expanded="false">Tránh số</button>
           <div class="pop" hidden>
-            <label><input type="checkbox" value="4"> Không có 4</label>
-            <label><input type="checkbox" value="7"> Không có 7</label>
+            <label class="d"><input type="checkbox" value="0"> 0</label><label class="d"><input type="checkbox" value="1"> 1</label><label class="d"><input type="checkbox" value="2"> 2</label><label class="d"><input type="checkbox" value="3"> 3</label><label class="d"><input type="checkbox" value="4"> 4</label><label class="d"><input type="checkbox" value="5"> 5</label><label class="d"><input type="checkbox" value="6"> 6</label><label class="d"><input type="checkbox" value="7"> 7</label><label class="d"><input type="checkbox" value="8"> 8</label><label class="d"><input type="checkbox" value="9"> 9</label>
             <label><input type="checkbox" value="49"> Không có 49</label>
             <label><input type="checkbox" value="53"> Không có 53</label>
             <label><input type="checkbox" value="13"> Không có 13</label>
@@ -144,6 +144,8 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
         <select id="fType" aria-label="Loại xe"><option value="">Loại xe</option><option value="0">Ô tô</option><option value="1">Xe máy</option></select>
         <select id="fMenh" aria-label="Mệnh" title="Theo số cuối: 1-6 Thủy, 2-7 Hỏa, 3-8 Mộc, 4-9 Kim, 5-0 Thổ (gồm hành tương sinh)"><option value="">Mệnh</option></select>
         <select id="fHead" aria-label="Đầu biển"><option value="">Đầu (tất cả)</option></select>
+        <select id="fGia" aria-label="Mức giá"><option value="">Mức giá</option><option value="0-100">Dưới 100 tr</option><option value="100-200">100 – 200 tr</option><option value="200-500">200 – 500 tr</option><option value="500-1000">500 tr – 1 tỷ</option><option value="lh">Liên hệ (từ 1 tỷ)</option><option value="custom">Tự nhập…</option></select>
+        <span id="giaCustom" hidden><input class="in" id="gMin" type="number" min="0" placeholder="Từ (tr)" style="width:90px"> – <input class="in" id="gMax" type="number" min="0" placeholder="Đến (tr)" style="width:90px"></span>
         <select id="fDate" aria-label="Lịch đấu giá"><option value="">Lịch đấu giá</option><option value="1">Đã có lịch</option><option value="0">Chưa có lịch</option></select>
         <select id="sort" aria-label="Sắp xếp"><option value="hot">Nổi bật trước</option><option value="date">Lịch ĐG gần nhất</option><option value="reg">Nhiều người ĐK</option><option value="none">Theo kho</option></select>
       </div>
@@ -313,6 +315,15 @@ function apply(){
   LIST = active();
   RES = KE.filter(LIST, { q:$("q").value, fmt:$("fFmt").value, avoid:[...AVOID], nut:[...DIG], year:$("fYear").value, prov:$("fProv").value,
     head:$("fHead").value, letter:LETTER, type:$("fType").value, menh:$("fMenh").value, dated:$("fDate").value }, !v);
+  // Lọc theo mức giá bán trên web (triệu); "Liên hệ" = từ 1 tỷ
+  const gv = $("fGia").value;
+  if (gv){
+    let lo = 0, hi = Infinity, lh = gv === "lh";
+    if (gv === "custom"){ lo = +$("gMin").value || 0; hi = $("gMax").value === "" ? Infinity : +$("gMax").value; }
+    else if (!lh){ [lo, hi] = gv.split("-").map(Number); }
+    RES = RES.filter(v => { const [s, i] = KE.unpack(LIST, v), g = KE.giaOf(s, i); if (g == null) return false;
+      if (g < 0) return lh || hi === Infinity; return !lh && g >= lo && g < hi; });
+  }
   if ($("sort").value !== "none") KE.sortRes(LIST, RES, $("sort").value);
   $("cnt").textContent = N(RES.length);
   redraw();
@@ -358,6 +369,8 @@ $("fDigits").insertAdjacentHTML("beforeend", Array.from({length:10},(_,i)=>`<but
 
 let tq; $("q").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(apply, 300); });
 ["fFmt","fYear","fType","fMenh","fDate","sort"].forEach(id => $(id).addEventListener("change", apply));
+$("fGia").addEventListener("change", () => { $("giaCustom").hidden = $("fGia").value !== "custom"; apply(); });
+let tg; ["gMin","gMax"].forEach(id => $(id).addEventListener("input", () => { clearTimeout(tg); tg = setTimeout(apply, 300); }));
 $("fSrc").addEventListener("change", () => { fillProvs(); apply(); });
 $("fProv").addEventListener("change", () => { fillHeads(); apply(); });
 $("fHead").addEventListener("change", () => { fillLetters(); apply(); });
@@ -365,12 +378,12 @@ $("fLetters").addEventListener("click", e => { const b = e.target.closest("butto
 $("fDigits").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const d = b.dataset.d; DIG.has(d) ? DIG.delete(d) : DIG.add(d); b.classList.toggle("on", DIG.has(d)); apply(); });
 // Tránh số: chọn nhiều
 const av = $("fAvoid"), avBtn = av.querySelector("button"), avPop = av.querySelector(".pop");
-function avLabel(){ avBtn.textContent = AVOID.size ? "Tránh " + [...AVOID].join(", ") : "Tránh số"; av.classList.toggle("on", AVOID.size > 0); }
+function avLabel(){ avBtn.textContent = AVOID.size ? "Tránh " + [...AVOID].sort((a,b)=>a.length-b.length||a.localeCompare(b)).join(", ") : "Tránh số"; av.classList.toggle("on", AVOID.size > 0); }
 avBtn.addEventListener("click", () => { avPop.hidden = !avPop.hidden; avBtn.setAttribute("aria-expanded", !avPop.hidden); });
 avPop.addEventListener("change", e => { const v = e.target.value; e.target.checked ? AVOID.add(v) : AVOID.delete(v); avLabel(); apply(); });
 document.addEventListener("click", e => { if (!av.contains(e.target)) avPop.hidden = true; });
 $("reset").addEventListener("click", () => {
-  $("q").value = ""; ["fSrc","fFmt","fYear","fProv","fType","fMenh","fHead","fDate"].forEach(id => $(id).value = "");
+  $("q").value = ""; ["fSrc","fFmt","fYear","fProv","fType","fMenh","fHead","fDate","fGia","gMin","gMax"].forEach(id => $(id).value = ""); $("giaCustom").hidden = true;
   LETTER = ""; DIG.clear(); AVOID.clear(); avPop.querySelectorAll("input").forEach(i => i.checked = false); avLabel();
   document.querySelectorAll("#fDigits button").forEach(b => b.classList.remove("on")); $("sort").value = "hot"; fillProvs.init = false; fillProvs(); apply();
 });

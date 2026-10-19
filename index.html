@@ -710,10 +710,10 @@ function card(v){
   return `<article class="card">
     <div class="card-top"><span class="prov">${esc(s.prov(i))}</span><span class="tag">${esc(tags[0])}</span></div>
     <div class="plate"><span class="kind">${moto?"Xe máy":"Ô tô"}</span><span class="l1">${esc(head)}</span><span class="l2">${n.slice(0,3)}.${n.slice(3)}</span></div>
-    <div class="price">${gia != null ? (gia < 0 ? '<span style="font-size:16px">Liên hệ</span>' : onSale ? `<s>${esc(KE.giaText(gia))}</s>${esc(KE.giaText(salePrice(gia)))}<span class="off">-${saleOff(gia)}%</span>` : esc(KE.giaText(gia))) : '<span style="font-size:15px">' + (date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)) + '</span>'}</div>
+    <div class="price">${gia != null ? (gia < 0 ? '<span style="font-size:16px">Liên hệ</span>' : onSale ? `<s>${esc(KE.giaText(gia))}</s>${esc(KE.giaText(salePrice(gia)))}<span class="off">-${saleOff(gia)}%</span>` : esc(KE.giaText(gia))) : '<span style="font-size:16px">Liên hệ</span>'}</div>
     ${onSale ? `<div class="cd">⏱ Sale còn ${hms(saleLeftMs())}</div>` : ""}
-    ${gia != null ? `<div class="meta" style="justify-content:center">${date ? "Đấu giá " + KE.fmtDate(date) : esc(srcName)}</div>` : ""}
-    <div class="meta"><span>${esc(tags.join(" · "))}</span><span>${cnt >= 0 ? cnt + " người ĐK · " : ""}${s.nut[i]} nút</span></div>
+    ${date ? `<div class="meta" style="justify-content:center">Đấu giá ${KE.fmtDate(date)}</div>` : ""}
+    <div class="meta"><span>${esc(tags.join(" · "))}</span><span>${s.nut[i]} nút</span></div>
     <div class="card-act">
       <a class="btn btn-tv" href="tel:${HOTLINE}" title="Gọi tư vấn ${HOTLINE}">Tư vấn</a>
       <button class="btn btn-yn" type="button" data-yn data-plate="${esc(t)}" data-n="${n}" data-tags="${esc(KE.tagsOf(m).join(", "))}" data-nut="${s.nut[i]}" data-price="${gia == null ? "" : gia < 0 ? "Liên hệ" : esc(KE.giaText(onSale ? salePrice(gia) : gia))}" data-msg="${esc(msg)}">Ý nghĩa</button>
