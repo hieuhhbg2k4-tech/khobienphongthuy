@@ -245,8 +245,9 @@ function giaOf(s, i) {
     if (!moto && /^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) v = Math.max(KEP_MIN, v);   // tam hoa kép
   }
   if (v >= CONTACT_FROM) return -1;
-  // Bảng tam hoa ô tô; tứ quý/ngũ quý và các nhóm 666/888/999 giữ nguyên.
-  if (!moto && (s.tag[i] & B["Tam hoa"]) && !(s.tag[i] & (B["Tứ quý"] | B["Ngũ quý"]))) {
+  // Bảng tam hoa ô tô (giá sàn); tứ quý/ngũ quý và các nhóm 666/888/999 giữ nguyên.
+  // Chỉ áp cho biển chưa có giá khobienvietnam; có giá kbvn thì luôn giữ tối thiểu kbvn +10%.
+  if (kb == null && !moto && (s.tag[i] & B["Tam hoa"]) && !(s.tag[i] & (B["Tứ quý"] | B["Ngũ quý"]))) {
     const tail = n.match(/(\d)\1\1$/), head = n.match(/^(\d)\1\1/);
     const digit = (tail || head || [])[1];
     if (digit === "1" || digit === "4") v = 79;
@@ -255,6 +256,7 @@ function giaOf(s, i) {
       const reference = grouped != null && grouped >= 0 ? Math.max(hv || floor, Math.round(grouped * KB_MARKUP)) : v;
       v = digit === "7" ? (reference >= 109 ? 109 : reference >= 99 ? 99 : 89) : (reference >= 119 ? 119 : reference >= 109 ? 109 : 99);
     }
+    if (hv != null && hv > v) v = hv;   // không bán thấp hơn giá lịch sử trúng đấu giá VPA của đuôi 5 số
   }
   return v;
 }
