@@ -12,7 +12,8 @@ Cách làm việc:
 - Khi khách hỏi về một biển cụ thể: gọi y_nghia_bien.
 - CHỈ báo biển và giá lấy từ kết quả công cụ. Tuyệt đối không tự bịa biển số, giá, ngày đấu giá hay tình trạng biển. Biển "Liên hệ" thì mời khách gọi hotline để báo giá.
 - Giờ vàng: 20:00–22:00 mỗi ngày giảm 5% (biển 79 tr còn 68 tr) — công cụ đã tính sẵn, chỉ nhắc lại khi có.
-- Liệt kê tối đa 5–6 biển mỗi lần, dạng: 30K-668.68 – 179 tr – Lộc phát.
+- Khi tìm biển, gọi tim_bien với so_luong 10 và liệt kê 8–10 biển (đủ các biển công cụ trả về), mỗi biển một dòng: 30K-668.68 – 179 tr – Lộc phát.
+- Gọi công cụ càng ít càng tốt: nếu tim_bien trả về 0 biển, nới điều kiện tối đa 1 lần (ví dụ bỏ điều kiện mệnh), rồi trả lời ngay và giải thích ngắn (vd: số 6, 8 khắc mệnh Mộc nên không có đuôi 68 hợp mệnh).
 - Phong thủy là quan niệm dân gian, mang tính tham khảo; không hứa hẹn tài lộc, không cam kết kết quả thủ tục hành chính.
 - Muốn giữ biển, đặt cọc, hỏi hồ sơ cụ thể: mời gọi/nhắn Zalo 0888.188.888.
 - Không bàn chuyện ngoài biển số/phong thủy biển số; lịch sự từ chối và quay lại chủ đề.`;
@@ -35,7 +36,15 @@ var TOOLS = [
     input_schema: { type: "object", properties: { bien: { type: "string", description: "Ví dụ '30K-668.68' hoặc '30K66868'." } }, required: ["bien"] } }
 ];
 
-function doGet() { return out_({ ok: true, msg: "Trợ lý Kho Biển Phong Thủy đang chạy" }); }
+function doGet(e) {
+  if (e && e.parameter && e.parameter.models) {   // ?models=1 : xem các mô hình khóa này dùng được (không lộ khóa)
+    var key = (PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY") || "").replace(/\s+/g, "");
+    var r = UrlFetchApp.fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key }, muteHttpExceptions: true });
+    try { return out_({ models: (JSON.parse(r.getContentText()).models || []).filter(function (m) { return (m.supportedGenerationMethods || []).indexOf("generateContent") >= 0; }).map(function (m) { return m.name.replace("models/", ""); }) }); }
+    catch (x) { return out_({ error: r.getContentText().slice(0, 300) }); }
+  }
+  return out_({ ok: true, msg: "Trợ lý Kho Biển Phong Thủy đang chạy" });
+}
 
 function doPost(e) {
   try {
@@ -76,6 +85,20 @@ function gemini_(key, model, msgs, system) {
   var payload = JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: contents,
       tools: [{ functionDeclarations: TOOLS.map(function (t) { return { name: t.name, description: t.description, parameters: cleanSchema_(t.input_schema) }; }) }],
       generationConfig: { maxOutputTokens: 900, temperature: 0.4 } });
+  // Thử lần lượt các mô hình: quá tải (503) / hết lượt miễn phí (429) / không có (404) -> chuyển mô hình khác
+  var chain = [model].concat((PropertiesService.getScriptProperties().getProperty("GEMINI_FALLBACKS") || "gemini-flash-lite-latest,gemini-flash-latest,gemini-2.5-flash-lite").split(",").map(function (s) { return s.trim(); }).filter(function (s) { return s && s !== model; }));
+  var res;
+  for (var mi = 0; mi < chain.length; mi++) {
+    res = callModel_(key, chain[mi], payload);
+    var c = res.getResponseCode();
+    if (c === 200 || [429, 503, 404, 500].indexOf(c) < 0) break;
+  }
+  var data = {}; try { data = JSON.parse(res.getContentText()); } catch (x) {}
+  if (res.getResponseCode() !== 200) return { error: data.error || res.getContentText().slice(0, 300) };
+  return toContent_(data);
+}
+
+function callModel_(key, model, payload) {
   var url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent";
   // Thử lần lượt các cách gửi khóa (khóa AIza... và khóa mới AQ....); nhớ cách chạy được
   var props = PropertiesService.getScriptProperties(), ways = ["header", "query", "bearer"], saved = props.getProperty("KEY_MODE");
@@ -89,8 +112,10 @@ function gemini_(key, model, msgs, system) {
     if (code === 200) { if (w !== saved) props.setProperty("KEY_MODE", w); break; }
     if (!/API_KEY_INVALID|UNAUTHENTICATED|API key not valid|invalid authentication/i.test(txt)) break;   // lỗi khác (vị trí, hạn mức...) -> dừng
   }
-  var data = {}; try { data = JSON.parse(res.getContentText()); } catch (x) {}
-  if (res.getResponseCode() !== 200) return { error: data.error || res.getContentText().slice(0, 300) };
+  return res;
+}
+
+function toContent_(data) {
   var parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [], content = [];
   parts.forEach(function (p, k) {
     if (p.text) content.push({ type: "text", text: p.text });
