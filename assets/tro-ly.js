@@ -40,7 +40,11 @@
     async tim_bien(a) {
       const src = await waitSrc(); if (!src) return { loi: "Kho đang tải, mời khách thử lại sau ít giây." };
       const type = a.loai_xe === "oto" ? "0" : a.loai_xe === "xemay" ? "1" : "";
-      const so = (a.so || "").trim();
+      let so = (a.so || "").trim();
+      // Khách gõ "đuôi 68" thì bắt buộc lọc biển KẾT THÚC bằng 68, AI không được nới thành "chứa 68"
+      const lastQ = [...history].reverse().find(m => m.role === "user" && typeof m.content === "string");
+      const duoi = lastQ && lastQ.content.match(/đuôi\s*(?:số\s*)?(\d{2,5})/i);
+      if (duoi) so = "*" + duoi[1];
       let res = KE.filter(src, { q: so, fmt: a.dang_so || "", avoid: a.tranh_so || [], prov: a.tinh || "", type, menh: "" }, true);
       if (a.menh && SO[a.menh]) { const G = new Set(sinh(a.menh)), K = new Set(khac(a.menh));
         res = res.filter(v => { const [s, i] = KE.unpack(src, v), d = [...KE.pad5(s.num[i])].map(Number); return G.has(d[4]) && !d.some(x => K.has(x)) && d.filter(x => G.has(x)).length >= 3; }); }
@@ -49,6 +53,7 @@
       const total = res.length; KE.sortRes(src, res, "hot");
       const n = Math.min(10, Math.max(8, a.so_luong || 10));   // luôn 8–10 biển
       return { tong_so_bien_phu_hop: total, bien: res.slice(0, n).map(v => { const [s, i] = KE.unpack(src, v); return info(s, i); }),
+        ...(duoi ? { dieu_kien_bat_buoc: `Khách yêu cầu ĐUÔI ${duoi[1]}: chỉ biển kết thúc bằng ${duoi[1]}, không được nới thành 'chứa ${duoi[1]}'.` } : {}),
         ghi_chu: total ? "Giá là giá bán trên web hiện tại. Liệt kê đủ tất cả các biển trong danh sách này cho khách." : "Không có biển phù hợp. Chỉ nới điều kiện thêm tối đa 1 lần rồi trả lời khách ngay; có thể giải thích lý do (vd số khắc mệnh) và mời gọi 0888.188.888." };
     },
     async phong_thuy_tuoi(a) { const y = +a.nam_sinh; if (!(y >= 1900 && y <= 2100)) return { loi: "Năm sinh không hợp lệ" }; return tuoi(y); },
