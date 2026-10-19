@@ -140,7 +140,10 @@ function markDups(list) {
 function filter(list, F, dedupe) {
   const q = (F.q || "").toUpperCase().replace(/[\s\-.]/g, "");
   let pat = null, re = null;
-  if (/^[A-E]{2,5}$/.test(q)) pat = q; else if (q.includes("*")) { try { re = new RegExp(q.replace(/[^0-9A-Z*]/g, "").replace(/\*/g, "\\d*")); } catch (e) {} }
+  if (/^[A-E]{2,5}$/.test(q)) pat = q; else if (q.includes("*")) { try {
+    // "*68" = đuôi 68 (kết thúc bằng 68); "68*" = 5 số bắt đầu bằng 68; "39*39" = có 39 rồi 39
+    const body = q.replace(/[^0-9A-Z*]/g, ""), src = body.replace(/\*/g, "\\d*");
+    re = new RegExp((/^\*/.test(body) && !/\*$/.test(body) ? src + "$" : src)); } catch (e) {} }
   const fbit = F.fmt ? B[F.fmt] : 0, avs = F.avoid || [], digs = F.digits || [];
   const nuts = [].concat(F.nut || []).map(Number).filter(Boolean), nutOk = new Uint8Array(11); nuts.forEach(v => nutOk[v] = 1); const nut = nuts.length;
   const yr = F.year === "all" ? -1 : (+F.year || 0), type = F.type === "" || F.type == null ? -1 : +F.type;
