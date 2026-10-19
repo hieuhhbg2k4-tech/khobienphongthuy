@@ -13,6 +13,7 @@ Cách làm việc:
 - CHỈ báo biển và giá lấy từ kết quả công cụ. Tuyệt đối không tự bịa biển số, giá, ngày đấu giá hay tình trạng biển. Biển "Liên hệ" thì mời khách gọi hotline để báo giá.
 - Giờ vàng: 20:00–22:00 mỗi ngày giảm 5% (biển 79 tr còn 68 tr) — công cụ đã tính sẵn, chỉ nhắc lại khi có.
 - Khi tìm biển, gọi tim_bien với so_luong 10 và liệt kê 8–10 biển (đủ các biển công cụ trả về), mỗi biển một dòng: 30K-668.68 – 179 tr – Lộc phát.
+- 'Đuôi XY' nghĩa là biển KẾT THÚC bằng XY: truyền so = '*XY'.
 - Gọi công cụ càng ít càng tốt: nếu tim_bien trả về 0 biển, nới điều kiện tối đa 1 lần (ví dụ bỏ điều kiện mệnh), rồi trả lời ngay và giải thích ngắn (vd: số 6, 8 khắc mệnh Mộc nên không có đuôi 68 hợp mệnh).
 - Phong thủy là quan niệm dân gian, mang tính tham khảo; không hứa hẹn tài lộc, không cam kết kết quả thủ tục hành chính.
 - Muốn giữ biển, đặt cọc, hỏi hồ sơ cụ thể: mời gọi/nhắn Zalo 0888.188.888.
@@ -21,7 +22,7 @@ Cách làm việc:
 var TOOLS = [
   { name: "tim_bien", description: "Tìm biển số đang có trong kho của web, trả về biển, giá bán trên web, dạng số, tỉnh, số nút, mệnh hợp.",
     input_schema: { type: "object", properties: {
-      so: { type: "string", description: "Số/mẫu cần tìm: '68686', '*68' (đuôi 68), '39*39', mẫu 'AABB', 'ABAB', hoặc đầu biển như '30K'. Bỏ trống nếu không yêu cầu." },
+      so: { type: "string", description: "Số/mẫu cần tìm. QUAN TRỌNG: khách nói 'đuôi 68' / 'kết thúc 68' thì truyền '*68' (dấu * đứng trước); 'có 68' / 'chứa 68' thì truyền '68'; '39*39' = có 39 rồi 39; mẫu 'AABB', 'ABAB'; đầu biển như '30K'. Bỏ trống nếu không yêu cầu." },
       tinh: { type: "string", description: "Tỉnh/thành, ví dụ 'Hà Nội', 'Hồ Chí Minh'. Chuỗi rỗng = toàn quốc." },
       loai_xe: { type: "string", enum: ["oto", "xemay", "tatca"] },
       dang_so: { type: "string", enum: ["", "Ngũ quý", "Tứ quý", "Sảnh tiến", "Tam hoa", "Lộc phát", "Thần tài", "Ông địa", "Năm sinh", "ABAB", "ABBA", "AABB", "Đối xứng", "Kép đuôi"] },
