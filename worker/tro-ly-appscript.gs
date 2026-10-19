@@ -45,7 +45,7 @@ function doPost(e) {
     while (msgs.length && (msgs[0].role !== "user" || (Array.isArray(msgs[0].content) && msgs[0].content.some(function (c) { return c.type === "tool_result"; })))) msgs.shift();
     if (!msgs.length) return out_({ error: "Empty" });
     var props = PropertiesService.getScriptProperties();
-    var key = props.getProperty("GEMINI_API_KEY"), model = props.getProperty("GEMINI_MODEL") || "gemini-3.8-flash";
+    var key = (props.getProperty("GEMINI_API_KEY") || "").replace(/\s+/g, ""), model = (props.getProperty("GEMINI_MODEL") || "gemini-3.8-flash").trim();
     if (!key) return out_({ error: "Chưa đặt GEMINI_API_KEY" });
     var now = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyyy-MM-dd HH:mm");
     return out_(gemini_(key, model, msgs, SYSTEM + "\nGiờ hiện tại ở Việt Nam: " + now + "."));
@@ -73,12 +73,22 @@ function gemini_(key, model, msgs, system) {
     });
     if (parts.length) contents.push({ role: m.role === "assistant" ? "model" : "user", parts: parts });
   });
-  var res = UrlFetchApp.fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
-    method: "post", contentType: "application/json", headers: { "x-goog-api-key": key }, muteHttpExceptions: true,
-    payload: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: contents,
+  var payload = JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: contents,
       tools: [{ functionDeclarations: TOOLS.map(function (t) { return { name: t.name, description: t.description, parameters: cleanSchema_(t.input_schema) }; }) }],
-      generationConfig: { maxOutputTokens: 900, temperature: 0.4 } })
-  });
+      generationConfig: { maxOutputTokens: 900, temperature: 0.4 } });
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent";
+  // Thử lần lượt các cách gửi khóa (khóa AIza... và khóa mới AQ....); nhớ cách chạy được
+  var props = PropertiesService.getScriptProperties(), ways = ["header", "query", "bearer"], saved = props.getProperty("KEY_MODE");
+  if (saved) ways = [saved].concat(ways.filter(function (w) { return w !== saved; }));
+  var res;
+  for (var i = 0; i < ways.length; i++) {
+    var w = ways[i], h = {}, u = url;
+    if (w === "header") h["x-goog-api-key"] = key; else if (w === "bearer") h["Authorization"] = "Bearer " + key; else u = url + "?key=" + encodeURIComponent(key);
+    res = UrlFetchApp.fetch(u, { method: "post", contentType: "application/json", headers: h, muteHttpExceptions: true, payload: payload });
+    var code = res.getResponseCode(), txt = res.getContentText();
+    if (code === 200) { if (w !== saved) props.setProperty("KEY_MODE", w); break; }
+    if (!/API_KEY_INVALID|UNAUTHENTICATED|API key not valid|invalid authentication/i.test(txt)) break;   // lỗi khác (vị trí, hạn mức...) -> dừng
+  }
   var data = {}; try { data = JSON.parse(res.getContentText()); } catch (x) {}
   if (res.getResponseCode() !== 200) return { error: data.error || res.getContentText().slice(0, 300) };
   var parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [], content = [];
