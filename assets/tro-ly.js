@@ -1,7 +1,7 @@
 /* Trợ lý AI trên web: khung chat + công cụ tra kho chạy tại trình duyệt (dùng dữ liệu kho, giá và quy tắc của chính trang).
    Bật bằng cách đặt TRO_LY_URL = địa chỉ Cloudflare Worker (xem worker/HUONG-DAN.md). Để trống = ẩn khung chat. */
 (function () {
-  const TRO_LY_URL = "";   // ví dụ "https://tro-ly.<tên>.workers.dev"
+  const TRO_LY_URL = "https://script.google.com/macros/s/AKfycbwePjxnQyAfGaHaT6bnnWAgx6H_2QzQ8OEUZ5k8vEphCmzJrHUGhH-YyRboXBDvJUaQzw/exec";   // ví dụ "https://tro-ly.<tên>.workers.dev"
   const URL_ = window.TRO_LY_URL || TRO_LY_URL;
   if (!URL_ && !/[?&]troly=test/.test(location.search)) return;
   const HOT = "0888188888", ZALO = "https://zalo.me/0888188888";
@@ -92,7 +92,9 @@
     <div class="tl-foot">Trợ lý AI có thể nhầm — xác nhận với hotline <a href="tel:${HOT}">0888.188.888</a> trước khi đặt cọc.</div>`;
   document.body.append(btn, box);
   const log = box.querySelector(".tl-log"), form = box.querySelector("form"), input = form.querySelector("input");
-  const add = (cls, text) => { const d = document.createElement("div"); d.className = "tl-m " + cls; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+  // Hiển thị chữ an toàn + **đậm** và gạch đầu dòng "* " của AI
+  const fmt = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/^\s*[*-]\s+/gm, "• ").replace(/(\d{2}[A-Z]{1,2}\d?-\d{3}\.\d{2})/g, '<a href="/?q=$1#kho" style="color:#c1121f;font-weight:600">$1</a>');
+  const add = (cls, text) => { const d = document.createElement("div"); d.className = "tl-m " + cls; if (cls === "a") d.innerHTML = fmt(text); else d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
   let history = [], busy = false, greeted = false;
   try { history = JSON.parse(sessionStorage.getItem("tl-h") || "[]"); } catch (e) {}
   const save = () => { try { sessionStorage.setItem("tl-h", JSON.stringify(history.slice(-30))); } catch (e) {} };
