@@ -211,6 +211,7 @@ function provs(list) { const v = new Set(); list.forEach(s => s.pre.forEach(p =>
 // Giá tham khảo (ô tô + xe máy) theo lịch sử trúng đấu giá VPA cùng 5 số cuối — dữ liệu /assets/gia.json
 const KEP_MIN = 100;   // giá tối thiểu (tr) cho tam hoa kép có số ngoài 0,1,2,4
 let GIA = null; const HN_CODES = new Set(["29","30","31","32","33","40"]);
+const LAN_CAN = new Set(["Bắc Ninh","Hưng Yên","Phú Thọ","Thái Nguyên","Ninh Bình","Hải Phòng"]);   // tỉnh lân cận Hà Nội
 let GROUP_KB = new Map();
 const setGia = g => {
   GIA = g && g.t ? g : null; GROUP_KB = new Map();
@@ -238,6 +239,12 @@ function giaOf(s, i) {
   const kb = grouped != null ? grouped : GIA.k && key in GIA.k ? GIA.k[key] : null;                                              // khobienvietnam
   if (kb === -1 || hv === -1) return -1;
   let v;
+  // Tam hoa kép AA.BBB: bảng giá riêng theo vùng [Hà Nội, tỉnh lân cận, tỉnh xa] (chủ web đặt, ưu tiên hơn mọi quy tắc khác)
+  const kep = !moto && GIA.kep && GIA.kep[n];
+  if (kep) {
+    const c = s.pre[s.pi[i]].slice(0, 2), z = HN_CODES.has(c) ? 0 : LAN_CAN.has(provOf(c)) ? 1 : 2;
+    return kep[z] >= CONTACT_FROM ? -1 : kep[z];
+  }
   // Tam hoa đầu + đuôi đẹp (111.68, 222.99...): giá theo kết quả trúng đấu giá VPA gần đây, không thấp hơn kbvn +10%
   const th = !moto && GIA.th && GIA.th[n];
   if (th) {
