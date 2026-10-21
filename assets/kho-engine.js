@@ -211,6 +211,7 @@ function provs(list) { const v = new Set(); list.forEach(s => s.pre.forEach(p =>
 // Giá tham khảo (ô tô + xe máy) theo lịch sử trúng đấu giá VPA cùng 5 số cuối — dữ liệu /assets/gia.json
 const KEP_MIN = 100;   // giá tối thiểu (tr) cho tam hoa kép có số ngoài 0,1,2,4
 let GIA = null; const HN_CODES = new Set(["29","30","31","32","33","40"]);
+const TAM_HOA_DAU_MIN = { "1": 79, "4": 79, "7": 89, "2": 99, "3": 99, "5": 99, "6": 109, "8": 119, "9": 119, "0": 79 };
 const LAN_CAN = new Set(["Bắc Ninh","Hưng Yên","Phú Thọ","Thái Nguyên","Ninh Bình","Hải Phòng"]);   // tỉnh lân cận Hà Nội
 let GROUP_KB = new Map();
 const setGia = g => {
@@ -229,7 +230,7 @@ const setGia = g => {
 // Giá bán = giá theo lịch sử trúng đấu giá VPA (cùng 5 số cuối), nhưng KHÔNG thấp hơn giá khobienvietnam + 10%.
 // Từ 1 tỷ -> "Liên hệ" (-1). Số đẹp (sảnh, tứ quý, ngũ quý) không có dữ liệu -> "Liên hệ".
 const KB_MARKUP = 1.10, CONTACT_FROM = 1000;
-function giaOf(s, i) {
+function giaRaw(s, i) {
   if (!GIA) return null;
   const n = pad5(s.num[i]), key = s.pre[s.pi[i]] + n, moto = s.moto[i];
   const tbl = moto ? GIA.m : GIA; if (!tbl) return null;
@@ -245,12 +246,11 @@ function giaOf(s, i) {
     const c = s.pre[s.pi[i]].slice(0, 2), z = HN_CODES.has(c) ? 0 : LAN_CAN.has(provOf(c)) ? 1 : 2;
     return kep[z] >= CONTACT_FROM ? -1 : kep[z];
   }
-  // Tam hoa đầu + đuôi đẹp (111.68, 222.99...): giá theo kết quả trúng đấu giá VPA gần đây, không thấp hơn kbvn +10%
-  const th = !moto && GIA.th && GIA.th[n];
-  if (th) {
-    v = th[HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1];
-    v = Math.max(v, { "2": 99, "3": 99, "5": 99, "6": 99, "7": 89, "8": 99, "9": 99 }[n[0]] || floor);   // sàn theo bảng tam hoa
-    if (kb != null) v = Math.max(v, Math.round(kb * KB_MARKUP));
+  // Tam hoa đầu AAA.XY (không tính tứ quý đầu, ngũ quý): bảng theo vùng từ giá trúng VPA, còn lại giá sàn theo đầu số
+  if (!moto && /^(\d)\1\1/.test(n) && n[3] !== n[0]) {
+    const c = s.pre[s.pi[i]].slice(0, 2), z = HN_CODES.has(c) ? 0 : LAN_CAN.has(provOf(c)) ? 1 : 2;
+    const th = GIA.th && GIA.th[n];
+    v = Math.max(th ? th[z] : 0, TAM_HOA_DAU_MIN[n[0]] || floor);
     return v >= CONTACT_FROM ? -1 : v;
   }
   if (kb != null) v = Math.max(hv || floor, Math.round(kb * KB_MARKUP));
@@ -288,6 +288,9 @@ function downloadCsv(name, head, rows) {
   const blob = new Blob(["\ufeff" + [head.map(q).join(",")].concat(rows.map(r => r.map(q).join(","))).join("\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+
+// Giá lẻ đuôi 1,2,3,4,6,7,8 -> đuôi 9 (173 -> 179); giữ đuôi 0, 5, 9
+function giaOf(s, i) { const v = giaRaw(s, i); if (v == null || v <= 0) return v; const d = v % 10; return d === 0 || d === 5 || d === 9 ? v : v - d + 9; }
 
 G.KE = { FMT_ORDER, B, MENH, ELEM, NEWPROV, provOf, classify, mainOf, tagsOf, scoreOf, nutOf, pad5, Source, fromExcel, fromLive, fromKho,
   markDups, filter, unpack, sortRes, heads, letters, provs, fmtDate, copyText, downloadCsv, setGia, giaOf, giaText };
