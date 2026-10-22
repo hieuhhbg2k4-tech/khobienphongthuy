@@ -241,6 +241,9 @@ function giaRaw(s, i) {
   // Dòng tiến đuôi 68 biển Hà Nội (5 số không giảm, không có 4/7, không tam hoa): đầu 0 = 130 tr, còn lại 150 tr (chủ web đặt 22/10/2026)
   if (!moto && HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) && /68$/.test(n) && !/[47]/.test(n) && !/(\d)\1\1/.test(n)
       && n[0] <= n[1] && n[1] <= n[2] && n[2] <= n[3]) return n[0] === "0" ? 130 : 150;
+  // Dòng tiến đuôi 99 biển Hà Nội (không 4/7, không tam hoa trừ 000.99, không kép 88.99): đầu 0 = 120 tr, còn lại 140 tr (chủ web đặt 22/10/2026)
+  if (!moto && HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) && /^\d\d\d99$/.test(n) && !/[47]/.test(n) && (n === "00099" || !/(\d)\1\1/.test(n)) && !/8899$/.test(n)
+      && n[0] <= n[1] && n[1] <= n[2] && n[2] <= "9") return n[0] === "0" ? 120 : 140;
   // Tứ quý đuôi X.AAAA biển Hà Nội: giá chủ web đặt
   if (!moto && GIA.tqd_hn && HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) && /^(\d)(\d)\2\2\2$/.test(n) && n[0] !== n[1] && GIA.tqd_hn[n[1]] != null) return GIA.tqd_hn[n[1]];
   if (kb === -1 || hv === -1) return -1;
