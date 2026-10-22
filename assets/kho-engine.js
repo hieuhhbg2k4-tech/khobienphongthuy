@@ -238,6 +238,9 @@ function giaRaw(s, i) {
   const hv = tbl.t && tbl.t[n] ? tbl.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : null;   // lịch sử VPA
   const grouped = GROUP_KB.get(moto + "|" + provOf(s.pre[s.pi[i]].slice(0, 2)) + "|" + n);
   const kb = grouped != null ? grouped : GIA.k && key in GIA.k ? GIA.k[key] : null;                                              // khobienvietnam
+  // Dòng tiến đuôi 68 biển Hà Nội (5 số không giảm, không có 4/7, không tam hoa): đầu 0 = 130 tr, còn lại 150 tr (chủ web đặt 22/10/2026)
+  if (!moto && HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) && /68$/.test(n) && !/[47]/.test(n) && !/(\d)\1\1/.test(n)
+      && n[0] <= n[1] && n[1] <= n[2] && n[2] <= n[3]) return n[0] === "0" ? 130 : 150;
   // Tứ quý đuôi X.AAAA biển Hà Nội: giá chủ web đặt
   if (!moto && GIA.tqd_hn && HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) && /^(\d)(\d)\2\2\2$/.test(n) && n[0] !== n[1] && GIA.tqd_hn[n[1]] != null) return GIA.tqd_hn[n[1]];
   if (kb === -1 || hv === -1) return -1;
