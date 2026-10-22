@@ -238,6 +238,8 @@ function giaRaw(s, i) {
   const hv = tbl.t && tbl.t[n] ? tbl.t[n][HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) ? 0 : 1] : null;   // lịch sử VPA
   const grouped = GROUP_KB.get(moto + "|" + provOf(s.pre[s.pi[i]].slice(0, 2)) + "|" + n);
   const kb = grouped != null ? grouped : GIA.k && key in GIA.k ? GIA.k[key] : null;                                              // khobienvietnam
+  // Tứ quý đuôi X.AAAA biển Hà Nội: giá chủ web đặt
+  if (!moto && GIA.tqd_hn && HN_CODES.has(s.pre[s.pi[i]].slice(0, 2)) && /^(\d)(\d)\2\2\2$/.test(n) && n[0] !== n[1] && GIA.tqd_hn[n[1]] != null) return GIA.tqd_hn[n[1]];
   if (kb === -1 || hv === -1) return -1;
   let v;
   // Tam hoa kép AA.BBB: bảng giá riêng theo vùng [Hà Nội, tỉnh lân cận, tỉnh xa] (chủ web đặt, ưu tiên hơn mọi quy tắc khác)
