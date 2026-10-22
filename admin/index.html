@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Quản trị kho biển</title>
+<link rel="icon" type="image/png" href="/assets/admin-icon.png">
+<link rel="apple-touch-icon" href="/assets/admin-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,6 +17,8 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
 button,input,select{font:inherit;color:inherit}
 a{color:inherit;text-decoration:none}
+.banner{display:block;width:100%;height:auto;border-radius:12px;margin:0 0 14px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.login-card .banner{border-radius:10px;margin:0 0 12px}
 :focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
 .wrap{max-width:1500px;margin:0 auto;padding:16px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:9px;border:1px solid var(--line2);background:var(--card);cursor:pointer;font-weight:600;white-space:nowrap}
@@ -27,7 +31,7 @@ a{color:inherit;text-decoration:none}
 
 /* đăng nhập */
 #login{min-height:100vh;display:grid;place-items:center;padding:16px}
-.login-card{width:min(400px,100%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+.login-card{width:min(480px,100%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
 .login-card h1{font-size:20px;margin:0 0 4px}
 .login-card p{color:var(--mute);margin:0 0 16px;font-size:13px}
 .login-card label{display:block;font-size:12px;color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:12px 0 6px}
@@ -96,6 +100,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
 
 <section id="login">
   <form class="login-card" id="loginForm" novalidate>
+    <img class="banner" src="/assets/admin-banner.webp" width="1600" height="416" alt="BIENXEOTO.VN – Cung cấp biển số xe đẹp toàn quốc">
     <h1>Quản trị kho biển</h1>
     <p id="loginSub">Đăng nhập bằng tài khoản email đã được duyệt.</p>
     <div class="mtabs"><button type="button" data-tab="login" class="on">Đăng nhập</button><button type="button" data-tab="register">Đăng ký</button></div>
@@ -112,6 +117,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
 
 <section id="app" hidden>
   <div class="wrap">
+    <img class="banner" src="/assets/admin-banner.webp" width="1600" height="416" alt="BIENXEOTO.VN – Cung cấp biển số xe đẹp toàn quốc">
     <div class="top">
       <div><h1>Kho biển số</h1><div class="sub" id="sub">—</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
