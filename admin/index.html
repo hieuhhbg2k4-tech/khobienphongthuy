@@ -308,6 +308,7 @@ function fillLetters(){
   box.insertAdjacentHTML("beforeend", [`<button type="button" data-l="" class="${LETTER?"":"on"}">Tất cả</button>`].concat(ls.map(l => `<button type="button" data-l="${l}" class="${LETTER===l?"on":""}">${l}</button>`)).join(""));
 }
 
+const REG_CLOSE_DAYS = 0;   // số ngày trước ngày đấu thì hết hạn đăng ký (0 = ngày đấu là hôm nay thì bỏ)
 function apply(){
   if (!SRC.length) return;
   const v = $("fSrc").value;
@@ -322,6 +323,11 @@ function apply(){
     else if (!lh){ [lo, hi] = gv.split("-").map(Number); }
     RES = RES.filter(v => { const [s, i] = KE.unpack(LIST, v), g = KE.giaOf(s, i); if (g == null) return false;
       if (g < 0) return lh || hi === Infinity; return !lh && g >= lo && g < hi; });
+  }
+  // "Lịch ĐG gần nhất" / "Đã có lịch": chỉ giữ biển còn hạn đăng ký (ngày đấu từ ngày mai trở đi, giờ Việt Nam)
+  if ($("sort").value === "date" || $("fDate").value === "1"){
+    const t = new Date(Date.now() + 7 * 3600e3 + REG_CLOSE_DAYS * 864e5), min = t.getUTCFullYear() * 10000 + (t.getUTCMonth() + 1) * 100 + t.getUTCDate();
+    RES = RES.filter(v => { const [s, i] = KE.unpack(LIST, v), d = s.date ? s.date[i] : 0; return d > min; });
   }
   if ($("sort").value !== "none") KE.sortRes(LIST, RES, $("sort").value);
   $("cnt").textContent = N(RES.length);
@@ -348,7 +354,7 @@ function rowHtml(v){
 }
 function render(){
   const next = RES.slice(shown, shown + PAGE);
-  $("tb").insertAdjacentHTML("beforeend", next.length ? next.map(rowHtml).join("") : (shown ? "" : '<tr><td colspan="13" class="loadmsg">Không có biển phù hợp.</td></tr>'));
+  $("tb").insertAdjacentHTML("beforeend", next.length ? next.map(rowHtml).join("") : (shown ? "" : `<tr><td colspan="13" class="loadmsg">${$("sort").value === "date" || $("fDate").value === "1" ? "Chưa có biển nào còn hạn đăng ký đấu giá (các phiên đã có lịch đều đã qua ngày đấu)." : "Không có biển phù hợp."}</td></tr>`));
   shown += next.length; $("more").hidden = shown >= RES.length;
   $("more").textContent = `Xem thêm (còn ${N(RES.length - shown)})`;
 }
