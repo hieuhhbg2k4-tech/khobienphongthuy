@@ -45,6 +45,9 @@ jobs:
 
       - name: Gắn lịch đấu giá + hạn đăng ký từ VPA
         continue-on-error: true
+        env:
+          # Web App Google Apps Script (worker/lich-dau-gia-appscript.gs) — GitHub bị VPA chặn nên phải đi qua Google
+          LICH_URL: ${{ vars.LICH_URL }}
         run: python3 tools/vpa_lich.py vpa-data/live.json 21
 
       - name: Commit nếu có thay đổi
