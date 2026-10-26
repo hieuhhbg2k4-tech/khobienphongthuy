@@ -34,6 +34,13 @@ jobs:
           done
           python3 - <<'PY'
           import json, sys
+          # Từ 20/10/2026 VPA chặn máy chủ Google nên dữ liệu Apps Script bị cũ; máy tính chủ web (tools/vpa-sync-windows)
+          # đẩy live.json có "src":"pc". Có bản từ máy tính thì không ghi đè bằng dữ liệu cũ của Apps Script.
+          try:
+              cur = json.load(open("vpa-data/live.json", encoding="utf-8"))
+              if cur.get("src") == "pc": print("live.json đang lấy từ máy tính chủ web (mới hơn) — bỏ qua Apps Script"); sys.exit(0)
+          except SystemExit: raise
+          except Exception: pass
           d = json.load(open("/tmp/live.json", encoding="utf-8"))
           rows = d.get("rows") or []
           # Chặn ghi đè file tốt bằng dữ liệu hỏng (Apps Script lỗi, sheet đang đồng bộ dở...)
@@ -44,6 +51,7 @@ jobs:
           PY
 
       - name: Gắn lịch đấu giá + hạn đăng ký từ VPA
+        if: ${{ vars.LICH_URL != '' }}
         continue-on-error: true
         env:
           # Web App Google Apps Script (worker/lich-dau-gia-appscript.gs) — GitHub bị VPA chặn nên phải đi qua Google

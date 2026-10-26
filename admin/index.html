@@ -257,7 +257,10 @@ async function start(){
   // Biển VPA hằng ngày: chỉ trả về khi phiên đăng nhập hợp lệ (đồng thời là bước kiểm tra tài khoản)
   const pLive = api({ action:"member_data", token: s.token }).catch(() => ({ ok:false, error:"Không kết nối được máy chủ." }));
   const pEx = loadExcel(), pGia = fetch("/assets/gia.json", {cache:"no-cache"}).then(r => r.json()).then(KE.setGia).catch(() => {});
-  const live = await pLive;
+  // Bản live.json do máy tính chủ web đẩy lên (src:"pc") mới hơn dữ liệu sheet BIENSOVP (VPA chặn Google từ 20/10/2026)
+  const pPc = fetch("/vpa-data/live.json", {cache:"no-cache"}).then(r => r.json()).catch(() => null);
+  let live = await pLive;
+  if (live.ok){ const pc = await pPc; if (pc && pc.src === "pc" && pc.rows && pc.rows.length > 1000) live = pc; }
   if (!live.ok){
     if (live.relogin){ sess.clear(); return showLogin(live.error || "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại."); }
     toast(live.error || "Không tải được biển VPA hằng ngày");
