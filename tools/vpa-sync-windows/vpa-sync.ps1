@@ -15,62 +15,95 @@ try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::
 $Repo     = 'hieuhhbg2k4-tech/khobienphongthuy'
 $Branch   = 'main'
 $LiveUrl  = 'https://khobienphongthuy.vn/vpa-data/live.json'
-$Api      = 'https://dgbs.vpa.com.vn/search-api/search/list-announcement-plan'
 $Days     = 21          # lấy lịch đấu giá trong 21 ngày tới
-$Threads  = 3           # số luồng hỏi VPA cùng lúc (nhẹ tay, tránh bị chặn)
+$Threads  = 4           # số yêu cầu Chrome gửi cùng lúc (nhẹ tay, tránh bị chặn)
 $Page     = 25          # VPA chỉ trả 25 biển mỗi lần
 $Dir      = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $LogFile  = Join-Path $Dir 'nhat-ky.txt'
 $TokenFile= Join-Path $Dir 'github-token.txt'
-if ($env:VPA_API) { $Api = $env:VPA_API }; if ($env:GH_BRANCH) { $Branch = $env:GH_BRANCH }; if ($env:LIVE_URL) { $LiveUrl = $env:LIVE_URL }   # chỉ dùng khi kiểm thử
+if ($env:GH_BRANCH) { $Branch = $env:GH_BRANCH }; if ($env:LIVE_URL) { $LiveUrl = $env:LIVE_URL }   # chỉ dùng khi kiểm thử
 
 function Log($m) {
   $line = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + '  ' + $m
   Write-Host $line
   try { Add-Content -Path $LogFile -Value $line -Encoding UTF8 } catch {}
 }
-function Body($date, $site, $offset) {
-  '{"offset":' + $offset + ',"limit":' + $Page + ',"province":"","vehicle":"","colorCode":-1,"license_plate":"","auctionDate":"' + $date + '","announcementNumber":"","siteId":' + $site + '}'
+# ===== Hỏi VPA qua Chrome chạy ngầm =====
+# VPA chặn mọi chương trình không phải trình duyệt thật (lỗi 403), nên file này mở Chrome ẩn (không hiện cửa sổ),
+# vào trang dgbs.vpa.com.vn rồi để chính Chrome hỏi dữ liệu — giống người dùng mở trang web.
+$VpaHome = if ($env:VPA_HOME) { $env:VPA_HOME } else { 'https://dgbs.vpa.com.vn/' }
+$UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
+$script:cid = 0; $script:ws = $null; $script:chrome = $null
+function JsonEsc($t) { $t.Replace('\', '\\').Replace('"', '\"').Replace("`r", '').Replace("`n", '\n') }
+function Start-Chrome {
+  $cands = @($env:CHROME_EXE)
+  foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA)) { if ($base) { $cands += (Join-Path $base 'Google\Chrome\Application\chrome.exe') } }
+  if (${env:ProgramFiles(x86)}) { $cands += (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe') }
+  $cands = @($cands | Where-Object { $_ -and (Test-Path $_) })
+  if (-not $cands) { throw 'Không tìm thấy Chrome hoặc Edge trên máy' }
+  $port = 9333; $prof = Join-Path $Dir 'chrome-profile'
+  $a = @('--headless=new', "--remote-debugging-port=$port", ('--user-data-dir="' + $prof + '"'), '--no-first-run', '--no-default-browser-check', '--disable-gpu', ('--user-agent="' + $UA + '"'), $VpaHome)
+  if ($env:CHROME_EXTRA) { $a = @($env:CHROME_EXTRA.Split(' ')) + $a }
+  if ($env:OS -eq 'Windows_NT') { $script:chrome = Start-Process -FilePath $cands[0] -ArgumentList $a -PassThru -WindowStyle Hidden }
+  else { $script:chrome = Start-Process -FilePath $cands[0] -ArgumentList $a -PassThru }
+  $wsUrl = $null
+  for ($t = 0; $t -lt 60 -and -not $wsUrl; $t++) {
+    Start-Sleep -Milliseconds 500
+    try { $list = Invoke-RestMethod -Uri "http://127.0.0.1:$port/json/list" -TimeoutSec 3; $pg = @($list | Where-Object { $_.type -eq 'page' })[0]; if ($pg) { $wsUrl = $pg.webSocketDebuggerUrl } } catch {}
+  }
+  if (-not $wsUrl) { throw 'Không mở được Chrome chạy ngầm' }
+  $script:ws = New-Object System.Net.WebSockets.ClientWebSocket
+  $script:ws.Options.KeepAliveInterval = [TimeSpan]::FromSeconds(20)
+  $script:ws.ConnectAsync([Uri]$wsUrl, [Threading.CancellationToken]::None).Wait()
+  for ($t = 0; $t -lt 60; $t++) { if ((Eval 'location.host + "|" + document.readyState') -match 'vpa|127\.0\.0\.1.*\|complete') { break }; Start-Sleep -Seconds 1 }
+  Start-Sleep -Seconds 3
 }
-function Vpa($body) {
-  for ($t = 0; $t -lt 4; $t++) {
-    try { return Invoke-RestMethod -Uri $Api -Method Post -ContentType 'application/json' -Body $body -TimeoutSec 30 -UserAgent 'Mozilla/5.0' }
-    catch { if ($t -eq 3) { throw } ; Start-Sleep -Seconds (2 * ($t + 1)) }
+function Cdp($method, $paramsJson) {
+  $script:cid++
+  $bytes = [Text.Encoding]::UTF8.GetBytes('{"id":' + $script:cid + ',"method":"' + $method + '","params":' + $paramsJson + '}')
+  $script:ws.SendAsync((New-Object 'ArraySegment[byte]' -ArgumentList @(, $bytes)), [Net.WebSockets.WebSocketMessageType]::Text, $true, [Threading.CancellationToken]::None).Wait()
+  $buf = New-Object byte[] 1048576
+  while ($true) {
+    $ms = New-Object IO.MemoryStream
+    do { $r = $script:ws.ReceiveAsync((New-Object 'ArraySegment[byte]' -ArgumentList @(, $buf)), [Threading.CancellationToken]::None).GetAwaiter().GetResult(); $ms.Write($buf, 0, $r.Count) } while (-not $r.EndOfMessage)
+    $txt = [Text.Encoding]::UTF8.GetString($ms.ToArray())
+    if ($txt.StartsWith('{"id":' + $script:cid + ',')) { return $txt }
   }
 }
+function Eval($expr) {
+  $res = Cdp 'Runtime.evaluate' ('{"expression":"' + (JsonEsc $expr) + '","awaitPromise":true,"returnByValue":true}')
+  $m = [regex]::Match($res, '"value":"([^"]*)"')
+  if ($m.Success) { return $m.Groups[1].Value }
+  if ($res -match '"exceptionDetails"') { throw ('Chrome báo lỗi: ' + $res.Substring(0, [Math]::Min(300, $res.Length))) }
+  return ''
+}
+function Stop-Chrome { try { if ($script:ws) { $script:ws.Dispose() } } catch {}; try { if ($script:chrome -and -not $script:chrome.HasExited) { Stop-Process -Id $script:chrome.Id -Force } } catch {}
+  try { Get-CimInstance Win32_Process -Filter "Name='chrome.exe' or Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*remote-debugging-port=9333*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force } } catch {} }
 
-# Mỗi luồng tự hỏi VPA một phần danh sách; trả về các dòng "biển|ngày đấu|số người ĐK|hạn ĐK"
-$Worker = {
-  param($bodies, $api)
-  try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
-  $out = New-Object System.Collections.Generic.List[string]
-  foreach ($b in $bodies) {
-    $ok = $false; $site = [regex]::Match($b, '"siteId":(\d)').Groups[1].Value
-    for ($t = 0; $t -lt 4 -and -not $ok; $t++) {
-      try {
-        $r = Invoke-RestMethod -Uri $api -Method Post -ContentType 'application/json' -Body $b -TimeoutSec 30 -UserAgent 'Mozilla/5.0'
-        foreach ($x in $r.content) { $out.Add(('{0}|{1}|{2}|{3}|{4}' -f $x.bks, $x.auctionDate, $x.totalRegisteringPeople, $x.timeEndRegister, $site)) }
-        $ok = $true
-      } catch { Start-Sleep -Seconds (2 * ($t + 1)) }
-    }
-    if (-not $ok) { $out.Add('ERR') }
-  }
-  , $out
+# Hàm chạy trong Chrome: plan = "ngày|site|tổng;..."  -> trả "biển|ngày đấu|số người ĐK|hạn ĐK|site;..."
+$JsFn = @'
+(async (planText, conc, probeOnly) => {
+  const api = '/search-api/search/list-announcement-plan';
+  const body = (d, s, o) => JSON.stringify({ offset: o, limit: 25, province: '', vehicle: '', colorCode: -1, license_plate: '', auctionDate: d, announcementNumber: '', siteId: +s });
+  const post = async (d, s, o) => { for (let t = 0; t < 4; t++) { try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(d, s, o) }); if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, 1500 * (t + 1))); } return null; };
+  const items = planText.split(';').filter(Boolean).map(x => x.split('|'));
+  if (probeOnly) { const out = []; for (const [d, s] of items) { const j = await post(d, s, 0); out.push(d + '|' + s + '|' + (j ? (j.totalElements || 0) : -1)); } return out.join(';'); }
+  const tasks = []; for (const [d, s, tot] of items) for (let o = 0; o < +tot; o += 25) tasks.push([d, s, o]);
+  const out = []; let i = 0;
+  const w = async () => { while (i < tasks.length) { const [d, s, o] = tasks[i++]; const j = await post(d, s, o); if (!j) { out.push('ERR'); continue; }
+    for (const x of (j.content || [])) out.push(x.bks + '|' + (x.auctionDate || '') + '|' + (x.totalRegisteringPeople == null ? '' : x.totalRegisteringPeople) + '|' + (x.timeEndRegister || '') + '|' + s); } };
+  await Promise.all(Array.from({ length: conc }, w));
+  return out.join(';');
+})
+'@
+function Probe($specs) {   # specs: @("ngày|site", ...) -> @{ "ngày|site" = tổng }
+  $r = @{}; foreach ($x in (Eval ($JsFn + "('" + ($specs -join ';') + "',1,true)")).Split(';')) { if ($x) { $p = $x.Split('|'); $r[$p[0] + '|' + $p[1]] = [int]$p[2] } }; $r
 }
-function FetchMany($bodies) {
-  $n = [Math]::Max(1, [Math]::Min($Threads, $bodies.Count))
-  $chunks = @(); for ($k = 0; $k -lt $n; $k++) { $chunks += , (New-Object System.Collections.Generic.List[string]) }
-  for ($k = 0; $k -lt $bodies.Count; $k++) { $chunks[$k % $n].Add($bodies[$k]) }
-  $pool = [runspacefactory]::CreateRunspacePool(1, $n); $pool.Open()
-  $jobs = foreach ($c in $chunks) {
-    $ps = [powershell]::Create().AddScript($Worker).AddArgument($c.ToArray()).AddArgument($Api)
-    $ps.RunspacePool = $pool
-    @{ ps = $ps; h = $ps.BeginInvoke() }
-  }
-  $all = New-Object System.Collections.Generic.List[string]
-  foreach ($j in $jobs) { foreach ($res in $j.ps.EndInvoke($j.h)) { foreach ($line in $res) { $all.Add($line) } }; $j.ps.Dispose() }
-  $pool.Close()
-  , $all
+function FetchPlan($plan) {   # plan: @(@(ngày, site, tổng), ...) -> List các dòng
+  $txt = ($plan | ForEach-Object { $_[0] + '|' + $_[1] + '|' + $_[2] }) -join ';'
+  $out = New-Object System.Collections.Generic.List[string]
+  foreach ($l in (Eval ($JsFn + "('" + $txt + "'," + $Threads + ",false)")).Split(';')) { if ($l) { $out.Add($l) } }
+  , $out
 }
 
 try {
@@ -88,14 +121,15 @@ try {
   $provs = '[]'; $pm = [regex]::Match($old, '"provs"\s*:\s*(\[[^\]]*\])'); if ($pm.Success) { $provs = $pm.Groups[1].Value }
   if ($old -notmatch '"src"\s*:\s*"pc"') { $Full = $true }   # lần đầu chạy trên máy -> lấy toàn bộ
   Log ('Dữ liệu cũ trên web: ' + $rows.Count + ' biển')
+  Start-Chrome
+  Log 'Đã mở Chrome chạy ngầm, đang hỏi VPA...'
 
   # 2) Toàn bộ danh sách biển ô tô (Chủ nhật hoặc -Full)
   if ($Full -and -not $Test) {
-    $total = (Vpa (Body '' 1 0)).totalElements
+    $total = (Probe @('|1'))['|1']
+    if ($total -le 0) { throw 'VPA không trả về tổng số biển ô tô (có thể đang chặn)' }
     Log ('VPA đang công bố ' + $total + ' biển ô tô — đang tải toàn bộ...')
-    $bodies = New-Object System.Collections.Generic.List[string]
-    for ($o = 0; $o -lt $total; $o += $Page) { $bodies.Add((Body '' 1 $o)) }
-    $res = FetchMany $bodies.ToArray()
+    $res = FetchPlan @(, @('', 1, $total))
     $err = @($res | Where-Object { $_ -eq 'ERR' }).Count
     $car = New-Object 'System.Collections.Generic.Dictionary[string,object[]]'
     foreach ($l in $res) { if ($l -ne 'ERR') { $p = $l.Split('|'); $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null; $car[$p[0]] = @($p[0], '0', 0, '', $cnt) } }
@@ -107,18 +141,14 @@ try {
   }
 
   # 3) Lịch đấu giá + hạn đăng ký (ô tô site 1, xe máy site 2)
-  $plan = @()
+  $plan = @(); $specs = @()
   $last = if ($Test) { 3 } else { $Days }
-  for ($k = -1; $k -le $last; $k++) {
-    $d = $vn.AddDays($k).ToString('dd/MM/yyyy')
-    foreach ($site in 1, 2) {
-      $r = Vpa (Body $d $site 0)
-      if ($r.totalElements -gt 0) { $plan += , @($d, $site, [int]$r.totalElements); Log ("Phiên $d " + $(if ($site -eq 1) { 'ô tô' } else { 'xe máy' }) + ': ' + $r.totalElements + ' biển') }
-    }
-  }
-  $bodies = New-Object System.Collections.Generic.List[string]
-  foreach ($p in $plan) { $lim = if ($Test) { [Math]::Min($p[2], 100) } else { $p[2] }; for ($o = 0; $o -lt $lim; $o += $Page) { $bodies.Add((Body $p[0] $p[1] $o)) } }
-  $res = FetchMany $bodies.ToArray()
+  for ($k = -1; $k -le $last; $k++) { $d = $vn.AddDays($k).ToString('dd/MM/yyyy'); $specs += ($d + '|1'); $specs += ($d + '|2') }
+  $tot = Probe $specs
+  if (@($tot.Values | Where-Object { $_ -lt 0 }).Count -eq $tot.Count) { throw 'VPA không trả lời (có thể đang chặn)' }
+  foreach ($sp in $specs) { $n = $tot[$sp]; if ($n -gt 0) { $p = $sp.Split('|'); if ($Test) { $n = [Math]::Min($n, 100) }; $plan += , @($p[0], [int]$p[1], $n)
+      Log ('Phiên ' + $p[0] + ' ' + $(if ($p[1] -eq '1') { 'ô tô' } else { 'xe máy' }) + ': ' + $tot[$sp] + ' biển') } }
+  $res = if ($plan.Count) { FetchPlan $plan } else { New-Object System.Collections.Generic.List[string] }
   $lich = @{}; $regEnd = @{}; $err = 0
   foreach ($l in $res) {
     if ($l -eq 'ERR') { $err++; continue }
@@ -135,6 +165,8 @@ try {
     else { $moto = if ($p[4] -eq '2') { 1 } else { 0 }; $rows[$k] = @($k, '0', $moto, $p[1], $cnt); $add++ }
   }
   Log ('Lịch đấu giá: ' + $lich.Count + ' biển có lịch, thêm mới ' + $add + ' biển (' + $err + ' lượt lỗi)')
+
+  Stop-Chrome
 
   # 4) Ghi live.json
   $sb = New-Object System.Text.StringBuilder
@@ -178,3 +210,4 @@ catch {
   Log ('LỖI: ' + $_.Exception.Message)
   exit 1
 }
+finally { Stop-Chrome }
