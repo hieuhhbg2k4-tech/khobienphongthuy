@@ -19,7 +19,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -42,6 +42,10 @@ jobs:
           json.dump(d, open("vpa-data/live.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
           print("OK", len(rows), "biển, cập nhật", d.get("updated"))
           PY
+
+      - name: Gắn lịch đấu giá + hạn đăng ký từ VPA
+        continue-on-error: true
+        run: python3 tools/vpa_lich.py vpa-data/live.json 21
 
       - name: Commit nếu có thay đổi
         id: commit
