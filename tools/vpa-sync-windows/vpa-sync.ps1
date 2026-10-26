@@ -1,12 +1,14 @@
 ﻿# Đồng bộ biển VPA cho khobienphongthuy.vn — chạy trên máy Windows của chủ web (mạng Việt Nam).
 # Từ 20/10/2026 VPA chặn máy chủ Google/GitHub (lỗi 403) nên sheet BIENSOVP và GitHub không lấy được dữ liệu nữa.
-# File này lấy từ VPA: lịch đấu giá + hạn đăng ký + số người ĐK (mỗi ngày) và toàn bộ danh sách biển ô tô (Chủ nhật, hoặc chạy với -Full),
+# File này lấy từ VPA cả Danh sách công bố (toàn bộ ô tô + xe máy) và Danh sách chính thức (lịch đấu, hạn ĐK, số người ĐK),
 # rồi ghi vào vpa-data/live.json trên GitHub -> web và /admin tự cập nhật.
 #
 # Chạy tay:  powershell -ExecutionPolicy Bypass -File vpa-sync.ps1          (bình thường)
-#            powershell -ExecutionPolicy Bypass -File vpa-sync.ps1 -Full    (lấy lại toàn bộ biển ô tô, ~15-30 phút)
+#            powershell -ExecutionPolicy Bypass -File vpa-sync.ps1 -Quick   (chỉ cập nhật lịch đấu, vài phút)
 #            powershell -ExecutionPolicy Bypass -File vpa-sync.ps1 -Test    (chạy thử, không đưa lên web)
-param([switch]$Full, [switch]$Test)
+param([switch]$Quick, [switch]$Test)
+# Mặc định mỗi lần chạy lấy LẠI TOÀN BỘ cả 2 danh sách để web khớp VPA (VPA gỡ biển nào thì web gỡ biển đó).
+$Full = -not $Quick
 
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
@@ -129,9 +131,8 @@ function FetchPlan($plan) {   # plan: @(@(ngày, site, tổng), ...) -> List cá
 }
 
 try {
-  Log ('==== Bắt đầu' + $(if ($Full) { ' (lấy toàn bộ)' } elseif ($Test) { ' (chạy thử)' } else { '' }) + ' ====')
+  Log ('==== Bắt đầu' + $(if ($Test) { ' (chạy thử)' } elseif ($Quick) { ' (chỉ lịch đấu)' } else { ' (cả danh sách công bố + chính thức)' }) + ' ====')
   $vn = (Get-Date).ToUniversalTime().AddHours(7)
-  if (-not $Test -and $vn.DayOfWeek -eq 'Sunday' -and $vn.Hour -lt 12) { $Full = $true }   # sáng Chủ nhật: lấy lại toàn bộ biển ô tô
 
   # 1) Dữ liệu cũ đang có trên web
   $wc = New-Object System.Net.WebClient; $wc.Encoding = [Text.Encoding]::UTF8
@@ -146,7 +147,7 @@ try {
   Start-Chrome
   Log 'Đã mở Chrome chạy ngầm, đang hỏi VPA...'
 
-  # 2) Danh sách công bố: toàn bộ biển ô tô (site 1) và xe máy (site 2) — sáng Chủ nhật hoặc -Full
+  # 2) Danh sách công bố: toàn bộ biển ô tô (site 1) và xe máy (site 2) — mỗi lần chạy (trừ -Quick / -Test)
   if ($Full -and -not $Test) {
     foreach ($site in 1, 2) {
       $ten = if ($site -eq 1) { 'ô tô' } else { 'xe máy' }; $moto = $site - 1
