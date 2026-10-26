@@ -96,6 +96,28 @@ $JsFn = @'
   return out.join(';');
 })
 '@
+# Danh sách chính thức (trang "Danh sách chính thức" / Đăng ký đấu giá trên VPA): biển đã có lịch đấu, giờ đấu, hạn đăng ký
+$JsOfficial = @'
+(async (sites, conc, cap) => {
+  const api = '/api/bidding/public-result/list-await-auction/customer/detail';
+  const body = (s, p) => JSON.stringify({ provinceId: '', districtId: '', page: p, limit: 25, search: '', typeVehicle: '', siteId: s, colorCode: -1, fromAuctionTime: '', toAuctionTime: '' });
+  const post = async (s, p) => { for (let t = 0; t < 4; t++) { try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(s, p) }); if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, 1500 * (t + 1))); } return null; };
+  const vn = iso => { const d = new Date(new Date(iso).getTime() + 7 * 3600e3); const z = n => String(n).padStart(2, '0'); return z(d.getUTCDate()) + '/' + z(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); };
+  const tasks = [], info = [];
+  for (const s of sites) { const j = await post(s, 1); const tot = j ? (j.totalElements || 0) : -1; info.push('#' + s + '|' + tot); let pages = Math.ceil(Math.max(0, tot) / 25); if (cap) pages = Math.min(pages, cap); for (let p = 1; p <= pages; p++) tasks.push([s, p]); }
+  const out = []; let i = 0;
+  const w = async () => { while (i < tasks.length) { const [s, p] = tasks[i++]; const j = await post(s, p); if (!j) { out.push('ERR'); continue; }
+    for (const x of (j.data || [])) { if (!x.plateNumber || !x.auctionFromTime) continue;
+      out.push(x.plateNumber + '|' + vn(x.auctionFromTime) + '|' + (x.totalRegisteringPeople == null ? '' : x.totalRegisteringPeople) + '|' + (x.registerToDate ? new Date(x.registerToDate).getTime() : '') + '|' + s); } } };
+  await Promise.all(Array.from({ length: conc }, w));
+  return info.concat(out).join(';');
+})
+'@
+function FetchOfficial($cap) {   # -> @{ total = @{site=tổng}; lines = List }
+  $out = New-Object System.Collections.Generic.List[string]; $tot = @{}
+  foreach ($l in (Eval ($JsOfficial + "([1,2]," + $Threads + "," + $cap + ")")).Split(';')) { if (-not $l) { continue }; if ($l.StartsWith('#')) { $p = $l.Substring(1).Split('|'); $tot[$p[0]] = [int]$p[1] } else { $out.Add($l) } }
+  @{ total = $tot; lines = $out }
+}
 function Probe($specs) {   # specs: @("ngày|site", ...) -> @{ "ngày|site" = tổng }
   $r = @{}; foreach ($x in (Eval ($JsFn + "('" + ($specs -join ';') + "',1,true)")).Split(';')) { if ($x) { $p = $x.Split('|'); $r[$p[0] + '|' + $p[1]] = [int]$p[2] } }; $r
 }
@@ -124,37 +146,52 @@ try {
   Start-Chrome
   Log 'Đã mở Chrome chạy ngầm, đang hỏi VPA...'
 
-  # 2) Toàn bộ danh sách biển ô tô (Chủ nhật hoặc -Full)
+  # 2) Danh sách công bố: toàn bộ biển ô tô (site 1) và xe máy (site 2) — sáng Chủ nhật hoặc -Full
   if ($Full -and -not $Test) {
-    $total = (Probe @('|1'))['|1']
-    if ($total -le 0) { throw 'VPA không trả về tổng số biển ô tô (có thể đang chặn)' }
-    Log ('VPA đang công bố ' + $total + ' biển ô tô — đang tải toàn bộ...')
-    $res = FetchPlan @(, @('', 1, $total))
-    $err = @($res | Where-Object { $_ -eq 'ERR' }).Count
-    $car = New-Object 'System.Collections.Generic.Dictionary[string,object[]]'
-    foreach ($l in $res) { if ($l -ne 'ERR') { $p = $l.Split('|'); $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null; $car[$p[0]] = @($p[0], '0', 0, '', $cnt) } }
-    if ($car.Count -ge 0.9 * $total) {
-      foreach ($k in @($rows.Keys)) { if ($rows[$k][2] -eq 0 -and -not $car.ContainsKey($k)) { $rows.Remove($k) | Out-Null } }   # biển ô tô VPA đã gỡ
-      foreach ($k in $car.Keys) { if ($rows.ContainsKey($k)) { $rows[$k][4] = $car[$k][4] } else { $rows[$k] = $car[$k] } }
-      Log ('Ô tô: lấy được ' + $car.Count + '/' + $total + ' biển (' + $err + ' lượt lỗi)')
-    } else { Log ('Ô tô: chỉ lấy được ' + $car.Count + '/' + $total + ' biển — giữ danh sách cũ') }
+    foreach ($site in 1, 2) {
+      $ten = if ($site -eq 1) { 'ô tô' } else { 'xe máy' }; $moto = $site - 1
+      $total = (Probe @('|' + $site))['|' + $site]
+      if ($total -le 0) { Log ('Danh sách công bố ' + $ten + ': VPA không trả về tổng số — bỏ qua'); continue }
+      Log ('Danh sách công bố ' + $ten + ': ' + $total + ' biển — đang tải toàn bộ...')
+      $res = FetchPlan @(, @('', $site, $total))
+      $err = @($res | Where-Object { $_ -eq 'ERR' }).Count
+      $got = New-Object 'System.Collections.Generic.Dictionary[string,object[]]'
+      foreach ($l in $res) { if ($l -ne 'ERR') { $p = $l.Split('|'); $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null; $got[$p[0]] = @($p[0], '0', $moto, '', $cnt) } }
+      if ($got.Count -ge 0.9 * $total) {
+        foreach ($k in @($rows.Keys)) { if ($rows[$k][2] -eq $moto -and -not $got.ContainsKey($k)) { $rows.Remove($k) | Out-Null } }   # biển VPA đã gỡ
+        foreach ($k in $got.Keys) { if ($rows.ContainsKey($k)) { $rows[$k][4] = $got[$k][4] } else { $rows[$k] = $got[$k] } }
+        Log ('Danh sách công bố ' + $ten + ': lấy được ' + $got.Count + '/' + $total + ' biển (' + $err + ' lượt lỗi)')
+      } else { Log ('Danh sách công bố ' + $ten + ': chỉ lấy được ' + $got.Count + '/' + $total + ' — giữ danh sách cũ') }
+    }
   }
 
-  # 3) Lịch đấu giá + hạn đăng ký (ô tô site 1, xe máy site 2)
-  $plan = @(); $specs = @()
-  $last = if ($Test) { 3 } else { $Days }
-  for ($k = -1; $k -le $last; $k++) { $d = $vn.AddDays($k).ToString('dd/MM/yyyy'); $specs += ($d + '|1'); $specs += ($d + '|2') }
-  $tot = Probe $specs
-  if (@($tot.Values | Where-Object { $_ -lt 0 }).Count -eq $tot.Count) { throw 'VPA không trả lời (có thể đang chặn)' }
-  foreach ($sp in $specs) { $n = $tot[$sp]; if ($n -gt 0) { $p = $sp.Split('|'); if ($Test) { $n = [Math]::Min($n, 100) }; $plan += , @($p[0], [int]$p[1], $n)
-      Log ('Phiên ' + $p[0] + ' ' + $(if ($p[1] -eq '1') { 'ô tô' } else { 'xe máy' }) + ': ' + $tot[$sp] + ' biển') } }
-  $res = if ($plan.Count) { FetchPlan $plan } else { New-Object System.Collections.Generic.List[string] }
+  # 3) Danh sách chính thức: biển có lịch đấu + hạn đăng ký + số người ĐK (ô tô + xe máy)
   $lich = @{}; $regEnd = @{}; $err = 0
-  foreach ($l in $res) {
+  $off = FetchOfficial $(if ($Test) { 4 } else { 0 })
+  foreach ($k in $off.total.Keys) { Log ('Danh sách chính thức ' + $(if ($k -eq '1') { 'ô tô' } else { 'xe máy' }) + ': ' + $off.total[$k] + ' biển') }
+  foreach ($l in $off.lines) {
     if ($l -eq 'ERR') { $err++; continue }
     $p = $l.Split('|'); if (-not $p[1]) { continue }
     $lich[$p[0]] = $p
     if ($p[3]) { $dm = $p[1].Split('/'); $regEnd[$dm[2] + $dm[1] + $dm[0]] = $p[3] }
+  }
+  if ($lich.Count -lt 50 -and -not $Test) {
+    Log ('Danh sách chính thức chỉ lấy được ' + $lich.Count + ' biển — lấy lịch từ danh sách công bố theo ngày')
+    # 3) Lịch đấu giá + hạn đăng ký (ô tô site 1, xe máy site 2)
+    $plan = @(); $specs = @()
+    $last = if ($Test) { 3 } else { $Days }
+    for ($k = -1; $k -le $last; $k++) { $d = $vn.AddDays($k).ToString('dd/MM/yyyy'); $specs += ($d + '|1'); $specs += ($d + '|2') }
+    $tot = Probe $specs
+    if (@($tot.Values | Where-Object { $_ -lt 0 }).Count -eq $tot.Count) { throw 'VPA không trả lời (có thể đang chặn)' }
+    foreach ($sp in $specs) { $n = $tot[$sp]; if ($n -gt 0) { $p = $sp.Split('|'); if ($Test) { $n = [Math]::Min($n, 100) }; $plan += , @($p[0], [int]$p[1], $n)
+        Log ('Phiên ' + $p[0] + ' ' + $(if ($p[1] -eq '1') { 'ô tô' } else { 'xe máy' }) + ': ' + $tot[$sp] + ' biển') } }
+    $res = if ($plan.Count) { FetchPlan $plan } else { New-Object System.Collections.Generic.List[string] }
+    foreach ($l in $res) {
+      if ($l -eq 'ERR') { $err++; continue }
+      $p = $l.Split('|'); if (-not $p[1]) { continue }
+      $lich[$p[0]] = $p
+      if ($p[3]) { $dm = $p[1].Split('/'); $regEnd[$dm[2] + $dm[1] + $dm[0]] = $p[3] }
+    }
   }
   if ($lich.Count -lt 50 -and -not $Test) { throw ('Chỉ lấy được ' + $lich.Count + ' biển có lịch (' + $err + ' lượt lỗi) — VPA có thể đang chặn, giữ nguyên dữ liệu web') }
   foreach ($k in @($rows.Keys)) { $rows[$k][3] = '' }   # xoá lịch cũ, chỉ giữ lịch VPA đang công bố
