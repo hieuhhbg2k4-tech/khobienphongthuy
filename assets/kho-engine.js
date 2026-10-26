@@ -108,6 +108,7 @@ function fromLive(d, meta) {
     s.add(m[1], +m[2], r[2], { date: dm ? +(dm[3] + dm[2] + dm[1]) : 0, cnt: typeof r[4] === "number" ? r[4] : -1 });
   }
   s.updated = d.updated || "";
+  s.regEnd = d.reg_end || null;   // {yyyymmdd: hạn đăng ký (ms)}
   return s;
 }
 // Kho của tôi: rows [{plate:"30K-123.45", price, moto, isNew, cost?, seller?, group?, row?}]

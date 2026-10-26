@@ -169,7 +169,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
 </section>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="/assets/kho-engine.js?v=17"></script>
+<script src="/assets/kho-engine.js?v=18"></script>
 <script>
 /* ===== CẤU HÌNH ===== */
 const MEMBER_API = "https://script.google.com/macros/s/AKfycbxZ8CzcWQ2F88n13o1xJzlQqmOVDflJd33FNNaScQLwrZY71d6unreyrARuy7c77u-w/exec"; // Sheet BIENSOVP: tài khoản + biển VPA hằng ngày
@@ -327,7 +327,9 @@ function apply(){
   // "Lịch ĐG gần nhất" / "Đã có lịch": chỉ giữ biển còn hạn đăng ký (ngày đấu từ ngày mai trở đi, giờ Việt Nam)
   if ($("sort").value === "date" || $("fDate").value === "1"){
     const t = new Date(Date.now() + 7 * 3600e3 + REG_CLOSE_DAYS * 864e5), min = t.getUTCFullYear() * 10000 + (t.getUTCMonth() + 1) * 100 + t.getUTCDate();
-    RES = RES.filter(v => { const [s, i] = KE.unpack(LIST, v), d = s.date ? s.date[i] : 0; return d > min; });
+    const now = Date.now();
+    RES = RES.filter(v => { const [s, i] = KE.unpack(LIST, v), d = s.date ? s.date[i] : 0; if (!d) return false;
+      const end = s.regEnd && s.regEnd[d]; return end ? end > now : d > min; });   // có hạn đăng ký từ VPA thì so theo hạn đó
   }
   if ($("sort").value !== "none") KE.sortRes(LIST, RES, $("sort").value);
   $("cnt").textContent = N(RES.length);
