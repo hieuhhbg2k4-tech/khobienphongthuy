@@ -18,7 +18,7 @@ $Repo     = 'hieuhhbg2k4-tech/khobienphongthuy'
 $Branch   = 'main'
 $LiveUrl  = 'https://khobienphongthuy.vn/vpa-data/live.json'
 $Days     = 21          # lấy lịch đấu giá trong 21 ngày tới
-$Threads  = 4           # số yêu cầu Chrome gửi cùng lúc (nhẹ tay, tránh bị chặn)
+$Threads  = 5           # số yêu cầu Chrome gửi cùng lúc (nhẹ tay, tránh bị chặn)
 $Page     = 25          # VPA chỉ trả 25 biển mỗi lần
 $Dir      = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $LogFile  = Join-Path $Dir 'nhat-ky.txt'
@@ -86,13 +86,22 @@ function Stop-Chrome { try { if ($script:ws) { $script:ws.Dispose() } } catch {}
 $JsFn = @'
 (async (planText, conc, probeOnly) => {
   const api = '/search-api/search/list-announcement-plan';
-  const body = (d, s, o) => JSON.stringify({ offset: o, limit: 25, province: '', vehicle: '', colorCode: -1, license_plate: '', auctionDate: d, announcementNumber: '', siteId: +s });
-  const post = async (d, s, o) => { for (let t = 0; t < 4; t++) { try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(d, s, o) }); if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, 1500 * (t + 1))); } return null; };
+  const body = (d, s, o, p) => JSON.stringify({ offset: o, limit: 25, province: p || '', vehicle: '', colorCode: -1, license_plate: '', auctionDate: d, announcementNumber: '', siteId: +s });
+  const post = async (d, s, o, p) => { for (let t = 0; t < 4; t++) { try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(d, s, o, p) }); if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, 1500 * (t + 1))); } return null; };
   const items = planText.split(';').filter(Boolean).map(x => x.split('|'));
   if (probeOnly) { const out = []; for (const [d, s] of items) { const j = await post(d, s, 0); out.push(d + '|' + s + '|' + (j ? (j.totalElements || 0) : -1)); } return out.join(';'); }
-  const tasks = []; for (const [d, s, tot] of items) for (let o = 0; o < +tot; o += 25) tasks.push([d, s, o]);
+  // VPA trả rất chậm khi offset lớn (trang sâu) -> danh sách lớn thì chia theo tỉnh (mã 01..99) để trang nào cũng gần đầu
+  const tasks = [];
+  for (const [d, s, tot] of items) {
+    if (+tot > 20000) {
+      const tots = []; for (let k = 1; k <= 99; k++) { const c = String(k).padStart(2, '0'); const j = await post(d, s, 0, c); if (j && j.totalElements) tots.push([c, j.totalElements]); }
+      const sum = tots.reduce((a, b) => a + b[1], 0);
+      if (sum >= 0.98 * +tot) { for (const [c, n] of tots) for (let o = 0; o < n; o += 25) tasks.push([d, s, o, c]); continue; }
+    }
+    for (let o = 0; o < +tot; o += 25) tasks.push([d, s, o, '']);
+  }
   const out = []; let i = 0;
-  const w = async () => { while (i < tasks.length) { const [d, s, o] = tasks[i++]; const j = await post(d, s, o); if (!j) { out.push('ERR'); continue; }
+  const w = async () => { while (i < tasks.length) { const [d, s, o, pv] = tasks[i++]; const j = await post(d, s, o, pv); if (!j) { out.push('ERR'); continue; }
     for (const x of (j.content || [])) out.push(x.bks + '|' + (x.auctionDate || '') + '|' + (x.totalRegisteringPeople == null ? '' : x.totalRegisteringPeople) + '|' + (x.timeEndRegister || '') + '|' + s); } };
   await Promise.all(Array.from({ length: conc }, w));
   return out.join(';');
@@ -144,6 +153,7 @@ try {
   $provs = '[]'; $pm = [regex]::Match($old, '"provs"\s*:\s*(\[[^\]]*\])'); if ($pm.Success) { $provs = $pm.Groups[1].Value }
   if ($old -notmatch '"src"\s*:\s*"pc"') { $Full = $true }   # lần đầu chạy trên máy -> lấy toàn bộ
   Log ('Dữ liệu cũ trên web: ' + $rows.Count + ' biển')
+  Stop-Chrome   # tắt Chrome ngầm còn sót từ lần chạy trước (nếu có)
   Start-Chrome
   Log 'Đã mở Chrome chạy ngầm, đang hỏi VPA...'
 
