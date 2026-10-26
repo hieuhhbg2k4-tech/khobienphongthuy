@@ -157,7 +157,61 @@ try {
   Start-Chrome
   Log 'Đã mở Chrome chạy ngầm, đang hỏi VPA...'
 
-  # 2) Danh sách công bố: toàn bộ biển ô tô (site 1) và xe máy (site 2) — mỗi lần chạy (trừ -Quick / -Test)
+  # Ghi live.json + đưa lên web. Gọi sau MỖI bước để web có dữ liệu mới ngay (cập nhật đến đâu lên web đến đó)
+  $script:regEnd = @{}; $script:nLich = 0
+  function Publish($buoc) {
+    $sb = New-Object System.Text.StringBuilder
+    $stamp = (Get-Date).ToUniversalTime().AddHours(7).ToString('HH:mm dd/MM/yyyy')
+    [void]$sb.Append('{"updated":"' + $stamp + '","src":"pc","lich_updated":"' + $stamp + '","ok":true,"count":' + $rows.Count + ',"provs":' + $provs + ',"reg_end":{')
+    $first = $true; foreach ($k in $script:regEnd.Keys) { if (-not $first) { [void]$sb.Append(',') }; [void]$sb.Append('"' + $k + '":' + $script:regEnd[$k]); $first = $false }
+    [void]$sb.Append('},"rows":[')
+    $first = $true
+    foreach ($r in $rows.Values) { if (-not $first) { [void]$sb.Append(',') }; $first = $false; [void]$sb.Append('["' + $r[0] + '",' + $r[1] + ',' + $r[2] + ',"' + $r[3] + '",' + $r[4] + ']') }
+    [void]$sb.Append(']}')
+    $json = $sb.ToString()
+    $outFile = Join-Path $Dir $(if ($Test) { 'live-thu.json' } else { 'live.json' })
+    [IO.File]::WriteAllText($outFile, $json, (New-Object Text.UTF8Encoding $false))
+    if ($env:SKIP_UPLOAD) { Log ('[' + $buoc + '] (kiểm thử) ' + $rows.Count + ' biển'); return }
+    if ($Test) { Log ('[' + $buoc + '] Đã ghi ' + $outFile + ' (' + $rows.Count + ' biển) — chạy thử, không đưa lên web'); return }
+    if (-not (Test-Path $TokenFile)) { throw ('Chưa có file ' + $TokenFile + ' chứa mã GitHub') }
+    $tok = (Get-Content $TokenFile -Raw).Trim()
+    $H = @{ Authorization = 'Bearer ' + $tok; Accept = 'application/vnd.github+json'; 'User-Agent' = 'vpa-sync-khobienphongthuy' }
+    $gh = 'https://api.github.com/repos/' + $Repo
+    $J = { param($o) [Text.Encoding]::UTF8.GetBytes(($o | ConvertTo-Json -Depth 5 -Compress)) }
+    $ref = Invoke-RestMethod -Uri ($gh + '/git/ref/heads/' + $Branch) -Headers $H -TimeoutSec 120
+    $base = Invoke-RestMethod -Uri ($gh + '/git/commits/' + $ref.object.sha) -Headers $H -TimeoutSec 120
+    $blobBody = [Text.Encoding]::UTF8.GetBytes('{"content":"' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json)) + '","encoding":"base64"}')
+    $blob = Invoke-RestMethod -Uri ($gh + '/git/blobs') -Method Post -Headers $H -Body $blobBody -ContentType 'application/json' -TimeoutSec 600
+    $tree = Invoke-RestMethod -Uri ($gh + '/git/trees') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body (& $J @{ base_tree = $base.tree.sha; tree = @(@{ path = 'vpa-data/live.json'; mode = '100644'; type = 'blob'; sha = $blob.sha }) })
+    $commit = Invoke-RestMethod -Uri ($gh + '/git/commits') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body (& $J @{ message = ('Cap nhat bien VPA tu may tinh: ' + $buoc + ' (' + $stamp + ')'); tree = $tree.sha; parents = @($ref.object.sha) })
+    Invoke-RestMethod -Uri ($gh + '/git/refs/heads/' + $Branch) -Method Patch -Headers $H -ContentType 'application/json' -TimeoutSec 120 -Body (& $J @{ sha = $commit.sha }) | Out-Null
+    try { Invoke-RestMethod -Uri ($gh + '/pages/builds') -Method Post -Headers $H -TimeoutSec 60 | Out-Null } catch {}
+    Log ('[' + $buoc + '] ĐÃ ĐƯA LÊN WEB: ' + $rows.Count + ' biển, ' + $script:nLich + ' biển có lịch')
+  }
+
+  # 2) Danh sách chính thức trước (nhanh): lịch đấu + hạn đăng ký + số người ĐK (ô tô + xe máy)
+  $lich = @{}; $err = 0
+  $off = FetchOfficial $(if ($Test) { 4 } else { 0 })
+  foreach ($k in $off.total.Keys) { Log ('Danh sách chính thức ' + $(if ($k -eq '1') { 'ô tô' } else { 'xe máy' }) + ': ' + $off.total[$k] + ' biển') }
+  foreach ($l in $off.lines) {
+    if ($l -eq 'ERR') { $err++; continue }
+    $p = $l.Split('|'); if (-not $p[1]) { continue }
+    $lich[$p[0]] = $p
+    if ($p[3]) { $dm = $p[1].Split('/'); $script:regEnd[$dm[2] + $dm[1] + $dm[0]] = $p[3] }
+  }
+  if ($lich.Count -lt 50 -and -not $Test) { throw ('Danh sách chính thức chỉ lấy được ' + $lich.Count + ' biển (' + $err + ' lượt lỗi) — VPA có thể đang chặn, giữ nguyên dữ liệu web') }
+  foreach ($k in @($rows.Keys)) { $rows[$k][3] = '' }   # bỏ lịch cũ, chỉ giữ lịch VPA đang công bố
+  $add = 0
+  foreach ($k in $lich.Keys) {
+    $p = $lich[$k]; $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null
+    if ($rows.ContainsKey($k)) { $rows[$k][3] = $p[1]; if ($cnt -ge 0) { $rows[$k][4] = $cnt } }
+    else { $moto = if ($p[4] -eq '2') { 1 } else { 0 }; $rows[$k] = @($k, '0', $moto, $p[1], $cnt); $add++ }
+  }
+  $script:nLich = $lich.Count
+  Log ('Danh sách chính thức: ' + $lich.Count + ' biển có lịch, thêm mới ' + $add + ' biển (' + $err + ' lượt lỗi)')
+  Publish 'danh sach chinh thuc'
+
+  # 3) Danh sách công bố: toàn bộ ô tô rồi xe máy (trừ -Quick / -Test); xong phần nào đưa lên web phần đó
   if ($Full -and -not $Test) {
     foreach ($site in 1, 2) {
       $ten = if ($site -eq 1) { 'ô tô' } else { 'xe máy' }; $moto = $site - 1
@@ -166,93 +220,20 @@ try {
       Log ('Danh sách công bố ' + $ten + ': ' + $total + ' biển — đang tải toàn bộ...')
       $res = FetchPlan @(, @('', $site, $total))
       $err = @($res | Where-Object { $_ -eq 'ERR' }).Count
-      $got = New-Object 'System.Collections.Generic.Dictionary[string,object[]]'
-      foreach ($l in $res) { if ($l -ne 'ERR') { $p = $l.Split('|'); $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null; $got[$p[0]] = @($p[0], '0', $moto, '', $cnt) } }
+      $got = New-Object 'System.Collections.Generic.Dictionary[string,int]'
+      foreach ($l in $res) { if ($l -ne 'ERR') { $p = $l.Split('|'); $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null; $got[$p[0]] = $cnt } }
       if ($got.Count -ge 0.9 * $total) {
-        foreach ($k in @($rows.Keys)) { if ($rows[$k][2] -eq $moto -and -not $got.ContainsKey($k)) { $rows.Remove($k) | Out-Null } }   # biển VPA đã gỡ
-        foreach ($k in $got.Keys) { if ($rows.ContainsKey($k)) { $rows[$k][4] = $got[$k][4] } else { $rows[$k] = $got[$k] } }
-        Log ('Danh sách công bố ' + $ten + ': lấy được ' + $got.Count + '/' + $total + ' biển (' + $err + ' lượt lỗi)')
+        $del = 0
+        # biển VPA đã gỡ khỏi cả 2 danh sách (không còn trong công bố, không có lịch) -> gỡ khỏi web
+        foreach ($k in @($rows.Keys)) { if ($rows[$k][2] -eq $moto -and -not $got.ContainsKey($k) -and -not $rows[$k][3]) { $rows.Remove($k) | Out-Null; $del++ } }
+        $add = 0
+        foreach ($k in $got.Keys) { if ($rows.ContainsKey($k)) { if (-not $rows[$k][3] -and $got[$k] -ge 0) { $rows[$k][4] = $got[$k] } } else { $rows[$k] = @($k, '0', $moto, '', $got[$k]); $add++ } }
+        Log ('Danh sách công bố ' + $ten + ': ' + $got.Count + '/' + $total + ' biển, thêm ' + $add + ', gỡ ' + $del + ' (' + $err + ' lượt lỗi)')
+        Publish ('danh sach cong bo ' + $(if ($site -eq 1) { 'o to' } else { 'xe may' }))
       } else { Log ('Danh sách công bố ' + $ten + ': chỉ lấy được ' + $got.Count + '/' + $total + ' — giữ danh sách cũ') }
     }
   }
-
-  # 3) Danh sách chính thức: biển có lịch đấu + hạn đăng ký + số người ĐK (ô tô + xe máy)
-  $lich = @{}; $regEnd = @{}; $err = 0
-  $off = FetchOfficial $(if ($Test) { 4 } else { 0 })
-  foreach ($k in $off.total.Keys) { Log ('Danh sách chính thức ' + $(if ($k -eq '1') { 'ô tô' } else { 'xe máy' }) + ': ' + $off.total[$k] + ' biển') }
-  foreach ($l in $off.lines) {
-    if ($l -eq 'ERR') { $err++; continue }
-    $p = $l.Split('|'); if (-not $p[1]) { continue }
-    $lich[$p[0]] = $p
-    if ($p[3]) { $dm = $p[1].Split('/'); $regEnd[$dm[2] + $dm[1] + $dm[0]] = $p[3] }
-  }
-  if ($lich.Count -lt 50 -and -not $Test) {
-    Log ('Danh sách chính thức chỉ lấy được ' + $lich.Count + ' biển — lấy lịch từ danh sách công bố theo ngày')
-    # 3) Lịch đấu giá + hạn đăng ký (ô tô site 1, xe máy site 2)
-    $plan = @(); $specs = @()
-    $last = if ($Test) { 3 } else { $Days }
-    for ($k = -1; $k -le $last; $k++) { $d = $vn.AddDays($k).ToString('dd/MM/yyyy'); $specs += ($d + '|1'); $specs += ($d + '|2') }
-    $tot = Probe $specs
-    if (@($tot.Values | Where-Object { $_ -lt 0 }).Count -eq $tot.Count) { throw 'VPA không trả lời (có thể đang chặn)' }
-    foreach ($sp in $specs) { $n = $tot[$sp]; if ($n -gt 0) { $p = $sp.Split('|'); if ($Test) { $n = [Math]::Min($n, 100) }; $plan += , @($p[0], [int]$p[1], $n)
-        Log ('Phiên ' + $p[0] + ' ' + $(if ($p[1] -eq '1') { 'ô tô' } else { 'xe máy' }) + ': ' + $tot[$sp] + ' biển') } }
-    $res = if ($plan.Count) { FetchPlan $plan } else { New-Object System.Collections.Generic.List[string] }
-    foreach ($l in $res) {
-      if ($l -eq 'ERR') { $err++; continue }
-      $p = $l.Split('|'); if (-not $p[1]) { continue }
-      $lich[$p[0]] = $p
-      if ($p[3]) { $dm = $p[1].Split('/'); $regEnd[$dm[2] + $dm[1] + $dm[0]] = $p[3] }
-    }
-  }
-  if ($lich.Count -lt 50 -and -not $Test) { throw ('Chỉ lấy được ' + $lich.Count + ' biển có lịch (' + $err + ' lượt lỗi) — VPA có thể đang chặn, giữ nguyên dữ liệu web') }
-  foreach ($k in @($rows.Keys)) { $rows[$k][3] = '' }   # xoá lịch cũ, chỉ giữ lịch VPA đang công bố
-  $add = 0
-  foreach ($k in $lich.Keys) {
-    $p = $lich[$k]; $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null
-    if ($rows.ContainsKey($k)) { $rows[$k][3] = $p[1]; if ($cnt -ge 0) { $rows[$k][4] = $cnt } }
-    else { $moto = if ($p[4] -eq '2') { 1 } else { 0 }; $rows[$k] = @($k, '0', $moto, $p[1], $cnt); $add++ }
-  }
-  Log ('Lịch đấu giá: ' + $lich.Count + ' biển có lịch, thêm mới ' + $add + ' biển (' + $err + ' lượt lỗi)')
-
-  Stop-Chrome
-
-  # 4) Ghi live.json
-  $sb = New-Object System.Text.StringBuilder
-  $stamp = $vn.ToString('HH:mm dd/MM/yyyy')
-  [void]$sb.Append('{"updated":"' + $stamp + '","src":"pc","lich_updated":"' + $stamp + '","ok":true,"count":' + $rows.Count + ',"provs":' + $provs + ',"reg_end":{')
-  $first = $true; foreach ($k in $regEnd.Keys) { if (-not $first) { [void]$sb.Append(',') }; [void]$sb.Append('"' + $k + '":' + $regEnd[$k]); $first = $false }
-  [void]$sb.Append('},"rows":[')
-  $first = $true
-  foreach ($r in $rows.Values) {
-    if (-not $first) { [void]$sb.Append(',') }; $first = $false
-    [void]$sb.Append('["' + $r[0] + '",' + $r[1] + ',' + $r[2] + ',"' + $r[3] + '",' + $r[4] + ']')
-  }
-  [void]$sb.Append(']}')
-  $json = $sb.ToString()
-  $outFile = Join-Path $Dir $(if ($Test) { 'live-thu.json' } else { 'live.json' })
-  [IO.File]::WriteAllText($outFile, $json, (New-Object Text.UTF8Encoding $false))
-  Log ('Đã ghi ' + $outFile + ' (' + $rows.Count + ' biển, ' + [Math]::Round($json.Length / 1MB, 1) + ' MB)')
-  if ($Test) { Log 'Chạy thử xong — chưa đưa lên web.'; exit 0 }
-
-  # 5) Đưa lên GitHub (web tự cập nhật sau 1-2 phút)
-  if (-not (Test-Path $TokenFile)) { throw ('Chưa có file ' + $TokenFile + ' chứa mã GitHub') }
-  $tok = (Get-Content $TokenFile -Raw).Trim()
-  $H = @{ Authorization = 'Bearer ' + $tok; Accept = 'application/vnd.github+json'; 'User-Agent' = 'vpa-sync-khobienphongthuy' }
-  $gh = 'https://api.github.com/repos/' + $Repo
-  function GH($method, $path, $obj) {
-    $b = if ($obj) { [Text.Encoding]::UTF8.GetBytes(($obj | ConvertTo-Json -Depth 5 -Compress)) } else { $null }
-    if ($b) { Invoke-RestMethod -Uri ($gh + $path) -Method $method -Headers $H -Body $b -ContentType 'application/json' -TimeoutSec 300 }
-    else { Invoke-RestMethod -Uri ($gh + $path) -Method $method -Headers $H -TimeoutSec 120 }
-  }
-  $ref = GH 'GET' ('/git/ref/heads/' + $Branch) $null
-  $base = GH 'GET' ('/git/commits/' + $ref.object.sha) $null
-  $blobBody = [Text.Encoding]::UTF8.GetBytes('{"content":"' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json)) + '","encoding":"base64"}')
-  $blob = Invoke-RestMethod -Uri ($gh + '/git/blobs') -Method Post -Headers $H -Body $blobBody -ContentType 'application/json' -TimeoutSec 600
-  $tree = GH 'POST' '/git/trees' @{ base_tree = $base.tree.sha; tree = @(@{ path = 'vpa-data/live.json'; mode = '100644'; type = 'blob'; sha = $blob.sha }) }
-  $commit = GH 'POST' '/git/commits' @{ message = ('Cap nhat bien VPA tu may tinh (' + $stamp + ')'); tree = $tree.sha; parents = @($ref.object.sha) }
-  GH 'PATCH' ('/git/refs/heads/' + $Branch) @{ sha = $commit.sha } | Out-Null
-  try { GH 'POST' '/pages/builds' $null | Out-Null } catch {}
-  Log ('Đã đưa lên web: ' + $rows.Count + ' biển, ' + $lich.Count + ' biển có lịch. Xong.')
+  Log '==== Xong ===='
 }
 catch {
   Log ('LỖI: ' + $_.Exception.Message)
