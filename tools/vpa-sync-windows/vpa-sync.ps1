@@ -18,7 +18,7 @@ $Repo     = 'hieuhhbg2k4-tech/khobienphongthuy'
 $Branch   = 'main'
 $LiveUrl  = 'https://khobienphongthuy.vn/vpa-data/live.json'
 $Days     = 21          # lấy lịch đấu giá trong 21 ngày tới
-$Threads  = 5           # số yêu cầu Chrome gửi cùng lúc (nhẹ tay, tránh bị chặn)
+$Threads  = 2           # số yêu cầu gửi cùng lúc — VPA giới hạn tốc độ (lỗi 429 nếu hỏi dồn), 2 là mức an toàn đã thử
 $Page     = 25          # VPA chỉ trả 25 biển mỗi lần
 $Dir      = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $LogFile  = Join-Path $Dir 'nhat-ky.txt'
@@ -87,7 +87,7 @@ $JsFn = @'
 (async (planText, conc, probeOnly) => {
   const api = '/search-api/search/list-announcement-plan';
   const body = (d, s, o, p) => JSON.stringify({ offset: o, limit: 25, province: p || '', vehicle: '', colorCode: -1, license_plate: '', auctionDate: d, announcementNumber: '', siteId: +s });
-  const post = async (d, s, o, p) => { for (let t = 0; t < 4; t++) { try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(d, s, o, p) }); if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, 1500 * (t + 1))); } return null; };
+  const post = async (d, s, o, p) => { for (let t = 0; t < 12; t++) { let st = 0; try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(d, s, o, p) }); st = r.status; if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, st === 429 ? 30000 : 2000 * (t + 1))); } return null; };   // 429 = VPA bảo hỏi chậm lại -> chờ 30 giây
   const items = planText.split(';').filter(Boolean).map(x => x.split('|'));
   if (probeOnly) { const out = []; for (const [d, s] of items) { const j = await post(d, s, 0); out.push(d + '|' + s + '|' + (j ? (j.totalElements || 0) : -1)); } return out.join(';'); }
   // VPA trả rất chậm khi offset lớn (trang sâu) -> danh sách lớn thì chia theo tỉnh (mã 01..99) để trang nào cũng gần đầu
@@ -112,7 +112,7 @@ $JsOfficial = @'
 (async (sites, conc, cap) => {
   const api = '/api/bidding/public-result/list-await-auction/customer/detail';
   const body = (s, p) => JSON.stringify({ provinceId: '', districtId: '', page: p, limit: 25, search: '', typeVehicle: '', siteId: s, colorCode: -1, fromAuctionTime: '', toAuctionTime: '' });
-  const post = async (s, p) => { for (let t = 0; t < 4; t++) { try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(s, p) }); if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, 1500 * (t + 1))); } return null; };
+  const post = async (s, p) => { for (let t = 0; t < 12; t++) { let st = 0; try { const r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(s, p) }); st = r.status; if (r.ok) return await r.json(); } catch (e) {} await new Promise(z => setTimeout(z, st === 429 ? 30000 : 2000 * (t + 1))); } return null; };
   const vn = iso => { const d = new Date(new Date(iso).getTime() + 7 * 3600e3); const z = n => String(n).padStart(2, '0'); return z(d.getUTCDate()) + '/' + z(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); };
   const tasks = [], info = [];
   for (const s of sites) { const j = await post(s, 1); const tot = j ? (j.totalElements || 0) : -1; info.push('#' + s + '|' + tot); let pages = Math.ceil(Math.max(0, tot) / 25); if (cap) pages = Math.min(pages, cap); for (let p = 1; p <= pages; p++) tasks.push([s, p]); }
