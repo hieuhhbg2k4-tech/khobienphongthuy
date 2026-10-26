@@ -6,7 +6,7 @@
 # Chạy tay:  powershell -ExecutionPolicy Bypass -File vpa-sync.ps1          (bình thường)
 #            powershell -ExecutionPolicy Bypass -File vpa-sync.ps1 -Quick   (chỉ cập nhật lịch đấu, vài phút)
 #            powershell -ExecutionPolicy Bypass -File vpa-sync.ps1 -Test    (chạy thử, không đưa lên web)
-param([switch]$Quick, [switch]$Test)
+param([switch]$Quick, [switch]$Test, [switch]$UploadOnly)
 # Mặc định mỗi lần chạy lấy LẠI TOÀN BỘ cả 2 danh sách để web khớp VPA (VPA gỡ biển nào thì web gỡ biển đó).
 $Full = -not $Quick
 
@@ -139,9 +139,57 @@ function FetchPlan($plan) {   # plan: @(@(ngày, site, tổng), ...) -> List cá
   , $out
 }
 
+# Ghi live.json + đưa lên web. Gọi sau MỖI bước để web có dữ liệu mới ngay (cập nhật đến đâu lên web đến đó)
+$script:regEnd = @{}; $script:nLich = 0
+function Publish($buoc) {
+  $sb = New-Object System.Text.StringBuilder
+  $stamp = (Get-Date).ToUniversalTime().AddHours(7).ToString('HH:mm dd/MM/yyyy')
+  [void]$sb.Append('{"updated":"' + $stamp + '","src":"pc","lich_updated":"' + $stamp + '","ok":true,"count":' + $rows.Count + ',"provs":' + $provs + ',"reg_end":{')
+  $first = $true; foreach ($k in $script:regEnd.Keys) { if (-not $first) { [void]$sb.Append(',') }; [void]$sb.Append('"' + $k + '":' + $script:regEnd[$k]); $first = $false }
+  [void]$sb.Append('},"rows":[')
+  $first = $true
+  foreach ($r in $rows.Values) { if (-not $first) { [void]$sb.Append(',') }; $first = $false; [void]$sb.Append('["' + $r[0] + '",' + $r[1] + ',' + $r[2] + ',"' + $r[3] + '",' + $r[4] + ']') }
+  [void]$sb.Append(']}')
+  $json = $sb.ToString()
+  $outFile = Join-Path $Dir $(if ($Test) { 'live-thu.json' } else { 'live.json' })
+  [IO.File]::WriteAllText($outFile, $json, (New-Object Text.UTF8Encoding $false))
+  if ($env:SKIP_UPLOAD) { Log ('[' + $buoc + '] (kiểm thử) ' + $rows.Count + ' biển'); return }
+  if ($Test) { Log ('[' + $buoc + '] Đã ghi ' + $outFile + ' (' + $rows.Count + ' biển) — chạy thử, không đưa lên web'); return }
+  Upload $json $buoc $stamp
+  Log ('[' + $buoc + '] ĐÃ ĐƯA LÊN WEB: ' + $rows.Count + ' biển, ' + $script:nLich + ' biển có lịch')
+}
+function Upload($json, $buoc, $stamp) {
+  if (-not (Test-Path $TokenFile)) { throw ('Chưa có file ' + $TokenFile + ' chứa mã GitHub') }
+  $tok = (Get-Content $TokenFile -Raw).Trim()
+  $H = @{ Authorization = 'Bearer ' + $tok; Accept = 'application/vnd.github+json'; 'User-Agent' = 'vpa-sync-khobienphongthuy' }
+  $gh = 'https://api.github.com/repos/' + $Repo
+  $U8 = [Text.Encoding]::UTF8   # tự viết JSON; truyền thẳng mảng byte (không qua scriptblock để PowerShell không tách mảng)
+  $step = 'đọc nhánh'
+  try {
+  $ref = Invoke-RestMethod -Uri ($gh + '/git/ref/heads/' + $Branch) -Headers $H -TimeoutSec 120
+  $base = Invoke-RestMethod -Uri ($gh + '/git/commits/' + $ref.object.sha) -Headers $H -TimeoutSec 120
+  $blobBody = [Text.Encoding]::UTF8.GetBytes('{"content":"' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json)) + '","encoding":"base64"}')
+  $step = 'tải file lên'
+  $blob = Invoke-RestMethod -Uri ($gh + '/git/blobs') -Method Post -Headers $H -Body $blobBody -ContentType 'application/json' -TimeoutSec 600
+  $step = 'tạo cây thư mục'
+  $tree = Invoke-RestMethod -Uri ($gh + '/git/trees') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body ($U8.GetBytes('{"base_tree":"' + $base.tree.sha + '","tree":[{"path":"vpa-data/live.json","mode":"100644","type":"blob","sha":"' + $blob.sha + '"}]}'))
+  $step = 'tạo commit'
+  $commit = Invoke-RestMethod -Uri ($gh + '/git/commits') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body ($U8.GetBytes('{"message":"Cap nhat bien VPA tu may tinh: ' + $buoc + ' (' + $stamp + ')","tree":"' + $tree.sha + '","parents":["' + $ref.object.sha + '"]}'))
+  $step = 'cập nhật nhánh'
+  Invoke-RestMethod -Uri ($gh + '/git/refs/heads/' + $Branch) -Method Patch -Headers $H -ContentType 'application/json' -TimeoutSec 120 -Body ($U8.GetBytes('{"sha":"' + $commit.sha + '"}')) | Out-Null
+  } catch { $msg = $_.Exception.Message; if ($_.ErrorDetails -and $_.ErrorDetails.Message) { $msg += ' | ' + $_.ErrorDetails.Message }; throw ('GitHub lỗi ở bước ' + $step + ': ' + $msg) }
+  try { Invoke-RestMethod -Uri ($gh + '/pages/builds') -Method Post -Headers $H -TimeoutSec 60 | Out-Null } catch {}
+}
+
+
 try {
   Log ('==== Bắt đầu' + $(if ($Test) { ' (chạy thử)' } elseif ($Quick) { ' (chỉ lịch đấu)' } else { ' (cả danh sách công bố + chính thức)' }) + ' ====')
   $vn = (Get-Date).ToUniversalTime().AddHours(7)
+  if ($UploadOnly) {   # chỉ đưa file live.json đã tải sẵn trên máy lên web
+    $f = Join-Path $Dir 'live.json'; $json = [IO.File]::ReadAllText($f, [Text.Encoding]::UTF8)
+    Upload $json 'dua file co san' $vn.ToString('HH:mm dd/MM/yyyy')
+    Log ('ĐÃ ĐƯA LÊN WEB file có sẵn (' + [Math]::Round($json.Length / 1MB, 1) + ' MB)'); exit 0
+  }
 
   # 1) Dữ liệu cũ đang có trên web
   $wc = New-Object System.Net.WebClient; $wc.Encoding = [Text.Encoding]::UTF8
@@ -156,45 +204,6 @@ try {
   Stop-Chrome   # tắt Chrome ngầm còn sót từ lần chạy trước (nếu có)
   Start-Chrome
   Log 'Đã mở Chrome chạy ngầm, đang hỏi VPA...'
-
-  # Ghi live.json + đưa lên web. Gọi sau MỖI bước để web có dữ liệu mới ngay (cập nhật đến đâu lên web đến đó)
-  $script:regEnd = @{}; $script:nLich = 0
-  function Publish($buoc) {
-    $sb = New-Object System.Text.StringBuilder
-    $stamp = (Get-Date).ToUniversalTime().AddHours(7).ToString('HH:mm dd/MM/yyyy')
-    [void]$sb.Append('{"updated":"' + $stamp + '","src":"pc","lich_updated":"' + $stamp + '","ok":true,"count":' + $rows.Count + ',"provs":' + $provs + ',"reg_end":{')
-    $first = $true; foreach ($k in $script:regEnd.Keys) { if (-not $first) { [void]$sb.Append(',') }; [void]$sb.Append('"' + $k + '":' + $script:regEnd[$k]); $first = $false }
-    [void]$sb.Append('},"rows":[')
-    $first = $true
-    foreach ($r in $rows.Values) { if (-not $first) { [void]$sb.Append(',') }; $first = $false; [void]$sb.Append('["' + $r[0] + '",' + $r[1] + ',' + $r[2] + ',"' + $r[3] + '",' + $r[4] + ']') }
-    [void]$sb.Append(']}')
-    $json = $sb.ToString()
-    $outFile = Join-Path $Dir $(if ($Test) { 'live-thu.json' } else { 'live.json' })
-    [IO.File]::WriteAllText($outFile, $json, (New-Object Text.UTF8Encoding $false))
-    if ($env:SKIP_UPLOAD) { Log ('[' + $buoc + '] (kiểm thử) ' + $rows.Count + ' biển'); return }
-    if ($Test) { Log ('[' + $buoc + '] Đã ghi ' + $outFile + ' (' + $rows.Count + ' biển) — chạy thử, không đưa lên web'); return }
-    if (-not (Test-Path $TokenFile)) { throw ('Chưa có file ' + $TokenFile + ' chứa mã GitHub') }
-    $tok = (Get-Content $TokenFile -Raw).Trim()
-    $H = @{ Authorization = 'Bearer ' + $tok; Accept = 'application/vnd.github+json'; 'User-Agent' = 'vpa-sync-khobienphongthuy' }
-    $gh = 'https://api.github.com/repos/' + $Repo
-    $J = { param($o) [Text.Encoding]::UTF8.GetBytes(($o | ConvertTo-Json -Depth 5 -Compress)) }
-    $step = 'đọc nhánh'
-    try {
-    $ref = Invoke-RestMethod -Uri ($gh + '/git/ref/heads/' + $Branch) -Headers $H -TimeoutSec 120
-    $base = Invoke-RestMethod -Uri ($gh + '/git/commits/' + $ref.object.sha) -Headers $H -TimeoutSec 120
-    $blobBody = [Text.Encoding]::UTF8.GetBytes('{"content":"' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json)) + '","encoding":"base64"}')
-    $step = 'tải file lên'
-    $blob = Invoke-RestMethod -Uri ($gh + '/git/blobs') -Method Post -Headers $H -Body $blobBody -ContentType 'application/json' -TimeoutSec 600
-    $step = 'tạo cây thư mục'
-    $tree = Invoke-RestMethod -Uri ($gh + '/git/trees') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body (& $J @{ base_tree = $base.tree.sha; tree = @(@{ path = 'vpa-data/live.json'; mode = '100644'; type = 'blob'; sha = $blob.sha }) })
-    $step = 'tạo commit'
-    $commit = Invoke-RestMethod -Uri ($gh + '/git/commits') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body (& $J @{ message = ('Cap nhat bien VPA tu may tinh: ' + $buoc + ' (' + $stamp + ')'); tree = $tree.sha; parents = @($ref.object.sha) })
-    $step = 'cập nhật nhánh'
-    Invoke-RestMethod -Uri ($gh + '/git/refs/heads/' + $Branch) -Method Patch -Headers $H -ContentType 'application/json' -TimeoutSec 120 -Body (& $J @{ sha = $commit.sha }) | Out-Null
-    } catch { $msg = $_.Exception.Message; if ($_.ErrorDetails -and $_.ErrorDetails.Message) { $msg += ' | ' + $_.ErrorDetails.Message }; throw ('GitHub lỗi ở bước ' + $step + ': ' + $msg) }
-    try { Invoke-RestMethod -Uri ($gh + '/pages/builds') -Method Post -Headers $H -TimeoutSec 60 | Out-Null } catch {}
-    Log ('[' + $buoc + '] ĐÃ ĐƯA LÊN WEB: ' + $rows.Count + ' biển, ' + $script:nLich + ' biển có lịch')
-  }
 
   # 2) Danh sách chính thức trước (nhanh): biển có lịch đấu + hạn đăng ký + số người ĐK (ô tô + xe máy)
   #    Lấy theo từng ngày đấu trong danh sách VPA (trang "Danh sách chính thức" của VPA xáo trộn thứ tự khi lật trang nên bị trùng/thiếu)
