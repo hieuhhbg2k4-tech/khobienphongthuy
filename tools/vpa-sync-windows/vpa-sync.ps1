@@ -521,7 +521,14 @@ try {
       $res = FetchPlan @(, @('', $site, $total))
       $err = @($res | Where-Object { $_ -eq 'ERR' }).Count
       $got = New-Object 'System.Collections.Generic.Dictionary[string,int]'
-      foreach ($l in $res) { if ($l -ne 'ERR') { $p = $l.Split('|'); $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null; $got[$p[0]] = $cnt } }
+      $p11Set = New-Object 'System.Collections.Generic.HashSet[string]'
+      foreach ($l in $res) {
+        if ($l -ne 'ERR') {
+          $p = $l.Split('|'); $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null
+          $got[$p[0]] = $cnt
+          if ($p.Length -le 5 -or -not $p[5] -or $p[5] -match '11') { [void]$p11Set.Add($p[0]) }
+        }
+      }
       if ($got.Count -ge 0.9 * $total) {
         $del = 0
         foreach ($k in @($rows.Keys)) { if ($rows[$k][2] -eq $moto -and -not $got.ContainsKey($k) -and -not $rows[$k][3]) { $rows.Remove($k) | Out-Null; $del++ } }
@@ -529,6 +536,23 @@ try {
         foreach ($k in $got.Keys) { if ($rows.ContainsKey($k)) { if (-not $rows[$k][3] -and $got[$k] -ge 0) { $rows[$k][4] = $got[$k] } } else { $rows[$k] = @($k, '0', $moto, '', $got[$k]); $add++ } }
         Log ('Kế hoạch đấu giá ' + $ten + ': ' + $got.Count + '/' + $total + ' biển, thêm ' + $add + ', gỡ ' + $del + ' (' + $err + ' lượt lỗi)')
         Publish ('ke hoach dau gia ' + $(if ($site -eq 1) { 'o to' } else { 'xe may' }))
+        # Đồng thời lọc bỏ biển đã đấu khỏi file phiên tĩnh (phien-11-2026-o-to-trang.json / phien-11-2026-xe-may.json)
+        $p11Slug = if ($site -eq 1) { 'phien-11-2026-o-to-trang' } else { 'phien-11-2026-xe-may' }
+        $builtP11 = BuildGroupJson $p11Set $site
+        if ($builtP11.count -gt 10000) {
+          $stampP11 = (Get-Date).ToUniversalTime().AddHours(7).ToString('HH:mm dd/MM/yyyy')
+          $p11Files = @{ ('vpa-data/' + $p11Slug + '.json') = $builtP11.json }
+          try {
+            $idxRaw = $wc.DownloadString($IndexUrl + '?t=' + [DateTime]::Now.Ticks)
+            $idxRaw = [regex]::Replace($idxRaw, '"updated"\s*:\s*"[^"]*"', '"updated":"' + $stampP11 + '"')
+            $idxRaw = [regex]::Replace($idxRaw, '(\{"id":"' + $p11Slug + '"[^}]*"count":)\d+', '${1}' + $builtP11.count)
+            $p11Files['vpa-data/index.json'] = $idxRaw
+          } catch {}
+          if (-not $env:SKIP_UPLOAD) {
+            UploadFiles $p11Files ('cap nhat ' + $p11Slug) $stampP11
+            Log ('[' + $p11Slug + '] ĐÃ XOÁ BIỂN ĐÃ ĐẤU & CẬP NHẬT LÊN WEB: còn ' + $builtP11.count + ' biển')
+          }
+        }
       } else { Log ('Kế hoạch đấu giá ' + $ten + ': chỉ lấy được ' + $got.Count + '/' + $total + ' — giữ danh sách cũ') }
     }
   }
@@ -551,8 +575,10 @@ try {
         $bks = $p[0]; $dStr = $p[1]; $cnt = -1; [int]::TryParse($p[2], [ref]$cnt) | Out-Null; $col = $p[3]
         if ($site -eq 1 -and $col -eq '3') { continue }   # bỏ biển vàng ô tô
         if (-not $rows.ContainsKey($bks)) {
-          $rows[$bks] = @($bks, '0', $moto, $dStr, $cnt)
-          $addPub++
+          if ($Published -or $Test) {
+            $rows[$bks] = @($bks, '0', $moto, $dStr, $cnt)
+            $addPub++
+          }
         } else {
           if (-not $rows[$bks][3] -and $dStr) { $rows[$bks][3] = $dStr; $updPub++ }
           if ($rows[$bks][4] -lt 0 -and $cnt -ge 0) { $rows[$bks][4] = $cnt }
