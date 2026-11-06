@@ -18,6 +18,7 @@ $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 
 # ===== CẤU HÌNH =====
+$Repos    = @('hieuhhbg2k4-tech/khobienphongthuy', 'hieuhhbg2k4-tech/biensodep88')
 $Repo     = 'hieuhhbg2k4-tech/khobienphongthuy'
 $Branch   = 'main'
 $LiveUrl  = 'https://khobienphongthuy.vn/vpa-data/live.json'
@@ -421,29 +422,36 @@ function UploadFiles($fileMap, $buoc, $stamp) {
   if (-not (Test-Path $TokenFile)) { throw ('Chưa có file ' + $TokenFile + ' chứa mã GitHub') }
   $tok = (Get-Content $TokenFile -Raw).Trim()
   $H = @{ Authorization = 'Bearer ' + $tok; Accept = 'application/vnd.github+json'; 'User-Agent' = 'vpa-sync-khobienphongthuy' }
-  $gh = 'https://api.github.com/repos/' + $Repo
   $U8 = [Text.Encoding]::UTF8
-  $step = 'đọc nhánh'
-  try {
-    $ref = Invoke-RestMethod -Uri ($gh + '/git/ref/heads/' + $Branch) -Headers $H -TimeoutSec 120
-    $base = Invoke-RestMethod -Uri ($gh + '/git/commits/' + $ref.object.sha) -Headers $H -TimeoutSec 120
-    $treeEntries = @()
-    foreach ($path in $fileMap.Keys) {
-      $contentStr = $fileMap[$path]
-      $blobBody = $U8.GetBytes('{"content":"' + [Convert]::ToBase64String($U8.GetBytes($contentStr)) + '","encoding":"base64"}')
-      $step = 'tải file ' + $path + ' lên'
-      $blob = Invoke-RestMethod -Uri ($gh + '/git/blobs') -Method Post -Headers $H -Body $blobBody -ContentType 'application/json' -TimeoutSec 600
-      $treeEntries += ('{"path":"' + $path + '","mode":"100644","type":"blob","sha":"' + $blob.sha + '"}')
+  $targetList = if ($Repos) { $Repos } else { @($Repo) }
+  foreach ($targetRepo in $targetList) {
+    $step = 'đọc nhánh ' + $targetRepo
+    try {
+      $gh = 'https://api.github.com/repos/' + $targetRepo
+      $ref = Invoke-RestMethod -Uri ($gh + '/git/ref/heads/' + $Branch) -Headers $H -TimeoutSec 120
+      $base = Invoke-RestMethod -Uri ($gh + '/git/commits/' + $ref.object.sha) -Headers $H -TimeoutSec 120
+      $treeEntries = @()
+      foreach ($path in $fileMap.Keys) {
+        $contentStr = $fileMap[$path]
+        $blobBody = $U8.GetBytes('{"content":"' + [Convert]::ToBase64String($U8.GetBytes($contentStr)) + '","encoding":"base64"}')
+        $step = 'tải file ' + $path + ' lên ' + $targetRepo
+        $blob = Invoke-RestMethod -Uri ($gh + '/git/blobs') -Method Post -Headers $H -Body $blobBody -ContentType 'application/json' -TimeoutSec 600
+        $treeEntries += ('{"path":"' + $path + '","mode":"100644","type":"blob","sha":"' + $blob.sha + '"}')
+      }
+      $step = 'tạo cây thư mục ' + $targetRepo
+      $treeJson = '{"base_tree":"' + $base.tree.sha + '","tree":[' + ($treeEntries -join ',') + ']}'
+      $tree = Invoke-RestMethod -Uri ($gh + '/git/trees') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body ($U8.GetBytes($treeJson))
+      $step = 'tạo commit ' + $targetRepo
+      $commit = Invoke-RestMethod -Uri ($gh + '/git/commits') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body ($U8.GetBytes('{"message":"Cap nhat bien VPA tu may tinh: ' + $buoc + ' (' + $stamp + ')","tree":"' + $tree.sha + '","parents":["' + $ref.object.sha + '"]}'))
+      $step = 'cập nhật nhánh ' + $targetRepo
+      Invoke-RestMethod -Uri ($gh + '/git/refs/heads/' + $Branch) -Method Patch -Headers $H -ContentType 'application/json' -TimeoutSec 120 -Body ($U8.GetBytes('{"sha":"' + $commit.sha + '"}')) | Out-Null
+      try { Invoke-RestMethod -Uri ($gh + '/pages/builds') -Method Post -Headers $H -TimeoutSec 60 | Out-Null } catch {}
+      Log ('[' + $buoc + '] ĐÃ ĐẨY LÊN ' + $targetRepo)
+    } catch {
+      $msg = $_.Exception.Message; if ($_.ErrorDetails -and $_.ErrorDetails.Message) { $msg += ' | ' + $_.ErrorDetails.Message }
+      Log ('Lỗi khi đẩy lên ' + $targetRepo + ' ở bước ' + $step + ': ' + $msg)
     }
-    $step = 'tạo cây thư mục'
-    $treeJson = '{"base_tree":"' + $base.tree.sha + '","tree":[' + ($treeEntries -join ',') + ']}'
-    $tree = Invoke-RestMethod -Uri ($gh + '/git/trees') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body ($U8.GetBytes($treeJson))
-    $step = 'tạo commit'
-    $commit = Invoke-RestMethod -Uri ($gh + '/git/commits') -Method Post -Headers $H -ContentType 'application/json' -TimeoutSec 300 -Body ($U8.GetBytes('{"message":"Cap nhat bien VPA tu may tinh: ' + $buoc + ' (' + $stamp + ')","tree":"' + $tree.sha + '","parents":["' + $ref.object.sha + '"]}'))
-    $step = 'cập nhật nhánh'
-    Invoke-RestMethod -Uri ($gh + '/git/refs/heads/' + $Branch) -Method Patch -Headers $H -ContentType 'application/json' -TimeoutSec 120 -Body ($U8.GetBytes('{"sha":"' + $commit.sha + '"}')) | Out-Null
-  } catch { $msg = $_.Exception.Message; if ($_.ErrorDetails -and $_.ErrorDetails.Message) { $msg += ' | ' + $_.ErrorDetails.Message }; throw ('GitHub lỗi ở bước ' + $step + ': ' + $msg) }
-  try { Invoke-RestMethod -Uri ($gh + '/pages/builds') -Method Post -Headers $H -TimeoutSec 60 | Out-Null } catch {}
+  }
 }
 
 function Upload($json, $buoc, $stamp) {
