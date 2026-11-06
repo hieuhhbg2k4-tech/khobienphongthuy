@@ -24,9 +24,21 @@ def post(body, tries=4):
             if k == tries - 1: raise
             time.sleep(2 * (k + 1))
 
-def body(date, site, offset):
-    return {"offset": offset, "limit": PAGE, "province": "", "vehicle": "", "colorCode": -1, "license_plate": "",
-            "auctionDate": date, "announcementNumber": "", "siteId": site}
+def body(date, site, offset, province=""):
+    return {
+        "offset": offset,
+        "limit": PAGE,
+        "provinceCode": province,
+        "province": province,
+        "vehicle": "",
+        "announcementNumber": "",
+        "colorCode": -1,
+        "licensePlate": "",
+        "license_plate": "",
+        "plateType": [],
+        "auctionDate": date,
+        "siteId": site,
+    }
 
 def from_vpa(days, now):
     """Hỏi thẳng VPA (chỉ chạy được từ máy ở Việt Nam / máy chủ không bị VPA chặn)."""

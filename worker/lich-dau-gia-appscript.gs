@@ -16,8 +16,20 @@ function doGet(e) {
 
 function req_(date, site, offset) {
   return { url: API, method: "post", contentType: "application/json", muteHttpExceptions: true,
-    payload: JSON.stringify({ offset: offset, limit: PAGE, province: "", vehicle: "", colorCode: -1, license_plate: "",
-      auctionDate: date, announcementNumber: "", siteId: site }) };
+    payload: JSON.stringify({
+      offset: offset,
+      limit: PAGE,
+      provinceCode: "",
+      province: "",
+      vehicle: "",
+      announcementNumber: "",
+      colorCode: -1,
+      licensePlate: "",
+      license_plate: "",
+      plateType: [],
+      auctionDate: date,
+      siteId: site
+    }) };
 }
 
 function lich_(days) {
