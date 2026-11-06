@@ -566,7 +566,7 @@ try {
   }
 
   # 4) API 3 (list-published-license-plate): Danh sách biển công bố của phiên mới nhất (bổ sung biển công bố mới vào live.json)
-  if ($Full -or $Published -or $Test) {
+  if ($Published) {
     foreach ($site in 1, 2) {
       $ten = if ($site -eq 1) { 'ô tô' } else { 'xe máy' }; $moto = $site - 1
       $annName = if ($site -eq 1 -and $codesOto.Count -gt 0) { $codesOto[0].name } elseif ($site -eq 2 -and $codesXm.Count -gt 0) { $codesXm[0].name } else { '' }
