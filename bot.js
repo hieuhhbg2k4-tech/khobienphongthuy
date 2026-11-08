@@ -67,7 +67,7 @@ function removeAccents(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
 }
 
-/* ===== KHO BIỂN (PACKED TYPED ARRAYS ĐỂ SIÊU TIẾT KIỆM RAM) ===== */
+/* ===== KHO BIỂN (PACKED TYPED ARRAYS) ===== */
 const storage = {
   prefixes: [],
   plates: [], // { preIdx, num, tag, nut, moto }
@@ -77,7 +77,7 @@ const storage = {
 
 function fetchWithRedirect(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, res => {
+    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return fetchWithRedirect(res.headers.location).then(resolve).catch(reject);
       }
@@ -96,7 +96,6 @@ async function loadData() {
     let giaData = null;
     let liveData = null;
 
-    // Ưu tiên đọc trực tiếp từ ổ đĩa local của repository (nhanh nhất và không lỗi mạng)
     const giaPath = path.join(__dirname, 'assets', 'gia.json');
     const livePath = path.join(__dirname, 'vpa-data', 'live.json');
 
@@ -164,7 +163,29 @@ server.listen(PORT, () => {
   console.log(`Web server listening on port ${PORT}`);
 });
 
-// Format giá
+// Format & lấy số tiền (triệu đồng)
+function getPriceNumber(prefix, num, moto) {
+  const pStr = prefix + "-" + pad5(num);
+  if (storage.giaMap.has(pStr)) return parseFloat(storage.giaMap.get(pStr)) || 0;
+
+  const d = Math.floor(num / 10) % 10, e = num % 10;
+  const l2 = d * 10 + e;
+  let form = "khac";
+  if (l2 === 68 || l2 === 86) form = "loc-phat";
+  else if (l2 === 39 || l2 === 79) form = "than-tai";
+  else if (l2 === 38 || l2 === 78) form = "ong-dia";
+  else {
+    const a = Math.floor(num / 10000), b = Math.floor(num / 1000) % 10, c = Math.floor(num / 100) % 10;
+    if (a===b && b===c && c===d && d===e) form = "ngu-quy";
+    else if ((b===c && c===d && d===e) || (a===b && b===c && c===d)) form = "tu-quy";
+    else if ((c===d && d===e) || (a===b && b===c)) form = "tam-hoa";
+  }
+
+  const defKey = (moto ? "xemay_" : "oto_") + form;
+  if (storage.defaultGiaMap.has(defKey)) return parseFloat(storage.defaultGiaMap.get(defKey)) || 0;
+  return 0; // Chưa rõ giá
+}
+
 function formatPrice(prefix, num, moto) {
   const pStr = prefix + "-" + pad5(num);
   if (storage.giaMap.has(pStr)) return storage.giaMap.get(pStr) + " tr";
@@ -217,54 +238,90 @@ function sendTelegram(method, payload) {
   });
 }
 
-function parseFilter(text) {
-  const p = { raw: text, q: '', prov: '', fmt: '', type: -1, menh: '', nut: 0, avoids: '' };
-  const t = removeAccents(text).toLowerCase();
+/* ===== BỘ PARSER THÔNG MINH ĐỈNH CAO ===== */
+function parseFilter(rawText) {
+  const p = {
+    raw: rawText,
+    head: '',      // Ví dụ: 30N, 30K, 29A...
+    tail: '',      // Ví dụ: 368, 68, 888...
+    prov: '',      // Hà Nội, Hồ Chí Minh...
+    fmt: '',       // lộc phát, tứ quý...
+    type: -1,      // 0: ô tô, 1: xe máy
+    menh: '',      // Kim, Mộc, Thủy...
+    nut: 0,
+    minPrice: 0,
+    maxPrice: 0,
+    avoids: []
+  };
 
-  if (/xe may|\bxm\b/.test(t)) p.type = 1;
-  else if (/o to|oto|xe hoi/.test(t)) p.type = 0;
+  let t = removeAccents(rawText).toLowerCase();
 
-  if (/ha noi|\bhn\b/.test(t)) p.prov = "Hà Nội";
-  else if (/sai gon|ho chi minh|\bhcm\b|\bsg\b/.test(t)) p.prov = "Hồ Chí Minh";
-  else if (/hai phong|\bhp\b/.test(t)) p.prov = "Hải Phòng";
-  else if (/da nang|\bdn\b/.test(t)) p.prov = "Đà Nẵng";
-  else if (/bac ninh|\bbn\b/.test(t)) p.prov = "Bắc Ninh";
-  else if (/quang ninh|\bqn\b/.test(t)) p.prov = "Quảng Ninh";
-  else if (/thanh hoa|\bth\b/.test(t)) p.prov = "Thanh Hóa";
-  else if (/nghe an|\bna\b/.test(t)) p.prov = "Nghệ An";
-  else if (/hung yen|\bhy\b/.test(t)) p.prov = "Hưng Yên";
+  // 1. Nhận diện loại xe
+  if (/xe may|\bxm\b/.test(t)) { p.type = 1; t = t.replace(/xe may|\bxm\b/g, ' '); }
+  else if (/o to|oto|xe hoi/.test(t)) { p.type = 0; t = t.replace(/o to|oto|xe hoi/g, ' '); }
 
-  if (/ngu quy/.test(t)) p.fmt = "ngu-quy";
-  else if (/tu quy/.test(t)) p.fmt = "tu-quy";
-  else if (/tam hoa/.test(t)) p.fmt = "tam-hoa";
-  else if (/sanh tien|sanh/.test(t)) p.fmt = "sanh-tien";
-  else if (/loc phat/.test(t)) p.fmt = "loc-phat";
-  else if (/than tai/.test(t)) p.fmt = "than-tai";
-  else if (/ong dia/.test(t)) p.fmt = "ong-dia";
-  else if (/dao|ganh/.test(t)) p.fmt = "dao-ganh";
+  // 2. Nhận diện Tỉnh thành (Hà Nội, Sài Gòn...)
+  if (/ha noi|\bhn\b/.test(t)) { p.prov = "Hà Nội"; t = t.replace(/ha noi|\bhn\b/g, ' '); }
+  else if (/sai gon|ho chi minh|\bhcm\b|\bsg\b/.test(t)) { p.prov = "Hồ Chí Minh"; t = t.replace(/sai gon|ho chi minh|\bhcm\b|\bsg\b/g, ' '); }
+  else if (/hai phong|\bhp\b/.test(t)) { p.prov = "Hải Phòng"; t = t.replace(/hai phong|\bhp\b/g, ' '); }
+  else if (/da nang|\bdn\b/.test(t)) { p.prov = "Đà Nẵng"; t = t.replace(/da nang|\bdn\b/g, ' '); }
+  else if (/bac ninh|\bbn\b/.test(t)) { p.prov = "Bắc Ninh"; t = t.replace(/bac ninh|\bbn\b/g, ' '); }
+  else if (/quang ninh|\bqn\b/.test(t)) { p.prov = "Quảng Ninh"; t = t.replace(/quang ninh|\bqn\b/g, ' '); }
+  else if (/thanh hoa|\bth\b/.test(t)) { p.prov = "Thanh Hóa"; t = t.replace(/thanh hoa|\bth\b/g, ' '); }
+  else if (/nghe an|\bna\b/.test(t)) { p.prov = "Nghệ An"; t = t.replace(/nghe an|\bna\b/g, ' '); }
+  else if (/hung yen|\bhy\b/.test(t)) { p.prov = "Hưng Yên"; t = t.replace(/hung yen|\bhy\b/g, ' '); }
 
-  if (/menh kim/.test(t)) p.menh = "Kim";
-  else if (/menh moc/.test(t)) p.menh = "Mộc";
-  else if (/menh thuy/.test(t)) p.menh = "Thủy";
-  else if (/menh hoa/.test(t)) p.menh = "Hỏa";
-  else if (/menh tho/.test(t)) p.menh = "Thổ";
-
-  const mNut = t.match(/(\d+)\s*(nut|diem)/);
-  if (mNut) p.nut = parseInt(mNut[1], 10);
-
-  const mAvoid = t.match(/(tranh|bo|khong lay|khong co)\s*([0-9\s,]+)/);
-  if (mAvoid) p.avoids = mAvoid[2].replace(/\s+/g, '');
-
-  const mDuoi = t.match(/(duoi|ket thuc|dit)\s*([0-9]{2,5})/);
-  if (mDuoi) p.q = mDuoi[2];
-  else {
-    const mSub = t.match(/\b([0-9]{2,5})\b/);
-    if (mSub) p.q = mSub[1];
+  // 3. Nhận diện Tài chính / Giá tiền (ví dụ: 100tr, 50-80 triệu...)
+  const mRangePrice = t.match(/(\d+)\s*(?:-|den|đến)\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)?/);
+  if (mRangePrice) {
+    p.minPrice = parseFloat(mRangePrice[1]);
+    p.maxPrice = parseFloat(mRangePrice[2]);
+    t = t.replace(mRangePrice[0], ' ');
+  } else {
+    const mSinglePrice = t.match(/(?:tai chinh|duoi|tam|khoang|tam gia)?\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)/);
+    if (mSinglePrice) {
+      const val = parseFloat(mSinglePrice[1]);
+      p.minPrice = Math.max(0, val * 0.7); // Tầm quanh giá đó (ví dụ 100tr -> 70 - 110tr)
+      p.maxPrice = val * 1.15;
+      t = t.replace(mSinglePrice[0], ' ');
+    }
   }
 
-  const mHead = text.match(/\b(\d{2}[A-Z]{1,2})\b/i);
+  // 4. Nhận diện Đầu biển (30N, 30K, 29A...)
+  const mHead = t.match(/\b(\d{2}[a-z]{1,2})\b/);
   if (mHead) {
-    p.q = p.q ? (mHead[1].toUpperCase() + '-' + p.q) : mHead[1].toUpperCase();
+    p.head = mHead[1].toUpperCase();
+    t = t.replace(mHead[0], ' ');
+  }
+
+  // 5. Nhận diện Dạng số phong thủy
+  if (/ngu quy/.test(t)) { p.fmt = "ngu-quy"; t = t.replace(/ngu quy/g, ' '); }
+  else if (/tu quy/.test(t)) { p.fmt = "tu-quy"; t = t.replace(/tu quy/g, ' '); }
+  else if (/tam hoa/.test(t)) { p.fmt = "tam-hoa"; t = t.replace(/tam hoa/g, ' '); }
+  else if (/sanh tien|sanh/.test(t)) { p.fmt = "sanh-tien"; t = t.replace(/sanh tien|sanh/g, ' '); }
+  else if (/loc phat/.test(t)) { p.fmt = "loc-phat"; t = t.replace(/loc phat/g, ' '); }
+  else if (/than tai/.test(t)) { p.fmt = "than-tai"; t = t.replace(/than tai/g, ' '); }
+  else if (/ong dia/.test(t)) { p.fmt = "ong-dia"; t = t.replace(/ong dia/g, ' '); }
+
+  // 6. Nhận diện Tránh số
+  const mAvoid = t.match(/(?:tranh|bo|khong lay|khong co)\s*([0-9\s,]+)/);
+  if (mAvoid) {
+    const digits = mAvoid[1].replace(/[^0-9]/g, '');
+    for (const d of digits) p.avoids.push(parseInt(d, 10));
+    t = t.replace(mAvoid[0], ' ');
+  }
+
+  // 7. Nhận diện Đuôi số (ví dụ: đuôi 368, đuôi 68, hoặc còn số cụm 2-4 chữ số)
+  const mDuoi = t.match(/(?:duoi|dit|ket thuc)\s*([0-9]{2,5})/);
+  if (mDuoi) {
+    p.tail = mDuoi[1];
+    t = t.replace(mDuoi[0], ' ');
+  } else {
+    const mNum = t.match(/\b([0-9]{2,5})\b/);
+    if (mNum) {
+      p.tail = mNum[1];
+      t = t.replace(mNum[0], ' ');
+    }
   }
 
   return p;
@@ -293,13 +350,6 @@ function executeFilter(chatId, p, isMore) {
   else if (p.fmt === "than-tai") mask |= B["Thần tài"];
   else if (p.fmt === "ong-dia") mask |= B["Ông địa"];
 
-  let avoidList = [];
-  if (p.avoids) {
-    for (let i = 0; i < p.avoids.length; i++) {
-      if (p.avoids[i] >= '0' && p.avoids[i] <= '9') avoidList.push(p.avoids[i].charCodeAt(0) - 48);
-    }
-  }
-
   const results = [];
   for (let i = 0; i < storage.plates.length; i++) {
     const item = storage.plates[i];
@@ -307,26 +357,33 @@ function executeFilter(chatId, p, isMore) {
     if (mask && !(item.tag & mask)) continue;
 
     const prefix = storage.prefixes[item.pIdx];
+    
+    // Khớp đầu biển (ví dụ 30N)
+    if (p.head && !prefix.startsWith(p.head)) continue;
+
+    // Khớp Tỉnh thành
     const prov = provOf(prefix.slice(0, 2));
     if (p.prov && prov !== p.prov) continue;
-    if (p.nut > 0 && item.nut !== p.nut) continue;
-    if (p.menh && !menhOk(item.num, p.menh)) continue;
 
+    // Khớp Đuôi số (ví dụ: đuôi 368 -> phải kết thúc bằng 368)
     const numStr = pad5(item.num);
-    if (avoidList.length > 0) {
+    if (p.tail && !numStr.endsWith(p.tail)) continue;
+
+    // Tránh số
+    if (p.avoids.length > 0) {
       let hasAvoid = false;
-      for (const d of avoidList) {
+      for (const d of p.avoids) {
         if (numStr.includes(String(d))) { hasAvoid = true; break; }
       }
       if (hasAvoid) continue;
     }
 
-    if (p.q) {
-      if (p.q.includes('-')) {
-        const parts = p.q.split('-');
-        if (!prefix.includes(parts[0]) || !numStr.endsWith(parts[1])) continue;
-      } else if (!numStr.endsWith(p.q) && !prefix.includes(p.q) && !numStr.includes(p.q)) {
-        continue;
+    // Lọc theo khoảng giá (nếu có yêu cầu tài chính)
+    if (p.maxPrice > 0) {
+      const priceNum = getPriceNumber(prefix, item.num, item.moto);
+      if (priceNum > 0) {
+        if (priceNum > p.maxPrice) continue;
+        if (p.minPrice > 0 && priceNum < p.minPrice) continue;
       }
     }
 
@@ -350,7 +407,7 @@ function executeFilter(chatId, p, isMore) {
     } else {
       sendTelegram('sendMessage', {
         chat_id: chatId,
-        text: `❌ <b>Không tìm thấy biển nào</b> phù hợp với yêu cầu: <i>${p.raw}</i>.\n\n💡 <i>Mẹo: Gõ cú pháp ngắn như: <code>30K đuôi 68</code>, <code>Hà Nội lộc phát</code>, <code>tứ quý</code></i>`,
+        text: `❌ <b>Không tìm thấy biển nào</b> phù hợp với yêu cầu: <i>${p.raw}</i>.\n\n💡 <i>Mẹo: Gõ cú pháp ngắn như: <code>30K đuôi 68</code>, <code>Hà Nội lộc phát</code>, <code>đuôi 368 hà nội</code></i>`,
         parse_mode: 'HTML'
       });
     }
@@ -401,7 +458,7 @@ async function pollUpdates() {
           if (msgText === '/start' || msgText === '/help') {
             sendTelegram('sendMessage', {
               chat_id: chatId,
-              text: `👋 Chào mừng bạn đến với <b>Bot Lọc Biển Số Phong Thủy</b> (khobienphongthuy.vn).\n\n⚡ <b>Tốc độ lọc:</b> Dưới 1 giây.\n🎯 <b>Mỗi lần lọc:</b> 15 - 20 biển đẹp kèm giá tham khảo.\n🔄 <b>Lọc thêm:</b> Bấm nút xem tiếp các biển khác hoàn toàn không trùng lặp!\n\n💡 <i>Ví dụ:</i>\n• <code>30K đuôi 68</code>\n• <code>Hà Nội đuôi 68 tránh 4 7</code>\n• <code>đuôi tam hoa 9 hà nội</code>\n• <code>tứ quý ô tô</code>`,
+              text: `👋 Chào mừng bạn đến với <b>Bot Lọc Biển Số Phong Thủy</b> (khobienphongthuy.vn).\n\n⚡ <b>Tốc độ lọc:</b> Dưới 1 giây.\n🎯 <b>Mỗi lần lọc:</b> 15 - 20 biển đẹp kèm giá tham khảo.\n🔄 <b>Lọc thêm:</b> Bấm nút xem tiếp các biển khác hoàn toàn không trùng lặp!\n\n💡 <i>Ví dụ:</i>\n• <code>30N đuôi 68 hà nội</code>\n• <code>đuôi 368 hà nội 100tr</code>\n• <code>tài chính 50-80 triệu tam hoa</code>`,
               parse_mode: 'HTML'
             });
             continue;
@@ -436,7 +493,6 @@ async function pollUpdates() {
 // Bắt đầu
 (async () => {
   await loadData();
-  // Tự động tải lại kho biển mới mỗi 6 tiếng để luôn cập nhật theo web
   setInterval(loadData, 6 * 3600 * 1000);
   pollUpdates();
 })();
