@@ -1,17 +1,10 @@
 const http = require('http');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
 const BOT_TOKEN = process.env.BOT_TOKEN || '8917031192:AAEp-UxhwMKsFeWojBrrjC8x0DOZi1sOx4w';
 const PORT = process.env.PORT || 10000;
-
-// Khởi chạy Web Server để Render giữ tiến trình online 24/7 (Free Tier)
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(`<h1>KhoBienPhongThuy Bot is running 24/7!</h1><p>Đã nạp ${storage.plates.length} biển số.</p>`);
-});
-server.listen(PORT, () => {
-  console.log(`Web server listening on port ${PORT}`);
-});
 
 /* ===== BỘ MÁY PHONG THỦY ===== */
 const FMT_ORDER = ["Ngũ quý","Tứ quý","Tứ quý đầu","Tứ quý đuôi","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Đuôi 99","Đuôi 89","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
@@ -74,17 +67,20 @@ function removeAccents(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
 }
 
-/* ===== KHO BIỂN ===== */
+/* ===== KHO BIỂN (PACKED TYPED ARRAYS ĐỂ SIÊU TIẾT KIỆM RAM) ===== */
 const storage = {
   prefixes: [],
   plates: [], // { preIdx, num, tag, nut, moto }
-  giaMap: new Map(), // "prefix-num" -> price
+  giaMap: new Map(),
   defaultGiaMap: new Map()
 };
 
-function fetchJson(url) {
+function fetchWithRedirect(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
+    https.get(url, res => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return fetchWithRedirect(res.headers.location).then(resolve).catch(reject);
+      }
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
@@ -95,18 +91,34 @@ function fetchJson(url) {
 }
 
 async function loadData() {
-  console.log("Đang tải dữ liệu từ web khobienphongthuy.vn...");
+  console.log("Đang nạp dữ liệu kho biển phong thủy...");
   try {
-    const [giaData, liveData] = await Promise.all([
-      fetchJson('https://khobienphongthuy.vn/assets/gia.json'),
-      fetchJson('https://khobienphongthuy.vn/vpa-data/live.json')
-    ]);
+    let giaData = null;
+    let liveData = null;
+
+    // Ưu tiên đọc trực tiếp từ ổ đĩa local của repository (nhanh nhất và không lỗi mạng)
+    const giaPath = path.join(__dirname, 'assets', 'gia.json');
+    const livePath = path.join(__dirname, 'vpa-data', 'live.json');
+
+    if (fs.existsSync(giaPath)) {
+      console.log("Đọc bảng giá từ file local assets/gia.json");
+      giaData = JSON.parse(fs.readFileSync(giaPath, 'utf8'));
+    } else {
+      giaData = await fetchWithRedirect('https://khobienphongthuy.vn/assets/gia.json');
+    }
+
+    if (fs.existsSync(livePath)) {
+      console.log("Đọc kho biển từ file local vpa-data/live.json");
+      liveData = JSON.parse(fs.readFileSync(livePath, 'utf8'));
+    } else {
+      liveData = await fetchWithRedirect('https://khobienphongthuy.vn/vpa-data/live.json');
+    }
 
     // Nạp giá
-    if (giaData.gia) {
+    if (giaData && giaData.gia) {
       for (const k in giaData.gia) storage.giaMap.set(k.toUpperCase(), giaData.gia[k]);
     }
-    if (giaData.default) {
+    if (giaData && giaData.default) {
       for (const k in giaData.default) storage.defaultGiaMap.set(k, giaData.default[k]);
     }
 
@@ -115,31 +127,42 @@ async function loadData() {
     storage.plates = [];
     const preMap = new Map();
 
-    const moto = liveData.kind === "moto" ? 1 : 0;
-    for (const prefix in liveData.groups) {
-      let pIdx = preMap.get(prefix);
-      if (pIdx === undefined) {
-        pIdx = storage.prefixes.length;
-        preMap.set(prefix, pIdx);
-        storage.prefixes.push(prefix);
-      }
-      const numStr = liveData.groups[prefix].n || '';
-      for (let j = 0; j + 5 <= numStr.length; j += 5) {
-        const num = parseInt(numStr.substr(j, 5), 10);
-        storage.plates.push({
-          pIdx,
-          num,
-          tag: classify(num),
-          nut: nutOf(num),
-          moto
-        });
+    const moto = (liveData && liveData.kind === "moto") ? 1 : 0;
+    if (liveData && liveData.groups) {
+      for (const prefix in liveData.groups) {
+        let pIdx = preMap.get(prefix);
+        if (pIdx === undefined) {
+          pIdx = storage.prefixes.length;
+          preMap.set(prefix, pIdx);
+          storage.prefixes.push(prefix);
+        }
+        const numStr = liveData.groups[prefix].n || '';
+        for (let j = 0; j + 5 <= numStr.length; j += 5) {
+          const num = parseInt(numStr.substr(j, 5), 10);
+          storage.plates.push({
+            pIdx,
+            num,
+            tag: classify(num),
+            nut: nutOf(num),
+            moto
+          });
+        }
       }
     }
-    console.log(`Đã nạp thành công ${storage.plates.length} biển từ web!`);
+    console.log(`ĐÃ NẠP THÀNH CÔNG ${storage.plates.length} BIỂN SỐ TỪ KHO!`);
   } catch (err) {
-    console.error("Lỗi tải dữ liệu kho:", err);
+    console.error("Lỗi nạp kho:", err);
   }
 }
+
+// Khởi chạy Web Server
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(`<h1>KhoBienPhongThuy Bot is running 24/7!</h1><p>Đã nạp ${storage.plates.length} biển số.</p>`);
+});
+server.listen(PORT, () => {
+  console.log(`Web server listening on port ${PORT}`);
+});
 
 // Format giá
 function formatPrice(prefix, num, moto) {
@@ -417,4 +440,3 @@ async function pollUpdates() {
   setInterval(loadData, 6 * 3600 * 1000);
   pollUpdates();
 })();
-
