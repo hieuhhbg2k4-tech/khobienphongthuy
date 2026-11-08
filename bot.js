@@ -819,15 +819,34 @@ function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
     text += `<b>${idx + 1}.</b> <code>${plateText}</code> ${motoIcon} <b>${item.price.text}</b>${dateSuffix}\n`;
   });
 
+  // Danh sách copy nhanh (chỉ gồm biển số kèm giá theo đúng yêu cầu)
+  let copyBlock = "";
+  results.forEach(item => {
+    const s = pad5(item.num);
+    const plateText = `${item.prefix}-${s.slice(0, 3)}.${s.slice(3)}`;
+    copyBlock += `${plateText} ${item.price.text}\n`;
+  });
+
+  text += `────────────────────────\n`;
+  text += `📋 <b>Sao chép nhanh gửi khách:</b>\n`;
+  text += `<pre>${copyBlock.trim()}</pre>\n`;
   text += `────────────────────────\n`;
   text += `📞 Hotline/Zalo hỗ trợ chốt biển: <b>0888.188.888</b>`;
+
+  // Lưu lại kết quả lọc gần nhất của chat để hỗ trợ nút bấm copy nếu cần
+  state.lastResults = results;
 
   sendTelegram('sendMessage', {
     chat_id: chatId,
     text,
     parse_mode: 'HTML',
     reply_markup: {
-      inline_keyboard: [[{ text: '🔄 Lọc thêm biển khác (15-20 biển)', callback_data: 'more' }]]
+      inline_keyboard: [
+        [
+          { text: '📋 Copy toàn bộ (Biển + Giá)', callback_data: 'copy_all' },
+          { text: '🔄 Lọc thêm biển khác', callback_data: 'more' }
+        ]
+      ]
     }
   });
 }
@@ -1091,17 +1110,39 @@ async function pollUpdates() {
           executeMultiFilter(chatId, filters, false, msgText);
         }
 
-        if (update.callback_query && update.callback_query.data === 'more') {
+        if (update.callback_query) {
           const cb = update.callback_query;
-          sendTelegram('answerCallbackQuery', { callback_query_id: cb.id, text: 'Đang lọc thêm 15-20 biển mới...' });
-          if (cb.message && cb.message.chat) {
-            const chatId = cb.message.chat.id;
-            const state = userStates.get(chatId);
+          const chatId = cb.message && cb.message.chat ? cb.message.chat.id : null;
+          const state = chatId ? userStates.get(chatId) : null;
+
+          if (cb.data === 'copy_all') {
+            if (state && Array.isArray(state.lastResults) && state.lastResults.length > 0) {
+              let copyTxt = "";
+              state.lastResults.forEach(item => {
+                const s = pad5(item.num);
+                const plateText = `${item.prefix}-${s.slice(0, 3)}.${s.slice(3)}`;
+                copyTxt += `${plateText} ${item.price.text}\n`;
+              });
+              sendTelegram('answerCallbackQuery', { callback_query_id: cb.id, text: 'Đã gửi danh sách chỉ gồm Biển + Giá để bạn copy!' });
+              sendTelegram('sendMessage', {
+                chat_id: chatId,
+                text: `<pre>${copyTxt.trim()}</pre>`,
+                parse_mode: 'HTML'
+              });
+            } else {
+              sendTelegram('answerCallbackQuery', { callback_query_id: cb.id, text: 'Không tìm thấy danh sách cũ.' });
+            }
+            continue;
+          }
+
+          if (cb.data === 'more') {
+            sendTelegram('answerCallbackQuery', { callback_query_id: cb.id, text: 'Đang lọc thêm 15-20 biển mới...' });
             if (state && state.lastFilters) {
               executeMultiFilter(chatId, state.lastFilters, true, state.lastRaw || "");
             } else {
               sendTelegram('sendMessage', { chat_id: chatId, text: 'Vui lòng nhập lại tiêu chí lọc mới.' });
             }
+            continue;
           }
         }
       }
