@@ -121,34 +121,40 @@ async function loadData() {
       for (const k in giaData.default) storage.defaultGiaMap.set(k, giaData.default[k]);
     }
 
-    // Nạp biển
+    // Nạp biển (cấu trúc mảng rows trong live.json)
     storage.prefixes = [];
     storage.plates = [];
     const preMap = new Map();
 
-    const moto = (liveData && liveData.kind === "moto") ? 1 : 0;
-    if (liveData && liveData.groups) {
-      for (const prefix in liveData.groups) {
+    if (liveData && Array.isArray(liveData.rows)) {
+      console.log(`Đang xử lý ${liveData.rows.length} biển từ live.json...`);
+      for (let i = 0; i < liveData.rows.length; i++) {
+        const row = liveData.rows[i];
+        const raw = row[0]; // Ví dụ: "30D88888", "30N02468"
+        const reg = raw.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
+        if (!reg) continue;
+
+        const prefix = reg[1];
+        const num = parseInt(reg[2], 10);
+        const moto = row[2] ? 1 : 0;
+
         let pIdx = preMap.get(prefix);
         if (pIdx === undefined) {
           pIdx = storage.prefixes.length;
           preMap.set(prefix, pIdx);
           storage.prefixes.push(prefix);
         }
-        const numStr = liveData.groups[prefix].n || '';
-        for (let j = 0; j + 5 <= numStr.length; j += 5) {
-          const num = parseInt(numStr.substr(j, 5), 10);
-          storage.plates.push({
-            pIdx,
-            num,
-            tag: classify(num),
-            nut: nutOf(num),
-            moto
-          });
-        }
+
+        storage.plates.push({
+          pIdx,
+          num,
+          tag: classify(num),
+          nut: nutOf(num),
+          moto
+        });
       }
     }
-    console.log(`ĐÃ NẠP THÀNH CÔNG ${storage.plates.length} BIỂN SỐ TỪ KHO!`);
+    console.log(`ĐÃ NẠP THÀNH CÔNG ${storage.plates.length} BIỂN SỐ VÀO HỆ THỐNG!`);
   } catch (err) {
     console.error("Lỗi nạp kho:", err);
   }
@@ -157,13 +163,12 @@ async function loadData() {
 // Khởi chạy Web Server
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(`<h1>KhoBienPhongThuy Bot is running 24/7!</h1><p>Đã nạp ${storage.plates.length} biển số.</p>`);
+  res.end(`<h1>KhoBienPhongThuy Bot is running 24/7!</h1><p>Đã nạp thành công <b>${storage.plates.length}</b> biển số vào hệ thống.</p>`);
 });
 server.listen(PORT, () => {
   console.log(`Web server listening on port ${PORT}`);
 });
 
-// Format & lấy số tiền (triệu đồng)
 function getPriceNumber(prefix, num, moto) {
   const pStr = prefix + "-" + pad5(num);
   if (storage.giaMap.has(pStr)) return parseFloat(storage.giaMap.get(pStr)) || 0;
@@ -183,7 +188,7 @@ function getPriceNumber(prefix, num, moto) {
 
   const defKey = (moto ? "xemay_" : "oto_") + form;
   if (storage.defaultGiaMap.has(defKey)) return parseFloat(storage.defaultGiaMap.get(defKey)) || 0;
-  return 0; // Chưa rõ giá
+  return 0;
 }
 
 function formatPrice(prefix, num, moto) {
@@ -215,7 +220,6 @@ function mainTag(tag) {
   return "Số đẹp";
 }
 
-/* ===== TELEGRAM BOT HELPER ===== */
 function sendTelegram(method, payload) {
   return new Promise((resolve, reject) => {
     const data = Buffer.from(JSON.stringify(payload), 'utf8');
@@ -238,16 +242,16 @@ function sendTelegram(method, payload) {
   });
 }
 
-/* ===== BỘ PARSER THÔNG MINH ĐỈNH CAO ===== */
-function parseFilter(rawText) {
+/* ===== PARSE SUB-FILTER ĐƠN LẺ ===== */
+function parseSingleFilter(rawText) {
   const p = {
     raw: rawText,
-    head: '',      // Ví dụ: 30N, 30K, 29A...
-    tail: '',      // Ví dụ: 368, 68, 888...
-    prov: '',      // Hà Nội, Hồ Chí Minh...
-    fmt: '',       // lộc phát, tứ quý...
-    type: -1,      // 0: ô tô, 1: xe máy
-    menh: '',      // Kim, Mộc, Thủy...
+    head: '',
+    tail: '',
+    prov: '',
+    fmt: '',
+    type: -1,
+    menh: '',
     nut: 0,
     minPrice: 0,
     maxPrice: 0,
@@ -256,11 +260,11 @@ function parseFilter(rawText) {
 
   let t = removeAccents(rawText).toLowerCase();
 
-  // 1. Nhận diện loại xe
+  // 1. Loại xe
   if (/xe may|\bxm\b/.test(t)) { p.type = 1; t = t.replace(/xe may|\bxm\b/g, ' '); }
   else if (/o to|oto|xe hoi/.test(t)) { p.type = 0; t = t.replace(/o to|oto|xe hoi/g, ' '); }
 
-  // 2. Nhận diện Tỉnh thành (Hà Nội, Sài Gòn...)
+  // 2. Tỉnh thành
   if (/ha noi|\bhn\b/.test(t)) { p.prov = "Hà Nội"; t = t.replace(/ha noi|\bhn\b/g, ' '); }
   else if (/sai gon|ho chi minh|\bhcm\b|\bsg\b/.test(t)) { p.prov = "Hồ Chí Minh"; t = t.replace(/sai gon|ho chi minh|\bhcm\b|\bsg\b/g, ' '); }
   else if (/hai phong|\bhp\b/.test(t)) { p.prov = "Hải Phòng"; t = t.replace(/hai phong|\bhp\b/g, ' '); }
@@ -271,7 +275,7 @@ function parseFilter(rawText) {
   else if (/nghe an|\bna\b/.test(t)) { p.prov = "Nghệ An"; t = t.replace(/nghe an|\bna\b/g, ' '); }
   else if (/hung yen|\bhy\b/.test(t)) { p.prov = "Hưng Yên"; t = t.replace(/hung yen|\bhy\b/g, ' '); }
 
-  // 3. Nhận diện Tài chính / Giá tiền (ví dụ: 100tr, 50-80 triệu...)
+  // 3. Tài chính / giá tiền
   const mRangePrice = t.match(/(\d+)\s*(?:-|den|đến)\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)?/);
   if (mRangePrice) {
     p.minPrice = parseFloat(mRangePrice[1]);
@@ -281,20 +285,13 @@ function parseFilter(rawText) {
     const mSinglePrice = t.match(/(?:tai chinh|duoi|tam|khoang|tam gia)?\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)/);
     if (mSinglePrice) {
       const val = parseFloat(mSinglePrice[1]);
-      p.minPrice = Math.max(0, val * 0.7); // Tầm quanh giá đó (ví dụ 100tr -> 70 - 110tr)
+      p.minPrice = Math.max(0, val * 0.7);
       p.maxPrice = val * 1.15;
       t = t.replace(mSinglePrice[0], ' ');
     }
   }
 
-  // 4. Nhận diện Đầu biển (30N, 30K, 29A...)
-  const mHead = t.match(/\b(\d{2}[a-z]{1,2})\b/);
-  if (mHead) {
-    p.head = mHead[1].toUpperCase();
-    t = t.replace(mHead[0], ' ');
-  }
-
-  // 5. Nhận diện Dạng số phong thủy
+  // 4. Dạng số phong thủy
   if (/ngu quy/.test(t)) { p.fmt = "ngu-quy"; t = t.replace(/ngu quy/g, ' '); }
   else if (/tu quy/.test(t)) { p.fmt = "tu-quy"; t = t.replace(/tu quy/g, ' '); }
   else if (/tam hoa/.test(t)) { p.fmt = "tam-hoa"; t = t.replace(/tam hoa/g, ' '); }
@@ -303,7 +300,14 @@ function parseFilter(rawText) {
   else if (/than tai/.test(t)) { p.fmt = "than-tai"; t = t.replace(/than tai/g, ' '); }
   else if (/ong dia/.test(t)) { p.fmt = "ong-dia"; t = t.replace(/ong dia/g, ' '); }
 
-  // 6. Nhận diện Tránh số
+  // 5. Mệnh
+  if (/menh kim/.test(t)) { p.menh = "Kim"; t = t.replace(/menh kim/g, ' '); }
+  else if (/menh moc/.test(t)) { p.menh = "Mộc"; t = t.replace(/menh moc/g, ' '); }
+  else if (/menh thuy/.test(t)) { p.menh = "Thủy"; t = t.replace(/menh thuy/g, ' '); }
+  else if (/menh hoa/.test(t)) { p.menh = "Hỏa"; t = t.replace(/menh hoa/g, ' '); }
+  else if (/menh tho/.test(t)) { p.menh = "Thổ"; t = t.replace(/menh tho/g, ' '); }
+
+  // 6. Tránh số
   const mAvoid = t.match(/(?:tranh|bo|khong lay|khong co)\s*([0-9\s,]+)/);
   if (mAvoid) {
     const digits = mAvoid[1].replace(/[^0-9]/g, '');
@@ -311,7 +315,14 @@ function parseFilter(rawText) {
     t = t.replace(mAvoid[0], ' ');
   }
 
-  // 7. Nhận diện Đuôi số (ví dụ: đuôi 368, đuôi 68, hoặc còn số cụm 2-4 chữ số)
+  // 7. Đầu biển (30N, 30K, 29A...)
+  const mHead = t.match(/\b(\d{2}[a-z]{1,2})\b/);
+  if (mHead) {
+    p.head = mHead[1].toUpperCase();
+    t = t.replace(mHead[0], ' ');
+  }
+
+  // 8. Đuôi số
   const mDuoi = t.match(/(?:duoi|dit|ket thuc)\s*([0-9]{2,5})/);
   if (mDuoi) {
     p.tail = mDuoi[1];
@@ -327,71 +338,87 @@ function parseFilter(rawText) {
   return p;
 }
 
+// Phân tích nhiều vế nếu người dùng gõ "hoặc", "hay", ","
+function parseMultiFilter(rawText) {
+  const parts = rawText.split(/\bhoặc\b|\bhay\b|\bhoac\b|\/|\|/i);
+  const filters = [];
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.length > 0) {
+      filters.push(parseSingleFilter(trimmed));
+    }
+  }
+  return filters.length > 0 ? filters : [parseSingleFilter(rawText)];
+}
+
 const userStates = new Map();
 
-function executeFilter(chatId, p, isMore) {
+function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
   let state = userStates.get(chatId);
   if (!state) {
-    state = { excludedKeys: new Set(), lastP: p };
+    state = { excludedKeys: new Set(), lastFilters: filters, lastRaw: rawOriginal };
     userStates.set(chatId, state);
   }
   if (!isMore) {
     state.excludedKeys.clear();
-    state.lastP = p;
+    state.lastFilters = filters;
+    state.lastRaw = rawOriginal;
   }
 
   const start = Date.now();
-  let mask = 0;
-  if (p.fmt === "ngu-quy") mask |= B["Ngũ quý"];
-  else if (p.fmt === "tu-quy") mask |= B["Tứ quý"];
-  else if (p.fmt === "tam-hoa") mask |= B["Tam hoa"];
-  else if (p.fmt === "sanh-tien") mask |= B["Sảnh tiến"];
-  else if (p.fmt === "loc-phat") mask |= B["Lộc phát"];
-  else if (p.fmt === "than-tai") mask |= B["Thần tài"];
-  else if (p.fmt === "ong-dia") mask |= B["Ông địa"];
-
   const results = [];
-  for (let i = 0; i < storage.plates.length; i++) {
-    const item = storage.plates[i];
-    if (p.type >= 0 && item.moto !== p.type) continue;
-    if (mask && !(item.tag & mask)) continue;
 
-    const prefix = storage.prefixes[item.pIdx];
-    
-    // Khớp đầu biển (ví dụ 30N)
-    if (p.head && !prefix.startsWith(p.head)) continue;
+  for (const p of filters) {
+    let mask = 0;
+    if (p.fmt === "ngu-quy") mask |= B["Ngũ quý"];
+    else if (p.fmt === "tu-quy") mask |= B["Tứ quý"];
+    else if (p.fmt === "tam-hoa") mask |= B["Tam hoa"];
+    else if (p.fmt === "sanh-tien") mask |= B["Sảnh tiến"];
+    else if (p.fmt === "loc-phat") mask |= B["Lộc phát"];
+    else if (p.fmt === "than-tai") mask |= B["Thần tài"];
+    else if (p.fmt === "ong-dia") mask |= B["Ông địa"];
 
-    // Khớp Tỉnh thành
-    const prov = provOf(prefix.slice(0, 2));
-    if (p.prov && prov !== p.prov) continue;
+    for (let i = 0; i < storage.plates.length; i++) {
+      const item = storage.plates[i];
+      if (p.type >= 0 && item.moto !== p.type) continue;
+      if (mask && !(item.tag & mask)) continue;
 
-    // Khớp Đuôi số (ví dụ: đuôi 368 -> phải kết thúc bằng 368)
-    const numStr = pad5(item.num);
-    if (p.tail && !numStr.endsWith(p.tail)) continue;
+      const prefix = storage.prefixes[item.pIdx];
+      if (p.head && !prefix.startsWith(p.head)) continue;
 
-    // Tránh số
-    if (p.avoids.length > 0) {
-      let hasAvoid = false;
-      for (const d of p.avoids) {
-        if (numStr.includes(String(d))) { hasAvoid = true; break; }
+      const prov = provOf(prefix.slice(0, 2));
+      if (p.prov && prov !== p.prov) continue;
+
+      const numStr = pad5(item.num);
+      if (p.tail && !numStr.endsWith(p.tail)) continue;
+
+      if (p.menh && !menhOk(item.num, p.menh)) continue;
+      if (p.nut > 0 && item.nut !== p.nut) continue;
+
+      if (p.avoids.length > 0) {
+        let hasAvoid = false;
+        for (const d of p.avoids) {
+          if (numStr.includes(String(d))) { hasAvoid = true; break; }
+        }
+        if (hasAvoid) continue;
       }
-      if (hasAvoid) continue;
+
+      if (p.maxPrice > 0) {
+        const priceNum = getPriceNumber(prefix, item.num, item.moto);
+        if (priceNum > 0) {
+          if (priceNum > p.maxPrice) continue;
+          if (p.minPrice > 0 && priceNum < p.minPrice) continue;
+        }
+      }
+
+      const key = prefix + numStr;
+      if (state.excludedKeys.has(key)) continue;
+
+      results.push({ prefix, num: item.num, moto: item.moto, tag: item.tag, prov });
+      state.excludedKeys.add(key);
+      if (results.length >= 18) break;
     }
 
-    // Lọc theo khoảng giá (nếu có yêu cầu tài chính)
-    if (p.maxPrice > 0) {
-      const priceNum = getPriceNumber(prefix, item.num, item.moto);
-      if (priceNum > 0) {
-        if (priceNum > p.maxPrice) continue;
-        if (p.minPrice > 0 && priceNum < p.minPrice) continue;
-      }
-    }
-
-    const key = prefix + numStr;
-    if (state.excludedKeys.has(key)) continue;
-
-    results.push({ prefix, num: item.num, moto: item.moto, tag: item.tag, prov });
-    state.excludedKeys.add(key);
     if (results.length >= 18) break;
   }
 
@@ -407,7 +434,7 @@ function executeFilter(chatId, p, isMore) {
     } else {
       sendTelegram('sendMessage', {
         chat_id: chatId,
-        text: `❌ <b>Không tìm thấy biển nào</b> phù hợp với yêu cầu: <i>${p.raw}</i>.\n\n💡 <i>Mẹo: Gõ cú pháp ngắn như: <code>30K đuôi 68</code>, <code>Hà Nội lộc phát</code>, <code>đuôi 368 hà nội</code></i>`,
+        text: `❌ <b>Không tìm thấy biển nào</b> phù hợp với yêu cầu: <i>${rawOriginal}</i>.\n\n💡 <i>Mẹo: Gõ cú pháp ngắn như: <code>30N đuôi 68</code>, <code>đuôi 368 hà nội</code>, <code>Hà Nội lộc phát</code></i>`,
         parse_mode: 'HTML'
       });
     }
@@ -458,14 +485,14 @@ async function pollUpdates() {
           if (msgText === '/start' || msgText === '/help') {
             sendTelegram('sendMessage', {
               chat_id: chatId,
-              text: `👋 Chào mừng bạn đến với <b>Bot Lọc Biển Số Phong Thủy</b> (khobienphongthuy.vn).\n\n⚡ <b>Tốc độ lọc:</b> Dưới 1 giây.\n🎯 <b>Mỗi lần lọc:</b> 15 - 20 biển đẹp kèm giá tham khảo.\n🔄 <b>Lọc thêm:</b> Bấm nút xem tiếp các biển khác hoàn toàn không trùng lặp!\n\n💡 <i>Ví dụ:</i>\n• <code>30N đuôi 68 hà nội</code>\n• <code>đuôi 368 hà nội 100tr</code>\n• <code>tài chính 50-80 triệu tam hoa</code>`,
+              text: `👋 Chào mừng bạn đến với <b>Bot Lọc Biển Số Phong Thủy</b> (khobienphongthuy.vn).\n\n⚡ <b>Tốc độ lọc:</b> Dưới 1 giây.\n🎯 <b>Mỗi lần lọc:</b> 15 - 20 biển đẹp kèm giá tham khảo.\n🔄 <b>Lọc thêm:</b> Bấm nút xem tiếp các biển khác hoàn toàn không trùng lặp!\n\n💡 <i>Ví dụ:</i>\n• <code>đuôi 368 hà nội</code>\n• <code>30N đuôi 68 hà nội</code>\n• <code>tài chính 50-80 triệu tam hoa</code>`,
               parse_mode: 'HTML'
             });
             continue;
           }
 
-          const filter = parseFilter(msgText);
-          executeFilter(chatId, filter, false);
+          const filters = parseMultiFilter(msgText);
+          executeMultiFilter(chatId, filters, false, msgText);
         }
 
         if (update.callback_query && update.callback_query.data === 'more') {
@@ -474,8 +501,8 @@ async function pollUpdates() {
           if (cb.message && cb.message.chat) {
             const chatId = cb.message.chat.id;
             const state = userStates.get(chatId);
-            if (state && state.lastP) {
-              executeFilter(chatId, state.lastP, true);
+            if (state && state.lastFilters) {
+              executeMultiFilter(chatId, state.lastFilters, true, state.lastRaw || "");
             } else {
               sendTelegram('sendMessage', { chat_id: chatId, text: 'Vui lòng nhập lại tiêu chí lọc mới.' });
             }
