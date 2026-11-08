@@ -1,11 +1,11 @@
 {
-  "name": "khobienphongthuy-telegram-bot",
+  "name": "khobienphongthuy-bot",
   "version": "1.0.0",
-  "description": "Telegram Bot tu dong loc bien so phong thuy online 24/7",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.52"
+  }
 }
-

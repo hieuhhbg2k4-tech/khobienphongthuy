@@ -6,6 +6,22 @@ const path = require('path');
 const BOT_TOKEN = process.env.BOT_TOKEN || '8917031192:AAEp-UxhwMKsFeWojBrrjC8x0DOZi1sOx4w';
 const PORT = process.env.PORT || 10000;
 
+// Thư viện vẽ ảnh Canvas (nếu chưa có thì bỏ qua vẽ ảnh nhẹ nhàng)
+let canvasLib = null;
+try {
+  canvasLib = require('@napi-rs/canvas');
+} catch (e) {
+  console.log("Canvas lib loading status:", e.message);
+}
+
+// Dữ liệu ảnh mẫu Base64
+let templates = null;
+try {
+  templates = require('./templates-data.js');
+} catch (e) {
+  console.log("Templates data status:", e.message);
+}
+
 /* ===== BỘ MÁY PHONG THỦY ===== */
 const FMT_ORDER = ["Ngũ quý","Tứ quý","Tứ quý đầu","Tứ quý đuôi","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Đuôi 99","Đuôi 89","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
 const FMT_RANK = [10,9,9,9,8,7,5,5,4,4,3,4,6,6,6,5,3,1];
@@ -70,7 +86,7 @@ function removeAccents(str) {
 /* ===== KHO BIỂN (PACKED TYPED ARRAYS) ===== */
 const storage = {
   prefixes: [],
-  plates: [], // { preIdx, num, tag, nut, moto }
+  plates: [],
   giaMap: new Map(),
   defaultGiaMap: new Map()
 };
@@ -127,10 +143,10 @@ async function loadData() {
     const preMap = new Map();
 
     if (liveData && Array.isArray(liveData.rows)) {
-      console.log(`Đang xử lý ${liveData.rows.length} biển từ live.json...`);
+      console.log(`Đang nạp ${liveData.rows.length} biển từ live.json...`);
       for (let i = 0; i < liveData.rows.length; i++) {
         const row = liveData.rows[i];
-        const raw = row[0]; // Ví dụ: "30D88888", "30N02468"
+        const raw = row[0]; // "30D88888", "30N02468"
         const reg = raw.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
         if (!reg) continue;
 
@@ -220,6 +236,7 @@ function mainTag(tag) {
   return "Số đẹp";
 }
 
+/* ===== TELEGRAM BOT HELPER ===== */
 function sendTelegram(method, payload) {
   return new Promise((resolve, reject) => {
     const data = Buffer.from(JSON.stringify(payload), 'utf8');
@@ -240,6 +257,116 @@ function sendTelegram(method, payload) {
     req.write(data);
     req.end();
   });
+}
+
+function sendTelegramPhoto(chatId, imageBuffer, caption) {
+  return new Promise((resolve, reject) => {
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+    const postData = [];
+
+    // chat_id
+    postData.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n${chatId}\r\n`));
+
+    // caption
+    if (caption) {
+      postData.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="caption"\r\n\r\n${caption}\r\n`));
+    }
+
+    // photo
+    postData.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="photo"; filename="bienso.png"\r\nContent-Type: image/png\r\n\r\n`));
+    postData.push(imageBuffer);
+    postData.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+
+    const fullPayload = Buffer.concat(postData);
+
+    const req = https.request(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': fullPayload.length
+      }
+    }, res => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(body)); } catch (e) { resolve(body); }
+      });
+    });
+    req.on('error', reject);
+    req.write(fullPayload);
+    req.end();
+  });
+}
+
+/* ===== GHÉP ẢNH CANVAS ===== */
+function tryParsePlate(text) {
+  const m = text.match(/(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{2,3})\s*[-.]?\s*(\d{2})/);
+  if (m) {
+    return {
+      head: m[1].toUpperCase(),
+      tail: m[2] + '.' + m[3]
+    };
+  }
+  const m2 = text.match(/(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{5})/);
+  if (m2) {
+    const n5 = m2[2];
+    return {
+      head: m2[1].toUpperCase(),
+      tail: n5.substring(0, 3) + '.' + n5.substring(3)
+    };
+  }
+  return null;
+}
+
+async function renderMau1(head, tail) {
+  if (!canvasLib || !templates) return null;
+  const { createCanvas, loadImage } = canvasLib;
+  const imgBuffer = Buffer.from(templates.b64Mau1, 'base64');
+  const img = await loadImage(imgBuffer);
+  const canvas = createCanvas(img.width, img.height);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  // Che chữ cũ
+  ctx.fillStyle = '#f8f8fa';
+  ctx.fillRect(310, 565, 365, 88);
+
+  // Vẽ chữ biển dài
+  ctx.fillStyle = '#191919';
+  ctx.font = 'bold 52px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const fullText = head + ' - ' + tail;
+  ctx.fillText(fullText, 492, 608);
+
+  return canvas.toBuffer('image/png');
+}
+
+async function renderMau2(head, tail) {
+  if (!canvasLib || !templates) return null;
+  const { createCanvas, loadImage } = canvasLib;
+  const imgBuffer = Buffer.from(templates.b64Mau2, 'base64');
+  const img = await loadImage(imgBuffer);
+  const canvas = createCanvas(img.width, img.height);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  // Che chữ cũ
+  ctx.fillStyle = '#fefefe';
+  ctx.fillRect(240, 275, 545, 305);
+
+  // Dòng 1: Mã biển (ví dụ 30M)
+  ctx.fillStyle = '#0f0f0f';
+  ctx.font = 'bold 92px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(head, 512, 355);
+
+  // Dòng 2: Dãy số (ví dụ 688.68)
+  ctx.font = 'bold 122px sans-serif';
+  ctx.fillText(tail, 512, 500);
+
+  return canvas.toBuffer('image/png');
 }
 
 /* ===== PARSE SUB-FILTER ĐƠN LẺ ===== */
@@ -338,7 +465,6 @@ function parseSingleFilter(rawText) {
   return p;
 }
 
-// Phân tích nhiều vế nếu người dùng gõ "hoặc", "hay", ","
 function parseMultiFilter(rawText) {
   const parts = rawText.split(/\bhoặc\b|\bhay\b|\bhoac\b|\/|\|/i);
   const filters = [];
@@ -482,10 +608,55 @@ async function pollUpdates() {
           if (msgText.includes("KẾT QUẢ LỌC BIỂN")) continue;
 
           console.log(`MSG from ${chatId}: ${msgText}`);
+
+          const tLower = removeAccents(msgText).toLowerCase();
+
+          // 1. Lệnh ghép ảnh Mẫu 1 (Cô gái cầm biển dài)
+          if (tLower.includes("anh trung dau gia") || tLower.includes("trung dau gia") || tLower.startsWith("mau 1")) {
+            const plate = tryParsePlate(msgText);
+            if (plate) {
+              sendTelegram('sendMessage', {
+                chat_id: chatId,
+                text: `⏳ Đang ghép biển <b>${plate.head}-${plate.tail}</b> vào Mẫu 1 (Cô gái cầm biển dài)...`,
+                parse_mode: 'HTML'
+              });
+              try {
+                const imgBuf = await renderMau1(plate.head, plate.tail);
+                if (imgBuf) {
+                  await sendTelegramPhoto(chatId, imgBuf, `🎉 Chúc mừng quý khách trúng đấu giá biển số: ${plate.head}-${plate.tail}`);
+                  continue;
+                }
+              } catch (exRender) {
+                console.error("Render Mau 1 error:", exRender);
+              }
+            }
+          }
+
+          // 2. Lệnh ghép ảnh Mẫu 2 (Banner Đỏ Trúng Đấu Giá vuông)
+          if (tLower.startsWith("ghep") || tLower.startsWith("mau 2")) {
+            const plate = tryParsePlate(msgText);
+            if (plate) {
+              sendTelegram('sendMessage', {
+                chat_id: chatId,
+                text: `⏳ Đang ghép biển <b>${plate.head}\n${plate.tail}</b> vào Mẫu 2 (Banner Trúng Đấu Giá)...`,
+                parse_mode: 'HTML'
+              });
+              try {
+                const imgBuf = await renderMau2(plate.head, plate.tail);
+                if (imgBuf) {
+                  await sendTelegramPhoto(chatId, imgBuf, `🎉 Chúc mừng quý khách đã trúng đấu giá biển số: ${plate.head}-${plate.tail}`);
+                  continue;
+                }
+              } catch (exRender) {
+                console.error("Render Mau 2 error:", exRender);
+              }
+            }
+          }
+
           if (msgText === '/start' || msgText === '/help') {
             sendTelegram('sendMessage', {
               chat_id: chatId,
-              text: `👋 Chào mừng bạn đến với <b>Bot Lọc Biển Số Phong Thủy</b> (khobienphongthuy.vn).\n\n⚡ <b>Tốc độ lọc:</b> Dưới 1 giây.\n🎯 <b>Mỗi lần lọc:</b> 15 - 20 biển đẹp kèm giá tham khảo.\n🔄 <b>Lọc thêm:</b> Bấm nút xem tiếp các biển khác hoàn toàn không trùng lặp!\n\n💡 <i>Ví dụ:</i>\n• <code>đuôi 368 hà nội</code>\n• <code>30N đuôi 68 hà nội</code>\n• <code>tài chính 50-80 triệu tam hoa</code>`,
+              text: `👋 Chào mừng bạn đến với <b>Bot Kho Biển Phong Thủy</b> (khobienphongthuy.vn).\n\n🔍 <b>LỌC BIỂN SỐ:</b>\n• <code>đuôi 368 hà nội</code>\n• <code>30N đuôi 68 hà nội</code>\n• <code>tài chính 50-80 triệu tam hoa</code>\n\n🖼 <b>GHÉP ẢNH TRÚNG ĐẤU GIÁ:</b>\n• <code>ảnh trúng đấu giá 29K39939</code> ➔ Mẫu 1 (Cô gái cầm biển)\n• <code>ghép 30M 68868</code> ➔ Mẫu 2 (Banner Đỏ Trúng Đấu Giá)`,
               parse_mode: 'HTML'
             });
             continue;
