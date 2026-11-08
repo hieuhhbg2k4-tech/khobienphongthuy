@@ -932,8 +932,8 @@ async function pollUpdates() {
           console.log(`MSG from ${chatId}: ${msgText}`);
           const tLower = removeAccents(msgText).toLowerCase();
 
-          // 1. Menu nút bấm danh mục
-          if (tLower === "bien da co lich (sap dau)" || tLower === "bien da co lich" || tLower === "/dacolich") {
+          // 1. Menu nút bấm danh mục & Lệnh /command
+          if (tLower === "bien da co lich (sap dau)" || tLower === "bien da co lich" || tLower === "/colich" || tLower === "/dacolich") {
             executeMultiFilter(chatId, [{ raw: "da co lich", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 1, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển đã có lịch");
             continue;
           }
@@ -947,6 +947,22 @@ async function pollUpdates() {
           }
           if (tLower === "loc bien ngau nhien") {
             executeMultiFilter(chatId, [{ raw: "", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 0, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển ngẫu nhiên");
+            continue;
+          }
+          if (tLower === "/ghep") {
+            sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: `🖼 <b>HƯỚNG DẪN GHÉP BANNER TRÚNG ĐẤU GIÁ (MẪU 2 CHUẨN 186):</b>\n────────────────────────\nBạn chỉ cần gửi thẳng biển số hoặc gõ:\n• <code>30M-688.68</code>\n• <code>ghép 30D-668.66</code>\n• <code>30M-688.68 bước giá 10tr</code>\n\n👉 Bot sẽ tự động xuất ảnh banner đỏ tia sáng chuẩn 100%!`,
+              parse_mode: 'HTML'
+            });
+            continue;
+          }
+          if (tLower === "/mau1") {
+            sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: `🚘 <b>HƯỚNG DẪN GHÉP MẪU 1 (CÔ GÁI CẦM BIỂN DÀI):</b>\n────────────────────────\nBạn chỉ cần gửi lệnh:\n• <code>ảnh trúng đấu giá 29K39939</code>\n• <code>ảnh trúng đấu giá 30K-888.88</code>\n\n👉 Bot sẽ tự động ghép vào biển số dài cô gái cầm trước xe Mercedes!`,
+              parse_mode: 'HTML'
+            });
             continue;
           }
 
@@ -1074,8 +1090,28 @@ async function pollUpdates() {
   setTimeout(pollUpdates, 300);
 }
 
+async function registerBotCommands() {
+  try {
+    await sendTelegram('setMyCommands', {
+      commands: [
+        { command: 'start', description: '🏠 Menu chính & Hướng dẫn sử dụng' },
+        { command: 'colich', description: '⏰ Danh sách biển đã có lịch đấu' },
+        { command: 'chuacolich', description: '📋 Danh sách biển chưa có lịch' },
+        { command: 'dadau', description: '🔍 Tra cứu biển đã đấu & Giá trúng' },
+        { command: 'ghep', description: '🖼 Ghép banner Đỏ Trúng Đấu Giá' },
+        { command: 'mau1', description: '🚘 Ghép Mẫu 1 Cô gái cầm biển dài' },
+        { command: 'help', description: '💡 Hướng dẫn cú pháp lọc biển' }
+      ]
+    });
+    console.log("Đã đăng ký Menu lệnh Bot Telegram thành công.");
+  } catch (e) {
+    console.error("Lỗi đăng ký lệnh:", e.message);
+  }
+}
+
 // Bắt đầu chạy bot
 (async () => {
+  await registerBotCommands();
   await loadData();
   setInterval(loadData, 6 * 3600 * 1000); // Tự động cập nhật kho mỗi 6 tiếng
   pollUpdates();
