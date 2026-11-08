@@ -442,10 +442,10 @@ function renderVectorText(text, cx, cy, targetH, fill, maxW) {
   if (!glyphs) return '';
 
   const chars = String(text || "").toUpperCase();
-  const scaleXRatio = 0.86; // Tỷ lệ chữ biển số xe Việt Nam cân đối
-  const spacing = 5.0;
+  const scaleXRatio = 1.0; // Font Bahnschrift DIN chuẩn theo đúng mẫu 29AK - 797.79
+  const spacing = 8.0;
 
-  // Đo kích thước gốc ở hệ số sy = 1.0
+  // Đo kích thước gốc
   let curX0 = 0;
   let minBx0 = Infinity, maxBx0 = -Infinity, minBy0 = Infinity, maxBy0 = -Infinity;
   const rawItems = [];
@@ -480,7 +480,7 @@ function renderVectorText(text, cx, cy, targetH, fill, maxW) {
   const baseH = maxBy0 - minBy0;
 
   let sy = targetH / 72.8;
-  // Quy tắc tự động: Dòng chữ không bao giờ vượt quá maxW (tối đa <= 72% khung biển)
+  // Quy tắc tự động: Dòng chữ không bao giờ vượt quá maxW
   if (maxW && (baseW * sy) > maxW) {
     sy = maxW / baseW;
   }
@@ -501,17 +501,17 @@ function renderVectorText(text, cx, cy, targetH, fill, maxW) {
   return paths;
 }
 
-// MẪU 1: CÔ GÁI CẦM BIỂN XE MERCEDES (CHIA 2 DÒNG CHUẨN ĐẸP NHƯ ẢNH MẪU 2)
+// MẪU 1: CÔ GÁI CẦM BIỂN XE MERCEDES
 async function renderMau1(head, tail) {
   if (!templates || !templates.b64Mau1) return null;
   const bg = Buffer.from(templates.b64Mau1, 'base64');
 
   // Khung trắng biển số Mẫu 1: X=[297, 709] (rộng 412px, tâm X=503), Y=[471, 639] (cao 168px, tâm Y=555)
-  // Dòng 1: Mã tỉnh + chữ cái (ví dụ: 51M, 66A) - Tâm X=503, Y=514, Cao 62px (maxW=230px)
-  const svgL1 = renderVectorText(head, 503, 514, 62, "#0e0e0e", 230);
+  // Dòng 1: Mã tỉnh + chữ cái - Tâm X=503, Y=514, Cao 64px (maxW=230px)
+  const svgL1 = renderVectorText(head, 503, 514, 64, "#0e0e0e", 230);
 
-  // Dòng 2: 5 chữ số (ví dụ: 616.66, 666.66) - Tâm X=503, Y=592, Cao 68px (maxW=295px <= 72% của 412px)
-  const svgL2 = renderVectorText(tail, 503, 592, 68, "#0e0e0e", 295);
+  // Dòng 2: 5 chữ số - Tâm X=503, Y=592, Cao 70px (maxW=295px)
+  const svgL2 = renderVectorText(tail, 503, 592, 70, "#0e0e0e", 295);
 
   const svg = `
   <svg width="1024" height="839" xmlns="http://www.w3.org/2000/svg">
@@ -533,21 +533,21 @@ async function renderMau1(head, tail) {
   return null;
 }
 
-// MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (CÂN ĐỐI 100% THEO CHUẨN ẢNH MẪU)
+// MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (FONT BAHNSCHRIFT CHUẨN 100% NHƯ MẪU 29AK - 797.79)
 async function renderMau2(head, tail, buocGia) {
   if (!templates || !templates.b64Mau2) return null;
   const bg = Buffer.from(templates.b64Mau2, 'base64');
 
   // Khung trắng biển số Mẫu 2: X=[221, 801] (rộng 580px, tâm X=512), Y=[254, 549] (cao 295px, tâm Y=401.5)
-  // Dòng 1: Mã tỉnh + chữ cái (ví dụ: 30M, 30K) - Tâm X=512, Y=346, Cao 88px (maxW=310px)
-  const svgL1 = renderVectorText(head, 512, 346, 88, "#0a0a0a", 310);
+  // Dòng 1: Mã tỉnh + chữ cái (ví dụ: 29AK, 30M) - Tâm X=512, Y=346, Cao 94px (maxW=320px)
+  const svgL1 = renderVectorText(head, 512, 346, 94, "#0a0a0a", 320);
 
-  // Dòng 2: 5 chữ số (ví dụ: 688.68, 668.66) - Tâm X=512, Y=466, Cao 92px (maxW=415px <= 71.5% của 580px)
-  const svgL2 = renderVectorText(tail, 512, 466, 92, "#0a0a0a", 415);
+  // Dòng 2: 5 chữ số (ví dụ: 797.79, 688.68) - Tâm X=512, Y=466, Cao 95px (maxW=415px)
+  const svgL2 = renderVectorText(tail, 512, 466, 95, "#0a0a0a", 415);
 
   const svg = `
   <svg width="1024" height="892" xmlns="http://www.w3.org/2000/svg">
-    <!-- Chỉ xóa vùng chữ cũ bên trong lòng trắng (X=235..787, Y=265..538), giữ nguyên 100% viền đen [221..801, 254..549] -->
+    <!-- Xóa lòng trắng biển số mà không chạm viền đen -->
     <rect x="235" y="265" width="552" height="273" fill="#ffffff"/>
     ${svgL1}
     ${svgL2}
