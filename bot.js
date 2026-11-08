@@ -6,25 +6,46 @@ const path = require('path');
 const BOT_TOKEN = process.env.BOT_TOKEN || '8917031192:AAEp-UxhwMKsFeWojBrrjC8x0DOZi1sOx4w';
 const PORT = process.env.PORT || 10000;
 
-// Thư viện vẽ ảnh Canvas (nếu chưa có thì bỏ qua vẽ ảnh nhẹ nhàng)
+// Thư viện vẽ ảnh Canvas / Sharp
 let canvasLib = null;
-try {
-  canvasLib = require('@napi-rs/canvas');
-} catch (e) {
-  console.log("Canvas lib loading status:", e.message);
+try { canvasLib = require('@napi-rs/canvas'); } catch (e) { }
+
+let sharpLib = null;
+try { sharpLib = require('sharp'); } catch (e) { }
+
+// Dữ liệu ảnh mẫu Base64 & Font chữ nhúng
+let templates = null;
+try { templates = require('./templates-data.js'); } catch (e) { }
+
+let canvasFontRegistered = false;
+const fontFilePath = path.join(__dirname, 'ariblk.ttf');
+
+function ensureFontFile() {
+  if (fs.existsSync(fontFilePath)) return fontFilePath;
+  if (templates && templates.b64Font) {
+    try {
+      fs.writeFileSync(fontFilePath, Buffer.from(templates.b64Font, 'base64'));
+      return fontFilePath;
+    } catch (e) { }
+  }
+  return null;
 }
 
-// Dữ liệu ảnh mẫu Base64
-let templates = null;
-try {
-  templates = require('./templates-data.js');
-} catch (e) {
-  console.log("Templates data status:", e.message);
+if (canvasLib) {
+  try {
+    const fPath = ensureFontFile();
+    if (fPath && canvasLib.GlobalFonts) {
+      canvasLib.GlobalFonts.registerFromPath(fPath, 'PlateFont');
+      canvasFontRegistered = true;
+      console.log("Đã đăng ký PlateFont (Arial Black) vào Canvas!");
+    }
+  } catch (e) {
+    console.log("Canvas font status:", e.message);
+  }
 }
 
 /* ===== BỘ MÁY PHONG THỦY ===== */
 const FMT_ORDER = ["Ngũ quý","Tứ quý","Tứ quý đầu","Tứ quý đuôi","Sảnh tiến","Tam hoa","Lộc phát","Thần tài","Ông địa","Đuôi 99","Đuôi 89","Năm sinh","ABAB","ABBA","AABB","Đối xứng","Kép đuôi","Số đẹp"];
-const FMT_RANK = [10,9,9,9,8,7,5,5,4,4,3,4,6,6,6,5,3,1];
 const B = {}; FMT_ORDER.forEach((f, i) => B[f] = 1 << i);
 
 const NEWPROV = (() => {
@@ -41,6 +62,16 @@ const NEWPROV = (() => {
   return m;
 })();
 const provOf = code => NEWPROV[code] || "Khác";
+
+// Bỏ 100% biển vàng (29E, 30E, 29H, 30H, v.v. cả nước)
+function isYellowPlate(prefix) {
+  if (!prefix) return false;
+  return /^\d{2}[EH]/i.test(prefix);
+}
+
+const HN_CODES = new Set(["29", "30", "31", "32", "33", "40"]);
+const TAM_HOA_DAU_MIN = { "1": 79, "4": 79, "7": 89, "2": 99, "3": 99, "5": 99, "6": 109, "8": 119, "9": 119, "0": 79 };
+const LAN_CAN = new Set(["Bắc Ninh", "Hưng Yên", "Phú Thọ", "Thái Nguyên", "Ninh Bình", "Hải Phòng"]);
 
 const ELEM = ["Thổ","Thủy","Hỏa","Mộc","Kim","Thổ","Thủy","Hỏa","Mộc","Kim"];
 const SINH = { "Kim":"Thổ", "Thủy":"Kim", "Mộc":"Thủy", "Hỏa":"Mộc", "Thổ":"Hỏa" };
@@ -83,12 +114,16 @@ function removeAccents(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
 }
 
-/* ===== KHO BIỂN (PACKED TYPED ARRAYS) ===== */
+function getTodayInt() {
+  const d = new Date(Date.now() + 7 * 3600e3);
+  return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+}
+
+/* ===== KHO BIỂN & BẢNG GIÁ ===== */
+let giaData = null;
 const storage = {
   prefixes: [],
-  plates: [],
-  giaMap: new Map(),
-  defaultGiaMap: new Map()
+  plates: []
 };
 
 function fetchWithRedirect(url) {
@@ -109,7 +144,6 @@ function fetchWithRedirect(url) {
 async function loadData() {
   console.log("Đang nạp dữ liệu kho biển phong thủy...");
   try {
-    let giaData = null;
     let liveData = null;
 
     const giaPath = path.join(__dirname, 'assets', 'gia.json');
@@ -129,30 +163,30 @@ async function loadData() {
       liveData = await fetchWithRedirect('https://khobienphongthuy.vn/vpa-data/live.json');
     }
 
-    // Nạp giá
-    if (giaData && giaData.gia) {
-      for (const k in giaData.gia) storage.giaMap.set(k.toUpperCase(), giaData.gia[k]);
-    }
-    if (giaData && giaData.default) {
-      for (const k in giaData.default) storage.defaultGiaMap.set(k, giaData.default[k]);
-    }
-
-    // Nạp biển (cấu trúc mảng rows trong live.json)
+    // Nạp biển (bỏ 100% biển vàng 29E, 30E...)
     storage.prefixes = [];
     storage.plates = [];
     const preMap = new Map();
 
     if (liveData && Array.isArray(liveData.rows)) {
-      console.log(`Đang nạp ${liveData.rows.length} biển từ live.json...`);
+      console.log(`Đang xử lý ${liveData.rows.length} biển từ live.json...`);
       for (let i = 0; i < liveData.rows.length; i++) {
         const row = liveData.rows[i];
-        const raw = row[0]; // "30D88888", "30N02468"
+        const raw = String(row[0] || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
         const reg = raw.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
         if (!reg) continue;
 
         const prefix = reg[1];
+        if (isYellowPlate(prefix)) continue; // Bỏ 100% biển vàng
+
         const num = parseInt(reg[2], 10);
         const moto = row[2] ? 1 : 0;
+
+        // Ngày đấu giá
+        const dm = String(row[3] || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        const dateInt = dm ? +(dm[3] + dm[2] + dm[1]) : 0;
+        const dateShort = dm ? `${dm[1]}/${dm[2]}` : "";
+        const cnt = typeof row[4] === "number" ? row[4] : -1;
 
         let pIdx = preMap.get(prefix);
         if (pIdx === undefined) {
@@ -166,74 +200,134 @@ async function loadData() {
           num,
           tag: classify(num),
           nut: nutOf(num),
-          moto
+          moto,
+          date: dateInt,
+          dateShort,
+          cnt
         });
       }
     }
-    console.log(`ĐÃ NẠP THÀNH CÔNG ${storage.plates.length} BIỂN SỐ VÀO HỆ THỐNG!`);
+    console.log(`ĐÃ NẠP THÀNH CÔNG ${storage.plates.length} BIỂN SỐ VÀO HỆ THỐNG (Đã loại toàn bộ biển vàng)!`);
   } catch (err) {
     console.error("Lỗi nạp kho:", err);
   }
 }
 
-// Khởi chạy Web Server
+// Khởi chạy Web Server cho Render 24/7
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(`<h1>KhoBienPhongThuy Bot is running 24/7!</h1><p>Đã nạp thành công <b>${storage.plates.length}</b> biển số vào hệ thống.</p>`);
+  res.end(`<h1>KhoBienPhongThuy Bot is running 24/7!</h1><p>Đã nạp thành công <b>${storage.plates.length}</b> biển số sạch (không có biển vàng).</p>`);
 });
 server.listen(PORT, () => {
   console.log(`Web server listening on port ${PORT}`);
 });
 
-function getPriceNumber(prefix, num, moto) {
-  const pStr = prefix + "-" + pad5(num);
-  if (storage.giaMap.has(pStr)) return parseFloat(storage.giaMap.get(pStr)) || 0;
+/* ===== TÍNH GIÁ CHUẨN THEO THUẬT TOÁN WEB ===== */
+function calculatePrice(prefix, num, moto, tag) {
+  if (!giaData) return { priceNum: 79, text: "79 tr" };
+  const n = pad5(num);
+  const key = prefix + n;
+  const tbl = moto ? (giaData.m || giaData) : giaData;
+  const floor = (tbl && tbl.min) ? tbl.min : (moto ? 15 : 79);
 
-  const d = Math.floor(num / 10) % 10, e = num % 10;
-  const l2 = d * 10 + e;
-  let form = "khac";
-  if (l2 === 68 || l2 === 86) form = "loc-phat";
-  else if (l2 === 39 || l2 === 79) form = "than-tai";
-  else if (l2 === 38 || l2 === 78) form = "ong-dia";
-  else {
-    const a = Math.floor(num / 10000), b = Math.floor(num / 1000) % 10, c = Math.floor(num / 100) % 10;
-    if (a===b && b===c && c===d && d===e) form = "ngu-quy";
-    else if ((b===c && c===d && d===e) || (a===b && b===c && c===d)) form = "tu-quy";
-    else if ((c===d && d===e) || (a===b && b===c)) form = "tam-hoa";
+  // 1. Kiểm tra bảng p (biển riêng)
+  if (giaData.p && giaData.p[key] != null) {
+    return formatGiaValue(giaData.p[key]);
   }
 
-  const defKey = (moto ? "xemay_" : "oto_") + form;
-  if (storage.defaultGiaMap.has(defKey)) return parseFloat(storage.defaultGiaMap.get(defKey)) || 0;
-  return 0;
+  const provCode = prefix.slice(0, 2);
+  const isHN = HN_CODES.has(provCode);
+  const provName = provOf(provCode);
+  const isLanCan = LAN_CAN.has(provName);
+
+  // 2. Giá riêng chủ web đặt theo 5 số cuối (ô tô): [Hà Nội, tỉnh lân cận, tỉnh xa]
+  if (!moto && giaData.rieng && giaData.rieng[n]) {
+    const r = giaData.rieng[n];
+    const val = r[isHN ? 0 : isLanCan ? 1 : 2];
+    return formatGiaValue(val);
+  }
+
+  // 3. Dòng tiến đuôi 68 biển Hà Nội
+  if (!moto && isHN && /68$/.test(n) && !/[47]/.test(n) && !/(\d)\1\1/.test(n)
+      && n[0] <= n[1] && n[1] <= n[2] && n[2] <= n[3]) {
+    return formatGiaValue(n[0] === "0" ? 130 : 150);
+  }
+
+  // 4. Dòng tiến đuôi 99 biển Hà Nội
+  if (!moto && isHN && /^\d\d\d99$/.test(n) && !/[47]/.test(n) && (n === "00099" || !/(\d)\1\1/.test(n)) && !/8899$/.test(n)
+      && n[0] <= n[1] && n[1] <= n[2] && n[2] <= "9") {
+    return formatGiaValue(n[0] === "0" ? 120 : 140);
+  }
+
+  // 5. Tứ quý đuôi X.AAAA biển Hà Nội
+  if (!moto && giaData.tqd_hn && isHN && /^(\d)(\d)\2\2\2$/.test(n) && n[0] !== n[1] && giaData.tqd_hn[n[1]] != null) {
+    return formatGiaValue(giaData.tqd_hn[n[1]]);
+  }
+
+  // 6. Tam hoa kép AA.BBB: [Hà Nội, lân cận, tỉnh xa]
+  if (!moto && giaData.kep && giaData.kep[n]) {
+    const kep = giaData.kep[n];
+    const z = isHN ? 0 : isLanCan ? 1 : 2;
+    const val = kep[z];
+    return formatGiaValue(val >= 1000 ? -1 : val);
+  }
+
+  // 7. Tam hoa đầu AAA.XY
+  if (!moto && /^(\d)\1\1/.test(n) && n[3] !== n[0]) {
+    const z = isHN ? 0 : isLanCan ? 1 : 2;
+    const th = giaData.th && giaData.th[n];
+    let v = Math.max(th ? th[z] : 0, TAM_HOA_DAU_MIN[n[0]] || floor);
+    return formatGiaValue(v >= 1000 ? -1 : v);
+  }
+
+  // 8. Lịch sử trúng VPA: tbl.t
+  const hv = tbl && tbl.t && tbl.t[n] ? tbl.t[n][isHN ? 0 : 1] : null;
+
+  // 9. Kho biển: giaData.k
+  const kb = giaData.k && giaData.k[key] != null ? giaData.k[key] : null;
+
+  if (kb === -1 || hv === -1) return { priceNum: -1, text: "Liên hệ" };
+
+  let v;
+  if (kb != null) {
+    v = Math.max(hv || floor, Math.round(kb * 1.10));
+  } else {
+    const isVip = (tag & (B["Ngũ quý"] | B["Tứ quý"] | B["Sảnh tiến"]));
+    if (!moto && isVip && hv == null) {
+      return { priceNum: -1, text: "Liên hệ" };
+    }
+    v = hv != null ? Math.max(floor, hv) : floor;
+    if (!moto && /^(\d)\1(\d)\2\2$|^(\d)\3\3(\d)\4$/.test(n) && n[0] !== n[4] && /[35-9]/.test(n)) {
+      v = Math.max(100, v);
+    }
+  }
+
+  if (v >= 1000) return { priceNum: -1, text: "Liên hệ" };
+
+  // Bảng tam hoa ô tô (giá sàn)
+  if (kb == null && !moto && (tag & B["Tam hoa"]) && !(tag & (B["Tứ quý"] | B["Ngũ quý"]))) {
+    const tailMatch = n.match(/(\d)\1\1$/), headMatch = n.match(/^(\d)\1\1/);
+    const digit = (tailMatch || headMatch || [])[1];
+    if (digit === "1" || digit === "4") v = 79;
+    else if (digit === "2") v = 99;
+    else if (digit === "3" || digit === "5" || digit === "7") {
+      v = digit === "7" ? (v >= 109 ? 109 : v >= 99 ? 99 : 89) : (v >= 119 ? 119 : v >= 109 ? 109 : 99);
+    }
+    if (hv != null && hv > v) v = hv;
+  }
+
+  return formatGiaValue(v);
 }
 
-function formatPrice(prefix, num, moto) {
-  const pStr = prefix + "-" + pad5(num);
-  if (storage.giaMap.has(pStr)) return storage.giaMap.get(pStr) + " tr";
-
-  const d = Math.floor(num / 10) % 10, e = num % 10;
-  const l2 = d * 10 + e;
-  let form = "khac";
-  if (l2 === 68 || l2 === 86) form = "loc-phat";
-  else if (l2 === 39 || l2 === 79) form = "than-tai";
-  else if (l2 === 38 || l2 === 78) form = "ong-dia";
-  else {
-    const a = Math.floor(num / 10000), b = Math.floor(num / 1000) % 10, c = Math.floor(num / 100) % 10;
-    if (a===b && b===c && c===d && d===e) form = "ngu-quy";
-    else if ((b===c && c===d && d===e) || (a===b && b===c && c===d)) form = "tu-quy";
-    else if ((c===d && d===e) || (a===b && b===c)) form = "tam-hoa";
-  }
-
-  const defKey = (moto ? "xemay_" : "oto_") + form;
-  if (storage.defaultGiaMap.has(defKey)) return storage.defaultGiaMap.get(defKey) + " tr";
-  return "Liên hệ";
-}
-
-function mainTag(tag) {
-  for (let i = 0; i < FMT_ORDER.length; i++) {
-    if (tag & (1 << i)) return FMT_ORDER[i];
-  }
-  return "Số đẹp";
+function formatGiaValue(v) {
+  if (v == null || v <= 0) return { priceNum: -1, text: "Liên hệ" };
+  if (v === -1 || v >= 1000) return { priceNum: -1, text: "Liên hệ" };
+  const d = v % 10;
+  const rounded = (d === 0 || d === 5 || d === 9) ? v : v - d + 9;
+  return {
+    priceNum: rounded,
+    text: rounded >= 1000 ? (rounded / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tỷ" : rounded + " tr"
+  };
 }
 
 /* ===== TELEGRAM BOT HELPER ===== */
@@ -298,78 +392,214 @@ function sendTelegramPhoto(chatId, imageBuffer, caption) {
   });
 }
 
-/* ===== GHÉP ẢNH CANVAS ===== */
+/* ===== GHÉP ẢNH CHUẨN ĐẤU GIÁ 186 ===== */
 function tryParsePlate(text) {
-  const m = text.match(/(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{2,3})\s*[-.]?\s*(\d{2})/);
+  if (!text) return null;
+  let clean = text.replace(/^(?:ảnh\s*trúng\s*đấu\s*giá|anh\s*trung\s*dau\s*gia|trúng\s*đấu\s*giá|trung\s*dau\s*gia|ghép\s*ảnh|ghep\s*anh|ghép|ghep|mẫu\s*1|mau\s*1|mẫu\s*2|mau\s*2)\s*/i, '').trim();
+
+  // Bóc tách thêm bước giá nếu có: "30M-688.68 bước giá 10tr"
+  let buocGia = "";
+  const bgMatch = clean.match(/(?:bước\s*giá|buoc\s*gia)\s*[:=]?\s*([0-9.,]+(?:\s*(?:tr|trieu|triệu|k|nghin))?)/i);
+  if (bgMatch) {
+    buocGia = bgMatch[1].trim();
+    clean = clean.replace(bgMatch[0], '').trim();
+  }
+
+  // 1. Có dấu chấm hoặc gạch nối: 30D-668.66, 30M 688.68
+  let m = clean.match(/(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{2,3})\s*[-.]\s*(\d{2,3})/);
   if (m) {
-    return {
-      head: m[1].toUpperCase(),
-      tail: m[2] + '.' + m[3]
-    };
+    const head = m[1].toUpperCase();
+    const fullDigits = m[2] + m[3];
+    if (fullDigits.length === 5) {
+      return { head, tail: fullDigits.slice(0, 3) + '.' + fullDigits.slice(3), buocGia };
+    } else if (fullDigits.length === 4) {
+      return { head, tail: fullDigits.slice(0, 2) + '.' + fullDigits.slice(2), buocGia };
+    }
   }
-  const m2 = text.match(/(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{5})/);
+
+  // 2. Viết liền 5 số: 29K39939, 30M 68868, 30D66866
+  let m2 = clean.match(/(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{5})/);
   if (m2) {
+    const head = m2[1].toUpperCase();
     const n5 = m2[2];
-    return {
-      head: m2[1].toUpperCase(),
-      tail: n5.substring(0, 3) + '.' + n5.substring(3)
-    };
+    return { head, tail: n5.slice(0, 3) + '.' + n5.slice(3), buocGia };
   }
+
+  // 3. Viết liền 4 số
+  let m3 = clean.match(/(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{4})/);
+  if (m3) {
+    const head = m3[1].toUpperCase();
+    const n4 = m3[2];
+    return { head, tail: n4.slice(0, 2) + '.' + n4.slice(2), buocGia };
+  }
+
   return null;
 }
 
+// MẪU 1: CÔ GÁI CẦM BIỂN DÀI TRƯỚC XE MERCEDES
 async function renderMau1(head, tail) {
-  if (!canvasLib || !templates) return null;
-  const { createCanvas, loadImage } = canvasLib;
-  const imgBuffer = Buffer.from(templates.b64Mau1, 'base64');
-  const img = await loadImage(imgBuffer);
-  const canvas = createCanvas(img.width, img.height);
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
+  if (!templates || !templates.b64Mau1) return null;
+  const fullText = `${head} - ${tail}`;
+  ensureFontFile();
 
-  // Che chữ cũ
-  ctx.fillStyle = '#f8f8fa';
-  ctx.fillRect(310, 565, 365, 88);
+  // 1. Thử qua Canvas (Pixel-perfect & màu khớp 100%)
+  if (canvasLib && templates.b64Mau1) {
+    try {
+      const { createCanvas, loadImage } = canvasLib;
+      const img = await loadImage(Buffer.from(templates.b64Mau1, 'base64'));
+      const canvas = createCanvas(img.width, img.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
 
-  // Vẽ chữ biển dài
-  ctx.fillStyle = '#191919';
-  ctx.font = 'bold 52px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const fullText = head + ' - ' + tail;
-  ctx.fillText(fullText, 492, 608);
+      // Che phần giữa biển bằng màu khớp chuẩn 100% của biển kim loại trên tay cô gái
+      ctx.fillStyle = '#e6e9f3';
+      ctx.fillRect(305, 558, 400, 100);
 
-  return canvas.toBuffer('image/png');
+      const fontFam = canvasFontRegistered ? "'PlateFont', 'Arial Black', sans-serif" : "'Arial Black', sans-serif";
+
+      // Vẽ chữ biển dài chuẩn tâm: X=506, Y=608
+      ctx.fillStyle = '#141414';
+      ctx.font = `900 54px ${fontFam}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(fullText, 506, 608);
+
+      return canvas.toBuffer('image/png');
+    } catch (e) {
+      console.log("Canvas Mau 1 failed, trying Sharp:", e.message);
+    }
+  }
+
+  // 2. Thử qua Sharp (SVG với embedded base64 font)
+  if (sharpLib && templates.b64Mau1) {
+    try {
+      const bg = Buffer.from(templates.b64Mau1, 'base64');
+      const fontFaceCss = templates.b64Font ? `
+        @font-face {
+          font-family: 'PlateFont';
+          src: url('data:font/truetype;charset=utf-8;base64,${templates.b64Font}') format('truetype');
+          font-weight: 900;
+          font-style: normal;
+        }
+      ` : '';
+
+      const svg = `
+      <svg width="1024" height="838" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            ${fontFaceCss}
+            .pText1 {
+              font-family: 'PlateFont', 'Arial Black', 'Impact', sans-serif;
+              font-weight: 900;
+              font-size: 54px;
+              text-anchor: middle;
+              dominant-baseline: central;
+              fill: #141414;
+            }
+          </style>
+        </defs>
+        <!-- Che vùng chữ cũ bằng màu nhôm xám trắng tự nhiên #e6e9f3 -->
+        <rect x="305" y="558" width="400" height="100" rx="4" ry="4" fill="#e6e9f3"/>
+        <text class="pText1" x="506" y="608">${fullText}</text>
+      </svg>`;
+
+      return await sharpLib(bg)
+        .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
+        .png()
+        .toBuffer();
+    } catch (e) {
+      console.error("Sharp Mau 1 failed:", e.message);
+    }
+  }
+
+  return null;
 }
 
-async function renderMau2(head, tail) {
-  if (!canvasLib || !templates) return null;
-  const { createCanvas, loadImage } = canvasLib;
-  const imgBuffer = Buffer.from(templates.b64Mau2, 'base64');
-  const img = await loadImage(imgBuffer);
-  const canvas = createCanvas(img.width, img.height);
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
+// MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (CHUẨN 100% ĐẤU GIÁ 186)
+async function renderMau2(head, tail, buocGia) {
+  if (!templates || !templates.b64Mau2) return null;
+  ensureFontFile();
 
-  // Che chữ cũ
-  ctx.fillStyle = '#fefefe';
-  ctx.fillRect(240, 275, 545, 305);
+  // 1. Thử qua Canvas (Canvas với Font PlateFont đã đăng ký)
+  if (canvasLib && templates.b64Mau2) {
+    try {
+      const { createCanvas, loadImage } = canvasLib;
+      const img = await loadImage(Buffer.from(templates.b64Mau2, 'base64'));
+      const canvas = createCanvas(img.width, img.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
 
-  // Dòng 1: Mã biển (ví dụ 30M)
-  ctx.fillStyle = '#0f0f0f';
-  ctx.font = 'bold 92px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(head, 512, 355);
+      // Che vùng chữ cũ bên trong biển trắng (giữ nguyên khung viền đen và góc bo)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(232, 275, 560, 310);
 
-  // Dòng 2: Dãy số (ví dụ 688.68)
-  ctx.font = 'bold 122px sans-serif';
-  ctx.fillText(tail, 512, 500);
+      const fontFam = canvasFontRegistered ? "'PlateFont', 'Arial Black', sans-serif" : "'Arial Black', sans-serif";
 
-  return canvas.toBuffer('image/png');
+      // Line 1: Mã biển (ví dụ: 30D, 30M, 99A) - Tâm X=513, Y=345
+      ctx.fillStyle = '#0a0a0a';
+      ctx.font = `900 118px ${fontFam}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(head, 513, 345);
+
+      // Line 2: Dãy số (ví dụ: 688.68, 668.66, 999.99) - Tâm X=511, Y=492
+      ctx.font = `900 186px ${fontFam}`;
+      ctx.fillText(tail, 511, 492);
+
+      return canvas.toBuffer('image/png');
+    } catch (e) {
+      console.log("Canvas Mau 2 error, fallback to Sharp:", e.message);
+    }
+  }
+
+  // 2. Thử qua Sharp (SVG với embedded base64 font)
+  if (sharpLib && templates.b64Mau2) {
+    try {
+      const bg = Buffer.from(templates.b64Mau2, 'base64');
+      const fontFaceCss = templates.b64Font ? `
+        @font-face {
+          font-family: 'PlateFont';
+          src: url('data:font/truetype;charset=utf-8;base64,${templates.b64Font}') format('truetype');
+          font-weight: 900;
+          font-style: normal;
+        }
+      ` : '';
+
+      const svg = `
+      <svg width="1024" height="892" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            ${fontFaceCss}
+            .pText {
+              font-family: 'PlateFont', 'Arial Black', 'Impact', sans-serif;
+              font-weight: 900;
+              text-anchor: middle;
+              dominant-baseline: central;
+              fill: #0a0a0a;
+            }
+          </style>
+        </defs>
+        <!-- Che vùng chữ cũ bên trong biển trắng -->
+        <rect x="232" y="275" width="560" height="310" fill="#ffffff"/>
+        <!-- Dòng 1: Mã biển (ví dụ: 30M, 30D, 99A) -->
+        <text class="pText" x="513" y="345" font-size="118">${head}</text>
+        <!-- Dòng 2: Dãy số (ví dụ: 688.68, 668.66, 999.99) -->
+        <text class="pText" x="511" y="492" font-size="186">${tail}</text>
+      </svg>`;
+
+      return await sharpLib(bg)
+        .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
+        .png()
+        .toBuffer();
+    } catch (e) {
+      console.error("Sharp Mau 2 error:", e.message);
+    }
+  }
+
+  return null;
 }
 
-/* ===== PARSE SUB-FILTER ĐƠN LẺ ===== */
+/* ===== PARSE FILTER TIÊU CHÍ ===== */
 function parseSingleFilter(rawText) {
   const p = {
     raw: rawText,
@@ -380,6 +610,7 @@ function parseSingleFilter(rawText) {
     type: -1,
     menh: '',
     nut: 0,
+    status: 0, // 0: tất cả, 1: đã có lịch (sắp đấu), 2: chưa có lịch
     minPrice: 0,
     maxPrice: 0,
     avoids: []
@@ -387,11 +618,20 @@ function parseSingleFilter(rawText) {
 
   let t = removeAccents(rawText).toLowerCase();
 
-  // 1. Loại xe
+  // Danh mục trạng thái lịch
+  if (/da co lich|co lich|sap dau|lich dau/.test(t)) {
+    p.status = 1;
+    t = t.replace(/da co lich|co lich|sap dau|lich dau/g, ' ');
+  } else if (/chua co lich|chua lich/.test(t)) {
+    p.status = 2;
+    t = t.replace(/chua co lich|chua lich/g, ' ');
+  }
+
+  // Loại xe
   if (/xe may|\bxm\b/.test(t)) { p.type = 1; t = t.replace(/xe may|\bxm\b/g, ' '); }
   else if (/o to|oto|xe hoi/.test(t)) { p.type = 0; t = t.replace(/o to|oto|xe hoi/g, ' '); }
 
-  // 2. Tỉnh thành
+  // Tỉnh thành
   if (/ha noi|\bhn\b/.test(t)) { p.prov = "Hà Nội"; t = t.replace(/ha noi|\bhn\b/g, ' '); }
   else if (/sai gon|ho chi minh|\bhcm\b|\bsg\b/.test(t)) { p.prov = "Hồ Chí Minh"; t = t.replace(/sai gon|ho chi minh|\bhcm\b|\bsg\b/g, ' '); }
   else if (/hai phong|\bhp\b/.test(t)) { p.prov = "Hải Phòng"; t = t.replace(/hai phong|\bhp\b/g, ' '); }
@@ -402,7 +642,7 @@ function parseSingleFilter(rawText) {
   else if (/nghe an|\bna\b/.test(t)) { p.prov = "Nghệ An"; t = t.replace(/nghe an|\bna\b/g, ' '); }
   else if (/hung yen|\bhy\b/.test(t)) { p.prov = "Hưng Yên"; t = t.replace(/hung yen|\bhy\b/g, ' '); }
 
-  // 3. Tài chính / giá tiền
+  // Tài chính / giá tiền
   const mRangePrice = t.match(/(\d+)\s*(?:-|den|đến)\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)?/);
   if (mRangePrice) {
     p.minPrice = parseFloat(mRangePrice[1]);
@@ -418,7 +658,7 @@ function parseSingleFilter(rawText) {
     }
   }
 
-  // 4. Dạng số phong thủy
+  // Dạng số phong thủy
   if (/ngu quy/.test(t)) { p.fmt = "ngu-quy"; t = t.replace(/ngu quy/g, ' '); }
   else if (/tu quy/.test(t)) { p.fmt = "tu-quy"; t = t.replace(/tu quy/g, ' '); }
   else if (/tam hoa/.test(t)) { p.fmt = "tam-hoa"; t = t.replace(/tam hoa/g, ' '); }
@@ -427,14 +667,14 @@ function parseSingleFilter(rawText) {
   else if (/than tai/.test(t)) { p.fmt = "than-tai"; t = t.replace(/than tai/g, ' '); }
   else if (/ong dia/.test(t)) { p.fmt = "ong-dia"; t = t.replace(/ong dia/g, ' '); }
 
-  // 5. Mệnh
+  // Mệnh
   if (/menh kim/.test(t)) { p.menh = "Kim"; t = t.replace(/menh kim/g, ' '); }
   else if (/menh moc/.test(t)) { p.menh = "Mộc"; t = t.replace(/menh moc/g, ' '); }
   else if (/menh thuy/.test(t)) { p.menh = "Thủy"; t = t.replace(/menh thuy/g, ' '); }
   else if (/menh hoa/.test(t)) { p.menh = "Hỏa"; t = t.replace(/menh hoa/g, ' '); }
   else if (/menh tho/.test(t)) { p.menh = "Thổ"; t = t.replace(/menh tho/g, ' '); }
 
-  // 6. Tránh số
+  // Tránh số
   const mAvoid = t.match(/(?:tranh|bo|khong lay|khong co)\s*([0-9\s,]+)/);
   if (mAvoid) {
     const digits = mAvoid[1].replace(/[^0-9]/g, '');
@@ -442,14 +682,14 @@ function parseSingleFilter(rawText) {
     t = t.replace(mAvoid[0], ' ');
   }
 
-  // 7. Đầu biển (30N, 30K, 29A...)
+  // Đầu biển (30N, 30K, 29A...)
   const mHead = t.match(/\b(\d{2}[a-z]{1,2})\b/);
   if (mHead) {
     p.head = mHead[1].toUpperCase();
     t = t.replace(mHead[0], ' ');
   }
 
-  // 8. Đuôi số
+  // Đuôi số
   const mDuoi = t.match(/(?:duoi|dit|ket thuc)\s*([0-9]{2,5})/);
   if (mDuoi) {
     p.tail = mDuoi[1];
@@ -492,6 +732,7 @@ function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
   }
 
   const start = Date.now();
+  const todayInt = getTodayInt();
   const results = [];
 
   for (const p of filters) {
@@ -510,6 +751,7 @@ function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
       if (mask && !(item.tag & mask)) continue;
 
       const prefix = storage.prefixes[item.pIdx];
+      if (isYellowPlate(prefix)) continue; // Tuyệt đối loại bỏ biển vàng
       if (p.head && !prefix.startsWith(p.head)) continue;
 
       const prov = provOf(prefix.slice(0, 2));
@@ -517,6 +759,13 @@ function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
 
       const numStr = pad5(item.num);
       if (p.tail && !numStr.endsWith(p.tail)) continue;
+
+      // Lọc theo danh mục trạng thái
+      if (p.status === 1) { // Đã có lịch (sắp tới)
+        if (item.date < todayInt) continue;
+      } else if (p.status === 2) { // Chưa có lịch
+        if (item.date > 0) continue;
+      }
 
       if (p.menh && !menhOk(item.num, p.menh)) continue;
       if (p.nut > 0 && item.nut !== p.nut) continue;
@@ -529,18 +778,25 @@ function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
         if (hasAvoid) continue;
       }
 
-      if (p.maxPrice > 0) {
-        const priceNum = getPriceNumber(prefix, item.num, item.moto);
-        if (priceNum > 0) {
-          if (priceNum > p.maxPrice) continue;
-          if (p.minPrice > 0 && priceNum < p.minPrice) continue;
-        }
+      // Tính giá chuẩn theo web
+      const price = calculatePrice(prefix, item.num, item.moto, item.tag);
+      if (p.maxPrice > 0 && price.priceNum > 0) {
+        if (price.priceNum > p.maxPrice) continue;
+        if (p.minPrice > 0 && price.priceNum < p.minPrice) continue;
       }
 
       const key = prefix + numStr;
       if (state.excludedKeys.has(key)) continue;
 
-      results.push({ prefix, num: item.num, moto: item.moto, tag: item.tag, prov });
+      results.push({
+        prefix,
+        num: item.num,
+        moto: item.moto,
+        tag: item.tag,
+        date: item.date,
+        dateShort: item.dateShort,
+        price
+      });
       state.excludedKeys.add(key);
       if (results.length >= 18) break;
     }
@@ -560,24 +816,31 @@ function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
     } else {
       sendTelegram('sendMessage', {
         chat_id: chatId,
-        text: `❌ <b>Không tìm thấy biển nào</b> phù hợp với yêu cầu: <i>${rawOriginal}</i>.\n\n💡 <i>Mẹo: Gõ cú pháp ngắn như: <code>30N đuôi 68</code>, <code>đuôi 368 hà nội</code>, <code>Hà Nội lộc phát</code></i>`,
+        text: `❌ <b>Không tìm thấy biển nào</b> phù hợp với yêu cầu: <i>${rawOriginal}</i>.\n\n💡 <i>Mẹo: Gõ cú pháp ngắn như: <code>30N đuôi 68</code>, <code>đuôi 368 hà nội</code>, <code>đã có lịch hà nội</code></i>`,
         parse_mode: 'HTML'
       });
     }
     return;
   }
 
-  let text = isMore ? "🔄 <b>DANH SÁCH BIỂN TIẾP THEO (KHÔNG TRÙNG):</b>\n" : "🚗 <b>KẾT QUẢ LỌC BIỂN TỪ KHO KHOBIENPHONGTHUY.VN</b>\n";
+  let titleHeader = isMore ? "🔄 <b>DANH SÁCH BIỂN TIẾP THEO:</b>\n" : "🚗 <b>KẾT QUẢ LỌC BIỂN TỪ KHO KHOBIENPHONGTHUY.VN</b>\n";
+  if (filters[0] && filters[0].status === 1) {
+    titleHeader = "⏰ <b>DANH SÁCH BIỂN ĐÃ CÓ LỊCH ĐẤU (SẮP ĐẤU):</b>\n";
+  } else if (filters[0] && filters[0].status === 2) {
+    titleHeader = "📋 <b>DANH SÁCH BIỂN CHƯA CÓ LỊCH ĐẤU:</b>\n";
+  }
+
+  let text = titleHeader;
   text += `⏱ <i>Tốc độ lọc: ${elapsed} ms | Tìm thấy: ${results.length} biển</i>\n`;
   text += `────────────────────────\n`;
 
   results.forEach((item, idx) => {
     const s = pad5(item.num);
     const plateText = `${item.prefix}-${s.slice(0, 3)}.${s.slice(3)}`;
-    const price = formatPrice(item.prefix, item.num, item.moto);
-    const tag = mainTag(item.tag);
     const motoIcon = item.moto ? "🛵" : "🚘";
-    text += `<b>${idx + 1}.</b> <code>${plateText}</code> ${motoIcon} <b>${price}</b> | ${tag} • ${item.prov}\n`;
+    const dateSuffix = (item.dateShort && item.date >= todayInt) ? ` (Đấu ${item.dateShort})` : "";
+    // Định dạng rút gọn sạch sẽ: "1. 30D-888.39 🚘 290 tr (Đấu 16/11)"
+    text += `<b>${idx + 1}.</b> <code>${plateText}</code> ${motoIcon} <b>${item.price.text}</b>${dateSuffix}\n`;
   });
 
   text += `────────────────────────\n`;
@@ -590,6 +853,57 @@ function executeMultiFilter(chatId, filters, isMore, rawOriginal) {
     reply_markup: {
       inline_keyboard: [[{ text: '🔄 Lọc thêm biển khác (15-20 biển)', callback_data: 'more' }]]
     }
+  });
+}
+
+/* ===== TRA CỨU BIỂN ĐÃ ĐẤU ===== */
+function handleLookupDaDau(chatId, textInput) {
+  const plate = tryParsePlate(textInput);
+  if (!plate) {
+    sendTelegram('sendMessage', {
+      chat_id: chatId,
+      text: `🔍 <b>TRA CỨU BIỂN SỐ ĐÃ ĐẤU GIÁ</b>\n────────────────────────\nVui lòng nhập biển số cụ thể để tra cứu giá trúng và ngày đấu.\n\n👉 <i>Ví dụ gõ:</i>\n• <code>đã đấu 30K-888.88</code>\n• <code>check 51K-999.99</code>\n• <code>giá trúng 30D-668.66</code>`,
+      parse_mode: 'HTML'
+    });
+    return;
+  }
+
+  const rawHead = plate.head;
+  const rawTail = plate.tail.replace('.', '');
+  const provName = provOf(rawHead.slice(0, 2));
+  const isHN = HN_CODES.has(rawHead.slice(0, 2));
+
+  let priceText = "Liên hệ";
+  let dateText = "Đã đấu giá thành công";
+
+  if (giaData) {
+    const fullPlate = rawHead + rawTail;
+    if (giaData.p && giaData.p[fullPlate] != null) {
+      priceText = formatGiaValue(giaData.p[fullPlate]).text;
+    } else if (giaData.t && giaData.t[rawTail]) {
+      const pArr = giaData.t[rawTail];
+      const val = pArr[isHN ? 0 : 1];
+      if (val > 0) priceText = val + " tr (Giá trúng trung bình VPA)";
+    } else if (giaData.rieng && giaData.rieng[rawTail]) {
+      const rVal = giaData.rieng[rawTail][isHN ? 0 : 1];
+      if (rVal > 0) priceText = rVal + " tr";
+    }
+  }
+
+  const reply = `🎯 <b>KẾT QUẢ TRA CỨU BIỂN ĐÃ ĐẤU:</b>
+────────────────────────
+🚗 <b>Biển số:</b> <code>${plate.head}-${plate.tail}</code>
+📍 <b>Tỉnh thành:</b> ${provName}
+💰 <b>Giá trúng tham khảo:</b> <b>${priceText}</b>
+📅 <b>Trạng thái:</b> ${dateText}
+────────────────────────
+💡 <i>Hotline hỗ trợ hồ sơ, định danh & chuyển nhượng xe trúng đấu giá:</i>
+📞 <b>0888.188.888</b>`;
+
+  sendTelegram('sendMessage', {
+    chat_id: chatId,
+    text: reply,
+    parse_mode: 'HTML'
   });
 }
 
@@ -608,22 +922,52 @@ async function pollUpdates() {
           if (msgText.includes("KẾT QUẢ LỌC BIỂN")) continue;
 
           console.log(`MSG from ${chatId}: ${msgText}`);
-
           const tLower = removeAccents(msgText).toLowerCase();
 
-          // 1. Lệnh ghép ảnh Mẫu 1 (Cô gái cầm biển dài)
+          // 1. Menu nút bấm danh mục
+          if (tLower === "bien da co lich (sap dau)" || tLower === "bien da co lich" || tLower === "/dacolich") {
+            executeMultiFilter(chatId, [{ raw: "da co lich", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 1, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển đã có lịch");
+            continue;
+          }
+          if (tLower === "bien chua co lich" || tLower === "/chuacolich") {
+            executeMultiFilter(chatId, [{ raw: "chua co lich", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 2, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển chưa có lịch");
+            continue;
+          }
+          if (tLower === "tra cuu bien da dau" || tLower === "/dadau") {
+            handleLookupDaDau(chatId, "");
+            continue;
+          }
+          if (tLower === "loc bien ngau nhien") {
+            executeMultiFilter(chatId, [{ raw: "", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 0, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển ngẫu nhiên");
+            continue;
+          }
+
+          // 2. Tra cứu biển đã đấu cụ thể
+          if (tLower.startsWith("da dau") || tLower.startsWith("check") || tLower.startsWith("gia trung") || tLower.startsWith("tra cuu")) {
+            handleLookupDaDau(chatId, msgText);
+            continue;
+          }
+
+          // 3. Lệnh ghép ảnh Mẫu 1 (Cô gái cầm biển dài trước xe Mercedes)
           if (tLower.includes("anh trung dau gia") || tLower.includes("trung dau gia") || tLower.startsWith("mau 1")) {
             const plate = tryParsePlate(msgText);
             if (plate) {
               sendTelegram('sendMessage', {
                 chat_id: chatId,
-                text: `⏳ Đang ghép biển <b>${plate.head}-${plate.tail}</b> vào Mẫu 1 (Cô gái cầm biển dài)...`,
+                text: `⏳ Đang ghép biển <b>${plate.head} - ${plate.tail}</b> vào Mẫu 1 (Cô gái cầm biển)...`,
                 parse_mode: 'HTML'
               });
               try {
                 const imgBuf = await renderMau1(plate.head, plate.tail);
                 if (imgBuf) {
-                  await sendTelegramPhoto(chatId, imgBuf, `🎉 Chúc mừng quý khách trúng đấu giá biển số: ${plate.head}-${plate.tail}`);
+                  await sendTelegramPhoto(chatId, imgBuf, `🏆 CHÚC MỪNG TRÚNG ĐẤU GIÁ BIỂN SỐ: ${plate.head}-${plate.tail}`);
+                  continue;
+                } else {
+                  sendTelegram('sendMessage', {
+                    chat_id: chatId,
+                    text: `⚠️ <b>Chưa tạo được ảnh</b>: Vui lòng kiểm tra đã commit file <code>templates-data.js</code> lên GitHub.`,
+                    parse_mode: 'HTML'
+                  });
                   continue;
                 }
               } catch (exRender) {
@@ -632,19 +976,30 @@ async function pollUpdates() {
             }
           }
 
-          // 2. Lệnh ghép ảnh Mẫu 2 (Banner Đỏ Trúng Đấu Giá vuông)
-          if (tLower.startsWith("ghep") || tLower.startsWith("mau 2")) {
+          // 4. Lệnh ghép ảnh Mẫu 2 (Banner Đỏ Trúng Đấu Giá chuẩn 186)
+          // Tự động nhận diện khi gõ "ghép...", "mẫu 2...", HOẶC khi người dùng gửi trực tiếp biển số như "30M-688.68", "30D 668.66"
+          const isExplicitGhep = tLower.startsWith("ghep") || tLower.startsWith("mau 2");
+          const isPurePlate = /^\s*(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{4,5}|\d{2,3}[-.]\d{2})\s*$/.test(msgText);
+
+          if (isExplicitGhep || isPurePlate) {
             const plate = tryParsePlate(msgText);
             if (plate) {
               sendTelegram('sendMessage', {
                 chat_id: chatId,
-                text: `⏳ Đang ghép biển <b>${plate.head}\n${plate.tail}</b> vào Mẫu 2 (Banner Trúng Đấu Giá)...`,
+                text: `⏳ Đang ghép biển <b>${plate.head}\n${plate.tail}</b> vào Mẫu 2 (Banner Trúng Đấu Giá chuẩn 186)...`,
                 parse_mode: 'HTML'
               });
               try {
-                const imgBuf = await renderMau2(plate.head, plate.tail);
+                const imgBuf = await renderMau2(plate.head, plate.tail, plate.buocGia);
                 if (imgBuf) {
-                  await sendTelegramPhoto(chatId, imgBuf, `🎉 Chúc mừng quý khách đã trúng đấu giá biển số: ${plate.head}-${plate.tail}`);
+                  await sendTelegramPhoto(chatId, imgBuf, `🏆 CHÚC MỪNG TRÚNG ĐẤU GIÁ BIỂN SỐ: ${plate.head}-${plate.tail}`);
+                  continue;
+                } else {
+                  sendTelegram('sendMessage', {
+                    chat_id: chatId,
+                    text: `⚠️ <b>Chưa tạo được ảnh</b>: Vui lòng kiểm tra đã commit file <code>templates-data.js</code> lên GitHub.`,
+                    parse_mode: 'HTML'
+                  });
                   continue;
                 }
               } catch (exRender) {
@@ -653,15 +1008,38 @@ async function pollUpdates() {
             }
           }
 
+          // 5. Start / Help menu
           if (msgText === '/start' || msgText === '/help') {
             sendTelegram('sendMessage', {
               chat_id: chatId,
-              text: `👋 Chào mừng bạn đến với <b>Bot Kho Biển Phong Thủy</b> (khobienphongthuy.vn).\n\n🔍 <b>LỌC BIỂN SỐ:</b>\n• <code>đuôi 368 hà nội</code>\n• <code>30N đuôi 68 hà nội</code>\n• <code>tài chính 50-80 triệu tam hoa</code>\n\n🖼 <b>GHÉP ẢNH TRÚNG ĐẤU GIÁ:</b>\n• <code>ảnh trúng đấu giá 29K39939</code> ➔ Mẫu 1 (Cô gái cầm biển)\n• <code>ghép 30M 68868</code> ➔ Mẫu 2 (Banner Đỏ Trúng Đấu Giá)`,
-              parse_mode: 'HTML'
+              text: `👋 Chào mừng bạn đến với <b>Bot Kho Biển Phong Thủy</b> (khobienphongthuy.vn).
+
+🔍 <b>LỌC BIỂN SỐ:</b>
+• <code>đuôi 368 hà nội</code>
+• <code>30N đuôi 68 hà nội</code>
+• <code>tài chính 50-80 triệu tam hoa</code>
+
+📂 <b>DANH MỤC TRẠNG THÁI:</b>
+• <b>Biển đã có lịch:</b> <code>đã có lịch hà nội</code> (Sắp đấu tới, copy gửi khách)
+• <b>Biển chưa có lịch:</b> <code>chưa có lịch 30N</code>
+• <b>Biển đã đấu:</b> <code>đã đấu 30K-888.88</code> (Tra cứu ngày trúng & giá trúng)
+
+🖼 <b>GHÉP ẢNH TRÚNG ĐẤU GIÁ:</b>
+• <code>ảnh trúng đấu giá 29K39939</code> ➔ Mẫu 1 (Cô gái cầm biển)
+• <code>30M-688.68</code> hoặc <code>ghép 30M 68868</code> ➔ Mẫu 2 (Banner Đỏ Trúng Đấu Giá)`,
+              parse_mode: 'HTML',
+              reply_markup: {
+                keyboard: [
+                  [{ text: '⏰ Biển đã có lịch (Sắp đấu)' }, { text: '📋 Biển chưa có lịch' }],
+                  [{ text: '🔍 Tra cứu biển đã đấu' }, { text: '🔄 Lọc biển ngẫu nhiên' }]
+                ],
+                resize_keyboard: true
+              }
             });
             continue;
           }
 
+          // Lọc thông thường
           const filters = parseMultiFilter(msgText);
           executeMultiFilter(chatId, filters, false, msgText);
         }
@@ -688,9 +1066,9 @@ async function pollUpdates() {
   setTimeout(pollUpdates, 300);
 }
 
-// Bắt đầu
+// Bắt đầu chạy bot
 (async () => {
   await loadData();
-  setInterval(loadData, 6 * 3600 * 1000);
+  setInterval(loadData, 6 * 3600 * 1000); // Tự động cập nhật kho mỗi 6 tiếng
   pollUpdates();
 })();

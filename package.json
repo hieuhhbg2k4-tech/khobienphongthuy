@@ -6,6 +6,7 @@
     "start": "node bot.js"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.52"
+    "@napi-rs/canvas": "^0.1.52",
+    "sharp": "^0.33.5"
   }
 }
