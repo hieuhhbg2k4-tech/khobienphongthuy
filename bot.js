@@ -649,12 +649,20 @@ function parseSingleFilter(rawText) {
     p.maxPrice = parseFloat(mRangePrice[2]);
     t = t.replace(mRangePrice[0], ' ');
   } else {
-    const mSinglePrice = t.match(/(?:tai chinh|duoi|tam|khoang|tam gia)?\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)/);
-    if (mSinglePrice) {
-      const val = parseFloat(mSinglePrice[1]);
+    const mTam = t.match(/(?:tam|khoang|quanh)\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)/);
+    if (mTam) {
+      const val = parseFloat(mTam[1]);
       p.minPrice = Math.max(0, val * 0.7);
-      p.maxPrice = val * 1.15;
-      t = t.replace(mSinglePrice[0], ' ');
+      p.maxPrice = val * 1.25;
+      t = t.replace(mTam[0], ' ');
+    } else {
+      const mSinglePrice = t.match(/(?:tai chinh|duoi|toi da|tam gia)?\s*(\d+)\s*(?:tr|trieu|triệu|cu|củ)/);
+      if (mSinglePrice) {
+        const val = parseFloat(mSinglePrice[1]);
+        p.minPrice = 0; // Đặt 0 để lấy toàn bộ biển trong tầm ngân sách (không loại mất biển rẻ hơn)
+        p.maxPrice = val * 1.15;
+        t = t.replace(mSinglePrice[0], ' ');
+      }
     }
   }
 
@@ -979,7 +987,7 @@ async function pollUpdates() {
           // 4. Lệnh ghép ảnh Mẫu 2 (Banner Đỏ Trúng Đấu Giá chuẩn 186)
           // Tự động nhận diện khi gõ "ghép...", "mẫu 2...", HOẶC khi người dùng gửi trực tiếp biển số như "30M-688.68", "30D 668.66"
           const isExplicitGhep = tLower.startsWith("ghep") || tLower.startsWith("mau 2");
-          const isPurePlate = /^\s*(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{4,5}|\d{2,3}[-.]\d{2})\s*$/.test(msgText);
+          const isPurePlate = /^\s*(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{4,5}|\d{2,3}[-.]\d{2})(?:\s*(?:bước\s*giá|buoc\s*gia)?\s*[:=]?\s*[0-9.,]+(?:\s*(?:tr|trieu|triệu|k|nghin))?)?\s*$/i.test(msgText);
 
           if (isExplicitGhep || isPurePlate) {
             const plate = tryParsePlate(msgText);
