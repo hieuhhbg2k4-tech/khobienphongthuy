@@ -436,73 +436,77 @@ function tryParsePlate(text) {
   return null;
 }
 
+function renderVectorText(text, cx, cy, targetH, fill) {
+  fill = fill || "#0a0a0a";
+  const glyphs = (templates && templates.GLYPHS) ? templates.GLYPHS : null;
+  if (!glyphs) return '';
+
+  const s = targetH / 72.8;
+  const chars = String(text || "").toUpperCase();
+
+  let curX = 0;
+  const items = [];
+  let minBx = Infinity, maxBx = -Infinity, minBy = Infinity, maxBy = -Infinity;
+
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
+    if (c === ' ') {
+      curX += 28 * s;
+      continue;
+    }
+    const g = glyphs[c];
+    if (!g) continue;
+
+    const gx = curX;
+    const gMinX = gx + (g.bx * s);
+    const gMaxX = gMinX + (g.bw * s);
+    const gMinY = g.by * s;
+    const gMaxY = gMinY + (g.bh * s);
+
+    if (gMinX < minBx) minBx = gMinX;
+    if (gMaxX > maxBx) maxBx = gMaxX;
+    if (gMinY < minBy) minBy = gMinY;
+    if (gMaxY > maxBy) maxBy = gMaxY;
+
+    items.push({ g, x: gx });
+    curX += (g.w + 1.5) * s;
+  }
+
+  if (items.length === 0) return '';
+
+  const strW = maxBx - minBx;
+  const strH = maxBy - minBy;
+  const startX = cx - (strW / 2) - minBx;
+  const startY = cy - (strH / 2) - minBy;
+
+  let paths = '';
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const tx = startX + item.x;
+    const ty = startY;
+    paths += `<path d="${item.g.d}" transform="translate(${tx.toFixed(2)}, ${ty.toFixed(2)}) scale(${s.toFixed(5)})" fill="${fill}" />\n`;
+  }
+  return paths;
+}
+
 // MẪU 1: CÔ GÁI CẦM BIỂN DÀI TRƯỚC XE MERCEDES
 async function renderMau1(head, tail) {
   if (!templates || !templates.b64Mau1) return null;
   const fullText = `${head} - ${tail}`;
-  ensureFontFile();
+  const bg = Buffer.from(templates.b64Mau1, 'base64');
 
-  // 1. Thử qua Canvas (Pixel-perfect & màu khớp 100%)
-  if (canvasLib && templates.b64Mau1) {
+  // Vector path rendering chuẩn xác tâm X=506, Y=608, TargetH=54 (100% độc lập font)
+  const svgText = renderVectorText(fullText, 506, 608, 54, "#141414");
+
+  const svg = `
+  <svg width="1024" height="838" xmlns="http://www.w3.org/2000/svg">
+    <!-- Che phần giữa biển bằng màu nhôm khớp chuẩn 100% của biển kim loại trên tay cô gái -->
+    <rect x="305" y="558" width="400" height="100" fill="#e6e9f3"/>
+    ${svgText}
+  </svg>`;
+
+  if (sharpLib) {
     try {
-      const { createCanvas, loadImage } = canvasLib;
-      const img = await loadImage(Buffer.from(templates.b64Mau1, 'base64'));
-      const canvas = createCanvas(img.width, img.height);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-
-      // Che phần giữa biển bằng màu khớp chuẩn 100% của biển kim loại trên tay cô gái
-      ctx.fillStyle = '#e6e9f3';
-      ctx.fillRect(305, 558, 400, 100);
-
-      const fontFam = canvasFontRegistered ? "'PlateFont', 'Arial Black', sans-serif" : "'Arial Black', sans-serif";
-
-      // Vẽ chữ biển dài chuẩn tâm: X=506, Y=608
-      ctx.fillStyle = '#141414';
-      ctx.font = `900 54px ${fontFam}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(fullText, 506, 608);
-
-      return canvas.toBuffer('image/png');
-    } catch (e) {
-      console.log("Canvas Mau 1 failed, trying Sharp:", e.message);
-    }
-  }
-
-  // 2. Thử qua Sharp (SVG với embedded base64 font)
-  if (sharpLib && templates.b64Mau1) {
-    try {
-      const bg = Buffer.from(templates.b64Mau1, 'base64');
-      const fontFaceCss = templates.b64Font ? `
-        @font-face {
-          font-family: 'PlateFont';
-          src: url('data:font/truetype;charset=utf-8;base64,${templates.b64Font}') format('truetype');
-          font-weight: 900;
-          font-style: normal;
-        }
-      ` : '';
-
-      const svg = `
-      <svg width="1024" height="838" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <style>
-            ${fontFaceCss}
-            .pText1 {
-              font-family: 'PlateFont', 'Arial Black', 'Impact', sans-serif;
-              font-weight: 900;
-              font-size: 54px;
-              text-anchor: middle;
-              dominant-baseline: central;
-              fill: #141414;
-            }
-          </style>
-        </defs>
-        <!-- Che vùng chữ cũ bằng màu nhôm xám trắng tự nhiên #e6e9f3 -->
-        <rect x="305" y="558" width="400" height="100" rx="4" ry="4" fill="#e6e9f3"/>
-        <text class="pText1" x="506" y="608">${fullText}</text>
-      </svg>`;
-
       return await sharpLib(bg)
         .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
         .png()
@@ -518,75 +522,25 @@ async function renderMau1(head, tail) {
 // MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (CHUẨN 100% ĐẤU GIÁ 186)
 async function renderMau2(head, tail, buocGia) {
   if (!templates || !templates.b64Mau2) return null;
-  ensureFontFile();
+  const bg = Buffer.from(templates.b64Mau2, 'base64');
 
-  // 1. Thử qua Canvas (Canvas với Font PlateFont đã đăng ký)
-  if (canvasLib && templates.b64Mau2) {
+  // Vector path rendering chuẩn pixel theo mẫu gốc bot 186
+  // Line 1: Mã biển (30K, 30M, 99A) - Tâm X=514, Y=348, Cao 94px
+  const svgL1 = renderVectorText(head, 514, 348, 94, "#0a0a0a");
+
+  // Line 2: Dãy số (688.68, 668.66, 999.99) - Tâm X=510, Y=492, Cao 140px
+  const svgL2 = renderVectorText(tail, 510, 492, 140, "#0a0a0a");
+
+  const svg = `
+  <svg width="1024" height="892" xmlns="http://www.w3.org/2000/svg">
+    <!-- Che vùng chữ cũ bên trong biển trắng (khung chuẩn không lẹm viền) -->
+    <rect x="245" y="280" width="530" height="295" fill="#ffffff"/>
+    ${svgL1}
+    ${svgL2}
+  </svg>`;
+
+  if (sharpLib) {
     try {
-      const { createCanvas, loadImage } = canvasLib;
-      const img = await loadImage(Buffer.from(templates.b64Mau2, 'base64'));
-      const canvas = createCanvas(img.width, img.height);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-
-      // Che vùng chữ cũ bên trong biển trắng (giữ nguyên khung viền đen và góc bo)
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(232, 275, 560, 310);
-
-      const fontFam = canvasFontRegistered ? "'PlateFont', 'Arial Black', sans-serif" : "'Arial Black', sans-serif";
-
-      // Line 1: Mã biển (ví dụ: 30D, 30M, 99A) - Tâm X=513, Y=345
-      ctx.fillStyle = '#0a0a0a';
-      ctx.font = `900 118px ${fontFam}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(head, 513, 345);
-
-      // Line 2: Dãy số (ví dụ: 688.68, 668.66, 999.99) - Tâm X=511, Y=492
-      ctx.font = `900 186px ${fontFam}`;
-      ctx.fillText(tail, 511, 492);
-
-      return canvas.toBuffer('image/png');
-    } catch (e) {
-      console.log("Canvas Mau 2 error, fallback to Sharp:", e.message);
-    }
-  }
-
-  // 2. Thử qua Sharp (SVG với embedded base64 font)
-  if (sharpLib && templates.b64Mau2) {
-    try {
-      const bg = Buffer.from(templates.b64Mau2, 'base64');
-      const fontFaceCss = templates.b64Font ? `
-        @font-face {
-          font-family: 'PlateFont';
-          src: url('data:font/truetype;charset=utf-8;base64,${templates.b64Font}') format('truetype');
-          font-weight: 900;
-          font-style: normal;
-        }
-      ` : '';
-
-      const svg = `
-      <svg width="1024" height="892" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <style>
-            ${fontFaceCss}
-            .pText {
-              font-family: 'PlateFont', 'Arial Black', 'Impact', sans-serif;
-              font-weight: 900;
-              text-anchor: middle;
-              dominant-baseline: central;
-              fill: #0a0a0a;
-            }
-          </style>
-        </defs>
-        <!-- Che vùng chữ cũ bên trong biển trắng -->
-        <rect x="232" y="275" width="560" height="310" fill="#ffffff"/>
-        <!-- Dòng 1: Mã biển (ví dụ: 30M, 30D, 99A) -->
-        <text class="pText" x="513" y="345" font-size="118">${head}</text>
-        <!-- Dòng 2: Dãy số (ví dụ: 688.68, 668.66, 999.99) -->
-        <text class="pText" x="511" y="492" font-size="186">${tail}</text>
-      </svg>`;
-
       return await sharpLib(bg)
         .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
         .png()
@@ -915,6 +869,8 @@ function handleLookupDaDau(chatId, textInput) {
   });
 }
 
+const userSessions = new Map(); // chatId -> { mode: 'colich' | 'chuacolich' | 'dadau' | 'ghep' | 'mau1' }
+
 /* ===== POLLING LOOP ===== */
 let offset = 0;
 async function pollUpdates() {
@@ -932,108 +888,90 @@ async function pollUpdates() {
           console.log(`MSG from ${chatId}: ${msgText}`);
           const tLower = removeAccents(msgText).toLowerCase();
 
-          // 1. Menu nút bấm danh mục & Lệnh /command
+          // 1. Menu nút bấm danh mục & Lệnh chuyển chế độ (Session Mode)
           if (tLower === "bien da co lich (sap dau)" || tLower === "bien da co lich" || tLower === "/colich" || tLower === "/dacolich") {
-            executeMultiFilter(chatId, [{ raw: "da co lich", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 1, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển đã có lịch");
+            userSessions.set(chatId, { mode: 'colich' });
+            sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: `⏰ <b>CHẾ ĐỘ: LỌC BIỂN ĐÃ CÓ LỊCH ĐẤU (SẮP ĐẤU)</b>
+────────────────────────
+👉 <i>Hãy nhập tiêu chí bạn muốn tìm:</i>
+• Ví dụ: <code>đuôi 79 hà nội</code>, <code>30N đuôi 68</code>, <code>tam hoa</code>, <code>tài chính 100tr</code>...
+
+💡 <i>Mọi tìm kiếm bạn gửi sẽ tự động chỉ lọc trong danh sách các biển ĐÃ CÓ LỊCH ĐẤU để bạn copy gửi khách ngay!
+(Gõ /start bất cứ lúc nào để về menu chính)</i>`,
+              parse_mode: 'HTML'
+            });
             continue;
           }
+
           if (tLower === "bien chua co lich" || tLower === "/chuacolich") {
-            executeMultiFilter(chatId, [{ raw: "chua co lich", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 2, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển chưa có lịch");
+            userSessions.set(chatId, { mode: 'chuacolich' });
+            sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: `📋 <b>CHẾ ĐỘ: LỌC BIỂN CHƯA CÓ LỊCH ĐẤU</b>
+────────────────────────
+👉 <i>Hãy nhập tiêu chí bạn muốn tìm:</i>
+• Ví dụ: <code>đuôi 79 hà nội</code>, <code>30N đuôi 68</code>, <code>thần tài</code>, <code>lộc phát</code>...
+
+💡 <i>Mọi tìm kiếm bạn gửi sẽ tự động chỉ lọc các biển CHƯA CÓ LỊCH ĐẤU!
+(Gõ /start bất cứ lúc nào để về menu chính)</i>`,
+              parse_mode: 'HTML'
+            });
             continue;
           }
+
           if (tLower === "tra cuu bien da dau" || tLower === "/dadau") {
-            handleLookupDaDau(chatId, "");
+            userSessions.set(chatId, { mode: 'dadau' });
+            sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: `🔍 <b>CHẾ ĐỘ: TRA CỨU BIỂN SỐ ĐÃ ĐẤU GIÁ</b>
+────────────────────────
+👉 <i>Hãy nhập biển số cụ thể để tra cứu giá trúng & ngày đấu:</i>
+• Ví dụ: <code>30K-888.88</code>, <code>30D-668.66</code>, <code>51K-999.99</code>...`,
+              parse_mode: 'HTML'
+            });
             continue;
           }
+
+          if (tLower === "ghep banner trung dau gia" || tLower === "/ghep") {
+            userSessions.set(chatId, { mode: 'ghep' });
+            sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: `🖼 <b>CHẾ ĐỘ: GHÉP BANNER TRÚNG ĐẤU GIÁ (MẪU 2 CHUẨN 186)</b>
+────────────────────────
+👉 <i>Hãy nhập biển số bạn muốn ghép:</i>
+• Ví dụ: <code>30K 68868</code>, <code>30D-668.66</code>, <code>30M-688.68 bước giá 10tr</code>
+
+🏆 <i>Bot sẽ tự động xuất ảnh banner đỏ tia sáng chuẩn 100% như mẫu bot 186!</i>`,
+              parse_mode: 'HTML'
+            });
+            continue;
+          }
+
+          if (tLower === "ghep mau 1 co gai" || tLower === "/mau1") {
+            userSessions.set(chatId, { mode: 'mau1' });
+            sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: `🚘 <b>CHẾ ĐỘ: GHÉP MẪU 1 (CÔ GÁI CẦM BIỂN XE MERCEDES)</b>
+────────────────────────
+👉 <i>Hãy nhập biển số bạn muốn ghép:</i>
+• Ví dụ: <code>29K-399.39</code>, <code>30K-888.88</code>...
+
+✨ <i>Bot sẽ tự động ghép vào biển số dài cô gái cầm trước xe Mercedes!</i>`,
+              parse_mode: 'HTML'
+            });
+            continue;
+          }
+
           if (tLower === "loc bien ngau nhien") {
             executeMultiFilter(chatId, [{ raw: "", head: "", tail: "", prov: "", fmt: "", type: -1, menh: "", nut: 0, status: 0, minPrice: 0, maxPrice: 0, avoids: [] }], false, "Biển ngẫu nhiên");
             continue;
           }
-          if (tLower === "/ghep") {
-            sendTelegram('sendMessage', {
-              chat_id: chatId,
-              text: `🖼 <b>HƯỚNG DẪN GHÉP BANNER TRÚNG ĐẤU GIÁ (MẪU 2 CHUẨN 186):</b>\n────────────────────────\nBạn chỉ cần gửi thẳng biển số hoặc gõ:\n• <code>30M-688.68</code>\n• <code>ghép 30D-668.66</code>\n• <code>30M-688.68 bước giá 10tr</code>\n\n👉 Bot sẽ tự động xuất ảnh banner đỏ tia sáng chuẩn 100%!`,
-              parse_mode: 'HTML'
-            });
-            continue;
-          }
-          if (tLower === "/mau1") {
-            sendTelegram('sendMessage', {
-              chat_id: chatId,
-              text: `🚘 <b>HƯỚNG DẪN GHÉP MẪU 1 (CÔ GÁI CẦM BIỂN DÀI):</b>\n────────────────────────\nBạn chỉ cần gửi lệnh:\n• <code>ảnh trúng đấu giá 29K39939</code>\n• <code>ảnh trúng đấu giá 30K-888.88</code>\n\n👉 Bot sẽ tự động ghép vào biển số dài cô gái cầm trước xe Mercedes!`,
-              parse_mode: 'HTML'
-            });
-            continue;
-          }
 
-          // 2. Tra cứu biển đã đấu cụ thể
-          if (tLower.startsWith("da dau") || tLower.startsWith("check") || tLower.startsWith("gia trung") || tLower.startsWith("tra cuu")) {
-            handleLookupDaDau(chatId, msgText);
-            continue;
-          }
-
-          // 3. Lệnh ghép ảnh Mẫu 1 (Cô gái cầm biển dài trước xe Mercedes)
-          if (tLower.includes("anh trung dau gia") || tLower.includes("trung dau gia") || tLower.startsWith("mau 1")) {
-            const plate = tryParsePlate(msgText);
-            if (plate) {
-              sendTelegram('sendMessage', {
-                chat_id: chatId,
-                text: `⏳ Đang ghép biển <b>${plate.head} - ${plate.tail}</b> vào Mẫu 1 (Cô gái cầm biển)...`,
-                parse_mode: 'HTML'
-              });
-              try {
-                const imgBuf = await renderMau1(plate.head, plate.tail);
-                if (imgBuf) {
-                  await sendTelegramPhoto(chatId, imgBuf, `🏆 CHÚC MỪNG TRÚNG ĐẤU GIÁ BIỂN SỐ: ${plate.head}-${plate.tail}`);
-                  continue;
-                } else {
-                  sendTelegram('sendMessage', {
-                    chat_id: chatId,
-                    text: `⚠️ <b>Chưa tạo được ảnh</b>: Vui lòng kiểm tra đã commit file <code>templates-data.js</code> lên GitHub.`,
-                    parse_mode: 'HTML'
-                  });
-                  continue;
-                }
-              } catch (exRender) {
-                console.error("Render Mau 1 error:", exRender);
-              }
-            }
-          }
-
-          // 4. Lệnh ghép ảnh Mẫu 2 (Banner Đỏ Trúng Đấu Giá chuẩn 186)
-          // Tự động nhận diện khi gõ "ghép...", "mẫu 2...", HOẶC khi người dùng gửi trực tiếp biển số như "30M-688.68", "30D 668.66"
-          const isExplicitGhep = tLower.startsWith("ghep") || tLower.startsWith("mau 2");
-          const isPurePlate = /^\s*(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{4,5}|\d{2,3}[-.]\d{2})(?:\s*(?:bước\s*giá|buoc\s*gia)?\s*[:=]?\s*[0-9.,]+(?:\s*(?:tr|trieu|triệu|k|nghin))?)?\s*$/i.test(msgText);
-
-          if (isExplicitGhep || isPurePlate) {
-            const plate = tryParsePlate(msgText);
-            if (plate) {
-              sendTelegram('sendMessage', {
-                chat_id: chatId,
-                text: `⏳ Đang ghép biển <b>${plate.head}\n${plate.tail}</b> vào Mẫu 2 (Banner Trúng Đấu Giá chuẩn 186)...`,
-                parse_mode: 'HTML'
-              });
-              try {
-                const imgBuf = await renderMau2(plate.head, plate.tail, plate.buocGia);
-                if (imgBuf) {
-                  await sendTelegramPhoto(chatId, imgBuf, `🏆 CHÚC MỪNG TRÚNG ĐẤU GIÁ BIỂN SỐ: ${plate.head}-${plate.tail}`);
-                  continue;
-                } else {
-                  sendTelegram('sendMessage', {
-                    chat_id: chatId,
-                    text: `⚠️ <b>Chưa tạo được ảnh</b>: Vui lòng kiểm tra đã commit file <code>templates-data.js</code> lên GitHub.`,
-                    parse_mode: 'HTML'
-                  });
-                  continue;
-                }
-              } catch (exRender) {
-                console.error("Render Mau 2 error:", exRender);
-              }
-            }
-          }
-
-          // 5. Start / Help menu
-          if (msgText === '/start' || msgText === '/help') {
+          // 2. Start / Help menu (Reset session mode)
+          if (msgText === '/start' || msgText === '/help' || tLower === 'menu chinh') {
+            userSessions.delete(chatId);
             sendTelegram('sendMessage', {
               chat_id: chatId,
               text: `👋 Chào mừng bạn đến với <b>Bot Kho Biển Phong Thủy</b> (khobienphongthuy.vn).
@@ -1063,8 +1001,79 @@ async function pollUpdates() {
             continue;
           }
 
-          // Lọc thông thường
+          const currentSession = userSessions.get(chatId);
+
+          // 3. Nếu đang ở chế độ Tra cứu đã đấu
+          if (currentSession && currentSession.mode === 'dadau') {
+            handleLookupDaDau(chatId, msgText);
+            continue;
+          }
+          if (tLower.startsWith("da dau") || tLower.startsWith("check") || tLower.startsWith("gia trung") || tLower.startsWith("tra cuu")) {
+            handleLookupDaDau(chatId, msgText);
+            continue;
+          }
+
+          // 4. Lệnh ghép ảnh Mẫu 1 (Cô gái cầm biển dài trước xe Mercedes)
+          const isModeMau1 = currentSession && currentSession.mode === 'mau1';
+          if (isModeMau1 || tLower.includes("anh trung dau gia") || tLower.includes("trung dau gia") || tLower.startsWith("mau 1")) {
+            const plate = tryParsePlate(msgText);
+            if (plate) {
+              sendTelegram('sendMessage', {
+                chat_id: chatId,
+                text: `⏳ Đang ghép biển <b>${plate.head} - ${plate.tail}</b> vào Mẫu 1 (Cô gái cầm biển)...`,
+                parse_mode: 'HTML'
+              });
+              try {
+                const imgBuf = await renderMau1(plate.head, plate.tail);
+                if (imgBuf) {
+                  await sendTelegramPhoto(chatId, imgBuf, `🏆 CHÚC MỪNG TRÚNG ĐẤU GIÁ BIỂN SỐ: ${plate.head}-${plate.tail}`);
+                  continue;
+                }
+              } catch (exRender) {
+                console.error("Render Mau 1 error:", exRender);
+              }
+            }
+          }
+
+          // 5. Lệnh ghép ảnh Mẫu 2 (Banner Đỏ Trúng Đấu Giá chuẩn 186)
+          const isModeGhep = currentSession && currentSession.mode === 'ghep';
+          const isExplicitGhep = tLower.startsWith("ghep") || tLower.startsWith("mau 2");
+          const isPurePlate = /^\s*(\d{2}[A-Za-z]{1,2})\s*[-.]?\s*(\d{4,5}|\d{2,3}[-.]\d{2})(?:\s*(?:bước\s*giá|buoc\s*gia)?\s*[:=]?\s*[0-9.,]+(?:\s*(?:tr|trieu|triệu|k|nghin))?)?\s*$/i.test(msgText);
+
+          if (isModeGhep || isExplicitGhep || isPurePlate) {
+            const plate = tryParsePlate(msgText);
+            if (plate) {
+              sendTelegram('sendMessage', {
+                chat_id: chatId,
+                text: `⏳ Đang ghép biển <b>${plate.head}\n${plate.tail}</b> vào Mẫu 2 (Banner Trúng Đấu Giá chuẩn 186)...`,
+                parse_mode: 'HTML'
+              });
+              try {
+                const imgBuf = await renderMau2(plate.head, plate.tail, plate.buocGia);
+                if (imgBuf) {
+                  await sendTelegramPhoto(chatId, imgBuf, `🏆 CHÚC MỪNG TRÚNG ĐẤU GIÁ BIỂN SỐ: ${plate.head}-${plate.tail}`);
+                  continue;
+                }
+              } catch (exRender) {
+                console.error("Render Mau 2 error:", exRender);
+              }
+            }
+          }
+
+          // 6. Lọc thông thường hoặc theo danh mục đang chọn
           const filters = parseMultiFilter(msgText);
+
+          // Tự động kế thừa chế độ danh mục nếu người dùng đang ở chế độ đó
+          if (currentSession && currentSession.mode === 'colich') {
+            for (const f of filters) {
+              if (f.status === 0) f.status = 1; // Ép chỉ lọc biển ĐÃ CÓ LỊCH ĐẤU
+            }
+          } else if (currentSession && currentSession.mode === 'chuacolich') {
+            for (const f of filters) {
+              if (f.status === 0) f.status = 2; // Ép chỉ lọc biển CHƯA CÓ LỊCH
+            }
+          }
+
           executeMultiFilter(chatId, filters, false, msgText);
         }
 
