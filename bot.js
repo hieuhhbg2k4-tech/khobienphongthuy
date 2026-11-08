@@ -438,12 +438,71 @@ function tryParsePlate(text) {
 
 function renderVectorText(text, cx, cy, targetH, fill, maxW) {
   fill = fill || "#0a0a0a";
+  const pngGlyphs = (templates && templates.GLYPH_PNGS) ? templates.GLYPH_PNGS : null;
   const glyphs = (templates && templates.GLYPHS) ? templates.GLYPHS : null;
+
+  // 1. Dùng Glyph ảnh chuẩn từ bot biển số 186 (chuẩn 100% từng pixel)
+  if (pngGlyphs) {
+    const chars = String(text || "").trim().toUpperCase();
+    const scale = targetH / 94.0;
+    const charGap = 17.0 * scale;
+    const spaceGap = 28.0 * scale;
+
+    const items = [];
+    let totalW = 0;
+
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
+      if (c === ' ') {
+        totalW += spaceGap;
+        continue;
+      }
+      const g = pngGlyphs[c];
+      if (!g) continue;
+
+      const w = g.w * scale;
+      const h = g.h * scale;
+      let gap = 0;
+      if (i < chars.length - 1 && chars[i + 1] !== ' ') {
+        gap = (c === '.' || chars[i + 1] === '.') ? (14.0 * scale) : charGap;
+      }
+
+      items.push({ g, w, h, gap });
+      totalW += w + gap;
+    }
+
+    if (items.length > 0) {
+      let scaleFactor = 1.0;
+      if (maxW && totalW > maxW) {
+        scaleFactor = maxW / totalW;
+        totalW = maxW;
+      }
+
+      const startX = cx - (totalW / 2);
+      let curX = startX;
+      let svgImages = '';
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const w = item.w * scaleFactor;
+        const h = item.h * scaleFactor;
+        const drawY = (item.g === pngGlyphs['.'])
+          ? (cy + (targetH * scaleFactor / 2) - h)
+          : (cy - (h / 2));
+
+        svgImages += `    <image href="data:image/png;base64,${item.g.b64}" x="${curX.toFixed(2)}" y="${drawY.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" />\n`;
+        curX += w + (item.gap * scaleFactor);
+      }
+      return svgImages;
+    }
+  }
+
+  // 2. Dự phòng vector nếu chưa nạp được pngGlyphs
   if (!glyphs) return '';
 
   const chars = String(text || "").toUpperCase();
-  const scaleXRatio = 1.0; // Font Bahnschrift DIN chuẩn theo đúng mẫu 29AK - 797.79
-  const spacing = 8.0;
+  const scaleXRatio = 1.12;
+  const spacing = 17.0;
 
   // Đo kích thước gốc
   let curX0 = 0;
@@ -480,7 +539,6 @@ function renderVectorText(text, cx, cy, targetH, fill, maxW) {
   const baseH = maxBy0 - minBy0;
 
   let sy = targetH / 72.8;
-  // Quy tắc tự động: Dòng chữ không bao giờ vượt quá maxW
   if (maxW && (baseW * sy) > maxW) {
     sy = maxW / baseW;
   }
@@ -506,12 +564,12 @@ async function renderMau1(head, tail) {
   if (!templates || !templates.b64Mau1) return null;
   const bg = Buffer.from(templates.b64Mau1, 'base64');
 
-  // Khung trắng biển số Mẫu 1: X=[297, 709] (rộng 412px, tâm X=503), Y=[471, 639] (cao 168px, tâm Y=555)
-  // Dòng 1: Mã tỉnh + chữ cái - Tâm X=503, Y=514, Cao 64px (maxW=230px)
-  const svgL1 = renderVectorText(head, 503, 514, 64, "#0e0e0e", 230);
+  // Khung trắng biển số Mẫu 1: X=[297, 709] (tâm X=505), Y=[471, 639]
+  // Dòng 1: Mã tỉnh + chữ cái - Tâm X=505, Y=514, Cao 67px (maxW=230px)
+  const svgL1 = renderVectorText(head, 505, 514, 67, "#0e0e0e", 230);
 
-  // Dòng 2: 5 chữ số - Tâm X=503, Y=592, Cao 70px (maxW=295px)
-  const svgL2 = renderVectorText(tail, 503, 592, 70, "#0e0e0e", 295);
+  // Dòng 2: 5 chữ số - Tâm X=505, Y=594, Cao 68px (maxW=295px)
+  const svgL2 = renderVectorText(tail, 505, 594, 68, "#0e0e0e", 295);
 
   const svg = `
   <svg width="1024" height="839" xmlns="http://www.w3.org/2000/svg">
@@ -538,12 +596,12 @@ async function renderMau2(head, tail, buocGia) {
   if (!templates || !templates.b64Mau2) return null;
   const bg = Buffer.from(templates.b64Mau2, 'base64');
 
-  // Khung trắng biển số Mẫu 2: X=[221, 801] (rộng 580px, tâm X=512), Y=[254, 549] (cao 295px, tâm Y=401.5)
-  // Dòng 1: Mã tỉnh + chữ cái (ví dụ: 29AK, 30M) - Tâm X=512, Y=346, Cao 94px (maxW=320px)
-  const svgL1 = renderVectorText(head, 512, 346, 94, "#0a0a0a", 320);
+  // Khung trắng biển số Mẫu 2: X=[221, 801] (tâm X=512), Y=[254, 549] (tâm Y=401.5)
+  // Dòng 1: Mã tỉnh + chữ cái (ví dụ: 29AK, 30M) - Tâm X=512, Y=348, Cao 94px (maxW=320px)
+  const svgL1 = renderVectorText(head, 512, 348, 94, "#0a0a0a", 320);
 
-  // Dòng 2: 5 chữ số (ví dụ: 797.79, 688.68) - Tâm X=512, Y=466, Cao 95px (maxW=415px)
-  const svgL2 = renderVectorText(tail, 512, 466, 95, "#0a0a0a", 415);
+  // Dòng 2: 5 chữ số (ví dụ: 797.79, 688.68) - Tâm X=512, Y=468.5, Cao 94px (maxW=415px)
+  const svgL2 = renderVectorText(tail, 512, 468.5, 94, "#0a0a0a", 415);
 
   const svg = `
   <svg width="1024" height="892" xmlns="http://www.w3.org/2000/svg">
