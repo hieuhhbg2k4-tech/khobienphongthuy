@@ -436,55 +436,67 @@ function tryParsePlate(text) {
   return null;
 }
 
-function renderVectorText(text, cx, cy, targetH, fill) {
+function renderVectorText(text, cx, cy, targetH, fill, maxW) {
   fill = fill || "#0a0a0a";
   const glyphs = (templates && templates.GLYPHS) ? templates.GLYPHS : null;
   if (!glyphs) return '';
 
-  const s = targetH / 72.8;
   const chars = String(text || "").toUpperCase();
+  const scaleXRatio = 0.86; // Tỷ lệ chữ biển số xe Việt Nam cân đối
+  const spacing = 5.0;
 
-  let curX = 0;
-  const items = [];
-  let minBx = Infinity, maxBx = -Infinity, minBy = Infinity, maxBy = -Infinity;
+  // Đo kích thước gốc ở hệ số sy = 1.0
+  let curX0 = 0;
+  let minBx0 = Infinity, maxBx0 = -Infinity, minBy0 = Infinity, maxBy0 = -Infinity;
+  const rawItems = [];
 
   for (let i = 0; i < chars.length; i++) {
     const c = chars[i];
     if (c === ' ') {
-      curX += 28 * s;
+      curX0 += 28 * scaleXRatio;
       continue;
     }
     const g = glyphs[c];
     if (!g) continue;
 
-    const gx = curX;
-    const gMinX = gx + (g.bx * s);
-    const gMaxX = gMinX + (g.bw * s);
-    const gMinY = g.by * s;
-    const gMaxY = gMinY + (g.bh * s);
+    const gx0 = curX0;
+    const gMinX0 = gx0 + (g.bx * scaleXRatio);
+    const gMaxX0 = gMinX0 + (g.bw * scaleXRatio);
+    const gMinY0 = g.by;
+    const gMaxY0 = gMinY0 + g.bh;
 
-    if (gMinX < minBx) minBx = gMinX;
-    if (gMaxX > maxBx) maxBx = gMaxX;
-    if (gMinY < minBy) minBy = gMinY;
-    if (gMaxY > maxBy) maxBy = gMaxY;
+    if (gMinX0 < minBx0) minBx0 = gMinX0;
+    if (gMaxX0 > maxBx0) maxBx0 = gMaxX0;
+    if (gMinY0 < minBy0) minBy0 = gMinY0;
+    if (gMaxY0 > maxBy0) maxBy0 = gMaxY0;
 
-    items.push({ g, x: gx });
-    curX += (g.w + 1.5) * s;
+    rawItems.push({ g, x0: gx0 });
+    curX0 += (g.w + spacing) * scaleXRatio;
   }
 
-  if (items.length === 0) return '';
+  if (rawItems.length === 0) return '';
 
-  const strW = maxBx - minBx;
-  const strH = maxBy - minBy;
-  const startX = cx - (strW / 2) - minBx;
-  const startY = cy - (strH / 2) - minBy;
+  const baseW = maxBx0 - minBx0;
+  const baseH = maxBy0 - minBy0;
+
+  let sy = targetH / 72.8;
+  // Quy tắc tự động: Dòng chữ không bao giờ vượt quá maxW (tối đa <= 72% khung biển)
+  if (maxW && (baseW * sy) > maxW) {
+    sy = maxW / baseW;
+  }
+  const sx = sy * scaleXRatio;
+
+  const strW = baseW * sy;
+  const strH = baseH * sy;
+  const startX = cx - (strW / 2) - (minBx0 * sy);
+  const startY = cy - (strH / 2) - (minBy0 * sy);
 
   let paths = '';
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const tx = startX + item.x;
+  for (let i = 0; i < rawItems.length; i++) {
+    const item = rawItems[i];
+    const tx = startX + (item.x0 * sy);
     const ty = startY;
-    paths += `<path d="${item.g.d}" transform="translate(${tx.toFixed(2)}, ${ty.toFixed(2)}) scale(${s.toFixed(5)})" fill="${fill}" />\n`;
+    paths += `<path d="${item.g.d}" transform="translate(${tx.toFixed(2)}, ${ty.toFixed(2)}) scale(${sx.toFixed(5)}, ${sy.toFixed(5)})" fill="${fill}" />\n`;
   }
   return paths;
 }
@@ -494,17 +506,15 @@ async function renderMau1(head, tail) {
   if (!templates || !templates.b64Mau1) return null;
   const bg = Buffer.from(templates.b64Mau1, 'base64');
 
-  // Vector path rendering chuẩn xác 2 dòng như ảnh mẫu:
-  // Dòng 1: Mã biển (ví dụ: 51M, 66A, 29K) - Tâm X=505, Y=608, Cao 62px
-  const svgL1 = renderVectorText(head, 505, 608, 62, "#0e0e0e");
+  // Khung trắng biển số Mẫu 1: X=[297, 709] (rộng 412px, tâm X=503), Y=[471, 639] (cao 168px, tâm Y=555)
+  // Dòng 1: Mã tỉnh + chữ cái (ví dụ: 51M, 66A) - Tâm X=503, Y=514, Cao 62px (maxW=230px)
+  const svgL1 = renderVectorText(head, 503, 514, 62, "#0e0e0e", 230);
 
-  // Dòng 2: Dãy số (ví dụ: 616.66, 666.66, 399.39) - Tâm X=505, Y=698, Cao 80px
-  const svgL2 = renderVectorText(tail, 505, 698, 80, "#0e0e0e");
+  // Dòng 2: 5 chữ số (ví dụ: 616.66, 666.66) - Tâm X=503, Y=592, Cao 68px (maxW=295px <= 72% của 412px)
+  const svgL2 = renderVectorText(tail, 503, 592, 68, "#0e0e0e", 295);
 
   const svg = `
-  <svg width="1024" height="838" xmlns="http://www.w3.org/2000/svg">
-    <!-- Che phần giữa biển bằng màu nhôm xám trắng tự nhiên #F0EFF5 của biển số -->
-    <rect x="290" y="556" width="430" height="206" rx="6" ry="6" fill="#f0eff5"/>
+  <svg width="1024" height="839" xmlns="http://www.w3.org/2000/svg">
     ${svgL1}
     ${svgL2}
   </svg>`;
@@ -523,22 +533,22 @@ async function renderMau1(head, tail) {
   return null;
 }
 
-// MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (CÂN ĐỐI 100% THEO CHUẨN ẢNH MẪU 1)
+// MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (CÂN ĐỐI 100% THEO CHUẨN ẢNH MẪU)
 async function renderMau2(head, tail, buocGia) {
   if (!templates || !templates.b64Mau2) return null;
   const bg = Buffer.from(templates.b64Mau2, 'base64');
 
-  // Cân đối lại kích thước font chữ chuẩn tỉ lệ và cân xứng với khung biển số
-  // Dòng 1: Mã biển (ví dụ: 30M, 30K) - Tâm X=511, Y=355, Cao 82px
-  const svgL1 = renderVectorText(head, 511, 355, 82, "#0a0a0a");
+  // Khung trắng biển số Mẫu 2: X=[221, 801] (rộng 580px, tâm X=512), Y=[254, 549] (cao 295px, tâm Y=401.5)
+  // Dòng 1: Mã tỉnh + chữ cái (ví dụ: 30M, 30K) - Tâm X=512, Y=346, Cao 88px (maxW=310px)
+  const svgL1 = renderVectorText(head, 512, 346, 88, "#0a0a0a", 310);
 
-  // Dòng 2: Dãy số (ví dụ: 688.68, 668.66) - Tâm X=511, Y=485, Cao 115px
-  const svgL2 = renderVectorText(tail, 511, 485, 115, "#0a0a0a");
+  // Dòng 2: 5 chữ số (ví dụ: 688.68, 668.66) - Tâm X=512, Y=466, Cao 92px (maxW=415px <= 71.5% của 580px)
+  const svgL2 = renderVectorText(tail, 512, 466, 92, "#0a0a0a", 415);
 
   const svg = `
   <svg width="1024" height="892" xmlns="http://www.w3.org/2000/svg">
-    <!-- Che vùng chữ cũ bên trong biển trắng (khung chuẩn không lẹm viền) -->
-    <rect x="235" y="270" width="555" height="315" fill="#ffffff"/>
+    <!-- Chỉ xóa vùng chữ cũ bên trong lòng trắng (X=235..787, Y=265..538), giữ nguyên 100% viền đen [221..801, 254..549] -->
+    <rect x="235" y="265" width="552" height="273" fill="#ffffff"/>
     ${svgL1}
     ${svgL2}
   </svg>`;
