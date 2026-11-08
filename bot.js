@@ -489,20 +489,24 @@ function renderVectorText(text, cx, cy, targetH, fill) {
   return paths;
 }
 
-// MẪU 1: CÔ GÁI CẦM BIỂN DÀI TRƯỚC XE MERCEDES
+// MẪU 1: CÔ GÁI CẦM BIỂN XE MERCEDES (CHIA 2 DÒNG CHUẨN ĐẸP NHƯ ẢNH MẪU 2)
 async function renderMau1(head, tail) {
   if (!templates || !templates.b64Mau1) return null;
-  const fullText = `${head} - ${tail}`;
   const bg = Buffer.from(templates.b64Mau1, 'base64');
 
-  // Vector path rendering chuẩn xác tâm X=506, Y=608, TargetH=54 (100% độc lập font)
-  const svgText = renderVectorText(fullText, 506, 608, 54, "#141414");
+  // Vector path rendering chuẩn xác 2 dòng như ảnh mẫu:
+  // Dòng 1: Mã biển (ví dụ: 51M, 66A, 29K) - Tâm X=505, Y=608, Cao 62px
+  const svgL1 = renderVectorText(head, 505, 608, 62, "#0e0e0e");
+
+  // Dòng 2: Dãy số (ví dụ: 616.66, 666.66, 399.39) - Tâm X=505, Y=698, Cao 80px
+  const svgL2 = renderVectorText(tail, 505, 698, 80, "#0e0e0e");
 
   const svg = `
   <svg width="1024" height="838" xmlns="http://www.w3.org/2000/svg">
-    <!-- Che phần giữa biển bằng màu nhôm khớp chuẩn 100% của biển kim loại trên tay cô gái -->
-    <rect x="305" y="558" width="400" height="100" fill="#e6e9f3"/>
-    ${svgText}
+    <!-- Che phần giữa biển bằng màu nhôm xám trắng tự nhiên #F0EFF5 của biển số -->
+    <rect x="290" y="556" width="430" height="206" rx="6" ry="6" fill="#f0eff5"/>
+    ${svgL1}
+    ${svgL2}
   </svg>`;
 
   if (sharpLib) {
@@ -519,22 +523,22 @@ async function renderMau1(head, tail) {
   return null;
 }
 
-// MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (CHUẨN 100% ĐẤU GIÁ 186)
+// MẪU 2: BANNER ĐỎ TRÚNG ĐẤU GIÁ (CÂN ĐỐI 100% THEO CHUẨN ẢNH MẪU 1)
 async function renderMau2(head, tail, buocGia) {
   if (!templates || !templates.b64Mau2) return null;
   const bg = Buffer.from(templates.b64Mau2, 'base64');
 
-  // Vector path rendering chuẩn pixel theo mẫu gốc bot 186
-  // Line 1: Mã biển (30K, 30M, 99A) - Tâm X=514, Y=348, Cao 94px
-  const svgL1 = renderVectorText(head, 514, 348, 94, "#0a0a0a");
+  // Cân đối lại kích thước font chữ chuẩn tỉ lệ và cân xứng với khung biển số
+  // Dòng 1: Mã biển (ví dụ: 30M, 30K) - Tâm X=511, Y=355, Cao 82px
+  const svgL1 = renderVectorText(head, 511, 355, 82, "#0a0a0a");
 
-  // Line 2: Dãy số (688.68, 668.66, 999.99) - Tâm X=510, Y=492, Cao 140px
-  const svgL2 = renderVectorText(tail, 510, 492, 140, "#0a0a0a");
+  // Dòng 2: Dãy số (ví dụ: 688.68, 668.66) - Tâm X=511, Y=485, Cao 115px
+  const svgL2 = renderVectorText(tail, 511, 485, 115, "#0a0a0a");
 
   const svg = `
   <svg width="1024" height="892" xmlns="http://www.w3.org/2000/svg">
     <!-- Che vùng chữ cũ bên trong biển trắng (khung chuẩn không lẹm viền) -->
-    <rect x="245" y="280" width="530" height="295" fill="#ffffff"/>
+    <rect x="235" y="270" width="555" height="315" fill="#ffffff"/>
     ${svgL1}
     ${svgL2}
   </svg>`;
