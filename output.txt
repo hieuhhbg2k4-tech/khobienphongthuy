@@ -1,0 +1,15 @@
+Command exited with code 0.
+
+Command output:
+
+
+    Directory: C:\Users\ADMIN\Desktop
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+-a----         11/8/2026   1:37 PM            266 Bat_Bot_KhoBien.vbs                                                  
+-a----         11/8/2026   1:46 PM          16232 bot.js                                                               
+-a----         11/8/2026   1:46 PM            234 package.json                                                         
+
+
