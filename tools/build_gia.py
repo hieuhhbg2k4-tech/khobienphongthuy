@@ -59,14 +59,25 @@ def build(data, cfg):
 def _r(x): return int(math.floor(x + 0.5))   # làm tròn .5 lên (giống Math.round trên web)
 
 def kbvn_markup(p):
-    """p: giá niêm yết bên khobienvietnam (triệu). Trả về giá bán trên web, -1 = Liên hệ."""
+    """p: giá niêm yết bên khobienvietnam (triệu). Trả về giá bán trên web, -1 = Liên hệ.
+    Quy tắc:
+      - p >= 1000: Liên hệ (-1)
+      - p >= 200: markup +20% (* 1.20)
+      - p <= 195: markup +30% (* 1.30)
+      - 195 < p < 200: chuyển tiếp (* 1.25)
+      - Làm tròn lên đuôi 9 (vd 176 -> 179, 130 -> 139)
+    """
+    if p is None or p < 0: return p
     if p >= 1000: return -1                                   # từ 1 tỷ: Liên hệ
-    if p >= 500: return _r(p * 1.10)                  # 500 tr – dưới 1 tỷ: +10%
-    if p >= 400: return _r(p * 1.15 / 5.0) * 5        # 400–500 tr: +15%, làm tròn bội 5
-    if p >= 300: return _r(p * 1.20)                  # 300–400 tr: +20%
-    if p >= 200: return _r(p * 1.30)                  # 200–300 tr: +30%
-    if p >= 100: return _r(p * 1.40)                  # 100–200 tr: +40%
-    return _r(p)                                      # dưới 100 tr: giữ nguyên
+    if p >= 200:
+        marked = p * 1.20
+    elif p <= 195:
+        marked = p * 1.30
+    else:
+        marked = p * 1.25                                     # 195–200 tr: chuyển tiếp
+    v = _r(marked)
+    d = v % 10
+    return v if d == 9 else v - d + 9
 
 def main(car_src, moto_src, out, kbvn_src=None):
     car = build(json.load(open(car_src, encoding="utf-8")), CAR)

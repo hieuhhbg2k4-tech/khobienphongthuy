@@ -97,14 +97,25 @@ function fromExcel(meta, d) {
   }
   return s;
 }
+let MOCK_NOW = null;
+const setNow = t => { MOCK_NOW = t; };
+
 // Dữ liệu Sheet BIENSOVP: {rows:[[biển, tỉnh, xe máy 0/1, "dd/MM/yyyy", số người ĐK]]}
 function fromLive(d, meta) {
   const rows = d.rows || [];
   const s = new Source(Object.assign({ id: "live", name: "VPA cập nhật hằng ngày", kind: "mix", group: "vpa", live: true, cap: rows.length + 16 }, meta || {}));
+  const now = (meta && meta.now) || MOCK_NOW || Date.now();
   for (const r of rows) {
     const raw = String(r[0]).toUpperCase().replace(/[^0-9A-Z]/g, ""), m = raw.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
     if (!m) continue;
-    const dm = String(r[3] || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    const dateStr = String(r[3] || "");
+    const dm = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (dm) {
+      const day = +dm[1], mo = +dm[2], yr = +dm[3];
+      // Hạn đăng ký: 16h30 ngày D - 2 (giờ VN UTC+7 -> 09:30 UTC)
+      const deadline = (d.reg_end && d.reg_end[yr + dm[2] + dm[1]]) || Date.UTC(yr, mo - 1, day - 2, 9, 30, 0, 0);
+      if (now > deadline) continue; // Đã hết hạn đăng ký -> xóa/bỏ qua, không nạp lên web
+    }
     s.add(m[1], +m[2], r[2], { date: dm ? +(dm[3] + dm[2] + dm[1]) : 0, cnt: typeof r[4] === "number" ? r[4] : -1 });
   }
   s.updated = d.updated || "";
@@ -228,9 +239,17 @@ const setGia = g => {
     GROUP_KB.set(group, old === -1 || value === -1 ? -1 : old == null ? value : Math.max(old, value));
   }
 };
-// Giá bán = giá theo lịch sử trúng đấu giá VPA (cùng 5 số cuối), nhưng KHÔNG thấp hơn giá khobienvietnam + 10%.
+// Giá bán = giá theo lịch sử trúng đấu giá VPA (cùng 5 số cuối), nhưng KHÔNG thấp hơn giá khobienvietnam (+30% nếu <=195tr, +20% nếu >=200tr, căn lên đuôi 9).
 // Từ 1 tỷ -> "Liên hệ" (-1). Số đẹp (sảnh, tứ quý, ngũ quý) không có dữ liệu -> "Liên hệ".
-const KB_MARKUP = 1.10, CONTACT_FROM = 1000;
+const CONTACT_FROM = 1000;
+function kbMarkup(kb) {
+  if (kb == null || kb < 0) return kb;
+  if (kb >= CONTACT_FROM) return -1;
+  const rate = kb >= 200 ? 1.20 : kb <= 195 ? 1.30 : 1.25;
+  const raw = Math.round(kb * rate);
+  const d = raw % 10;
+  return d === 9 ? raw : raw - d + 9;
+}
 function giaRaw(s, i) {
   if (!GIA) return null;
   const n = pad5(s.num[i]), key = s.pre[s.pi[i]] + n, moto = s.moto[i];
@@ -265,7 +284,7 @@ function giaRaw(s, i) {
     v = Math.max(th ? th[z] : 0, TAM_HOA_DAU_MIN[n[0]] || floor);
     return v >= CONTACT_FROM ? -1 : v;
   }
-  if (kb != null) v = Math.max(hv || floor, Math.round(kb * KB_MARKUP));
+  if (kb != null) v = Math.max(hv || floor, kbMarkup(kb));
   else {
     if (!moto && scoreOf(s.tag[i]) >= 8) return -1;          // chưa có giá khobienvietnam để so -> Liên hệ
     v = hv != null ? Math.max(floor, hv) : floor;
@@ -273,14 +292,14 @@ function giaRaw(s, i) {
   }
   if (v >= CONTACT_FROM) return -1;
   // Bảng tam hoa ô tô (giá sàn); tứ quý/ngũ quý và các nhóm 666/888/999 giữ nguyên.
-  // Chỉ áp cho biển chưa có giá khobienvietnam; có giá kbvn thì luôn giữ tối thiểu kbvn +10%.
+  // Chỉ áp cho biển chưa có giá khobienvietnam; có giá kbvn thì luôn giữ tối thiểu kbvn (+30% hoặc +20%, căn đuôi 9).
   if (kb == null && !moto && (s.tag[i] & B["Tam hoa"]) && !(s.tag[i] & (B["Tứ quý"] | B["Ngũ quý"]))) {
     const tail = n.match(/(\d)\1\1$/), head = n.match(/^(\d)\1\1/);
     const digit = (tail || head || [])[1];
     if (digit === "1" || digit === "4") v = 79;
     else if (digit === "2") v = 99;
     else if (digit === "3" || digit === "5" || digit === "7") {
-      const reference = grouped != null && grouped >= 0 ? Math.max(hv || floor, Math.round(grouped * KB_MARKUP)) : v;
+      const reference = grouped != null && grouped >= 0 ? Math.max(hv || floor, kbMarkup(grouped)) : v;
       v = digit === "7" ? (reference >= 109 ? 109 : reference >= 99 ? 99 : 89) : (reference >= 119 ? 119 : reference >= 109 ? 109 : 99);
     }
     if (hv != null && hv > v) v = hv;   // không bán thấp hơn giá lịch sử trúng đấu giá VPA của đuôi 5 số
@@ -305,5 +324,5 @@ function downloadCsv(name, head, rows) {
 function giaOf(s, i) { const v = giaRaw(s, i); if (v == null || v <= 0) return v; const d = v % 10; return d === 0 || d === 5 || d === 9 ? v : v - d + 9; }
 
 G.KE = { FMT_ORDER, B, MENH, ELEM, NEWPROV, provOf, classify, mainOf, tagsOf, scoreOf, nutOf, pad5, Source, fromExcel, fromLive, fromKho,
-  markDups, filter, unpack, sortRes, heads, letters, provs, fmtDate, copyText, downloadCsv, setGia, giaOf, giaText };
+  markDups, filter, unpack, sortRes, heads, letters, provs, fmtDate, copyText, downloadCsv, setGia, giaOf, giaText, kbMarkup, setNow };
 })(window);

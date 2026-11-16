@@ -93,6 +93,24 @@ def main():
             upd += 1
         else:
             rows.append([bks, 0, 1 if site == 2 else 0, date, cnt if isinstance(cnt, int) else -1]); add += 1
+
+    # Lọc bỏ toàn bộ biển đã hết hạn đăng ký (16h30 ngày D - 2)
+    def is_expired(date_str):
+        if not date_str: return False
+        try:
+            dd, mm, yy = date_str.split("/")
+            key = yy + mm + dd
+            now_ms = int(datetime.datetime.utcnow().timestamp() * 1000)
+            if key in reg_end:
+                return now_ms > reg_end[key]
+            deadline = datetime.datetime(int(yy), int(mm), int(dd), 16, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=7))) - datetime.timedelta(days=2)
+            return now > deadline
+        except Exception:
+            return False
+
+    now_ms = int(datetime.datetime.utcnow().timestamp() * 1000)
+    rows = [r for r in rows if not is_expired(str(r[3] or ""))]
+    reg_end = {k: v for k, v in reg_end.items() if now_ms <= v}
     live["rows"] = rows; live["count"] = len(rows)
     live["reg_end"] = reg_end
     live["lich_updated"] = now.strftime("%H:%M %d/%m/%Y")

@@ -394,7 +394,33 @@ function BuildGroupJson($plateSet, $siteId) {
 
 # Ghi live.json + đưa lên web. Gọi sau MỖI bước để web có dữ liệu mới ngay (cập nhật đến đâu lên web đến đó)
 $script:regEnd = @{}; $script:nLich = 0
+function Remove-ExpiredRows {
+  $vnNow = (Get-Date).ToUniversalTime().AddHours(7)
+  $delKeys = @()
+  foreach ($k in $rows.Keys) {
+    $dateStr = [string]$rows[$k][3]
+    if (-not [string]::IsNullOrWhiteSpace($dateStr)) {
+      $parts = $dateStr.Split('/')
+      if ($parts.Length -eq 3) {
+        $d = [int]$parts[0]; $m = [int]$parts[1]; $y = [int]$parts[2]
+        $deadline = (New-Object DateTime($y, $m, $d, 16, 30, 0)).AddDays(-2)
+        if ($vnNow -gt $deadline) {
+          $delKeys += $k
+        }
+      }
+    }
+  }
+  foreach ($k in $delKeys) { [void]$rows.Remove($k) }
+  $nowMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+  $delReg = @()
+  foreach ($rk in $script:regEnd.Keys) {
+    if ($nowMs -gt [long]$script:regEnd[$rk]) { $delReg += $rk }
+  }
+  foreach ($rk in $delReg) { $script:regEnd.Remove($rk) }
+}
+
 function Publish($buoc) {
+  Remove-ExpiredRows
   $sb = New-Object System.Text.StringBuilder
   $stamp = (Get-Date).ToUniversalTime().AddHours(7).ToString('HH:mm dd/MM/yyyy')
   [void]$sb.Append('{"updated":"' + $stamp + '","src":"pc","lich_updated":"' + $stamp + '","ok":true,"count":' + $rows.Count + ',"provs":' + $provs + ',"reg_end":{')
