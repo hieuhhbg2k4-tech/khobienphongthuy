@@ -80,6 +80,12 @@ def kbvn_markup(p):
     return v if d == 9 else v - d + 9
 
 def main(car_src, moto_src, out, kbvn_src=None):
+    existing = {}
+    try:
+        with open(out, encoding="utf-8") as f:
+            existing = json.load(f)
+    except Exception:
+        pass
     car = build(json.load(open(car_src, encoding="utf-8")), CAR)
     res = {"updated": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7))).strftime("%d/%m/%Y"),
            "min": CAR["min"], "contact": CAR["contact"], "t": car}
@@ -95,7 +101,18 @@ def main(car_src, moto_src, out, kbvn_src=None):
         res["k"] = {k: (-1 if v[0] >= 1e9 else round(v[0] / 1e6)) for k, v in kb.items() if v and v[0]}
         res["car_kbvn"] = True   # ô tô: chỉ dùng giá khobienvietnam (không có trong danh sách = giá sàn)
         print(f"Giá theo khobienvietnam: {len(res['p'])} biển")
+    # Giữ lại các trường bảng giá Google Sheet / giá riêng nếu đang có trong gia.json
+    for keep_key in ("sheet", "sheet_min", "sheet_skip_heads", "sheet_id", "sheet_updated",
+                     "th", "th_note", "kep", "kep_note", "tqd_hn", "tqd_hn_note", "rieng", "rieng_note"):
+        if keep_key in existing and keep_key not in res:
+            res[keep_key] = existing[keep_key]
     json.dump(res, open(out, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    try:
+        from import_sheet_prices import fetch_csv_text, parse_sheet, update_gia_file
+        sheet_map, skip_heads, _, _ = parse_sheet(fetch_csv_text())
+        update_gia_file(out, sheet_map, skip_heads)
+    except Exception as exc:
+        print(f"Lưu ý: không tải mới Google Sheet khi build_gia ({exc}); giữ nguyên dữ liệu sheet hiện có.")
     print(f"Ô tô: {len(car)} đuôi có giá riêng / liên hệ -> {out}")
 
 if __name__ == "__main__":

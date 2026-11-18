@@ -223,6 +223,14 @@ server.listen(PORT, () => {
 });
 
 /* ===== TÍNH GIÁ CHUẨN THEO THUẬT TOÁN WEB ===== */
+function formatExactSheetPrice(v) {
+  if (v == null || v <= 0) return { priceNum: -1, text: "Liên hệ" };
+  return {
+    priceNum: v,
+    text: v >= 1000 ? (v / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tỷ" : v + " tr"
+  };
+}
+
 function calculatePrice(prefix, num, moto, tag) {
   if (!giaData) return { priceNum: 79, text: "79 tr" };
   const n = pad5(num);
@@ -230,15 +238,25 @@ function calculatePrice(prefix, num, moto, tag) {
   const tbl = moto ? (giaData.m || giaData) : giaData;
   const floor = (tbl && tbl.min) ? tbl.min : (moto ? 15 : 79);
 
-  // 1. Kiểm tra bảng p (biển riêng)
-  if (giaData.p && giaData.p[key] != null) {
-    return formatGiaValue(giaData.p[key]);
-  }
-
   const provCode = prefix.slice(0, 2);
   const isHN = HN_CODES.has(provCode);
   const provName = provOf(provCode);
   const isLanCan = LAN_CAN.has(provName);
+
+  // 0. Bảng giá chuẩn từ Google Sheet chủ web (ô tô): [Giá Hà Nội, Giá TPHCM & Tỉnh]
+  if (!moto && giaData.sheet) {
+    const skip = giaData.sheet_skip_heads && giaData.sheet_skip_heads.includes(n[0]);
+    if (!skip) {
+      const pair = giaData.sheet[n];
+      const val = pair ? pair[isHN ? 0 : 1] : (giaData.sheet_min || 79);
+      return formatExactSheetPrice(val);
+    }
+  }
+
+  // 1. Kiểm tra bảng p (biển riêng)
+  if (giaData.p && giaData.p[key] != null) {
+    return formatGiaValue(giaData.p[key]);
+  }
 
   // 2. Giá riêng chủ web đặt theo 5 số cuối (ô tô): [Hà Nội, tỉnh lân cận, tỉnh xa]
   if (!moto && giaData.rieng && giaData.rieng[n]) {

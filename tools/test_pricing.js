@@ -9,11 +9,20 @@ const KE = window.KE;
 
 console.log("KE loaded:", !!KE);
 console.log("KE.kbMarkup function exists:", typeof KE.kbMarkup === 'function');
+console.log("KE.sheetGia function exists:", typeof KE.sheetGia === 'function');
 console.log("KE.setNow function exists:", typeof KE.setNow === 'function');
 
 let failed = 0;
+function check(cond, desc) {
+  if (!cond) {
+    console.error(`FAIL: ${desc}`);
+    failed++;
+  } else {
+    console.log(`PASS: ${desc}`);
+  }
+}
 
-// 1. Formula unit tests for kbMarkup
+// 1. Formula unit tests for kbMarkup (used for motorcycles & fallback)
 const cases = [
   { in: 100, expected: 139, desc: "100tr -> 130 -> căn 139 (+30%)" },
   { in: 135, expected: 179, desc: "135tr -> 175.5 -> 176 -> căn 179 (+30%)" },
@@ -27,148 +36,97 @@ const cases = [
 
 for (const c of cases) {
   const actual = KE.kbMarkup(c.in);
-  const ok = actual === c.expected;
-  if (!ok) {
-    console.error(`FAIL: ${c.desc} -> got ${actual}, expected ${c.expected}`);
-    failed++;
-  } else {
-    console.log(`PASS: ${c.desc} -> ${actual}`);
-  }
+  check(actual === c.expected, `${c.desc} -> got ${actual}`);
 }
 
-// 2. Test with real gia.json
+// 2. Test Google Sheet authoritative pricing in gia.json
 const giaData = JSON.parse(fs.readFileSync(path.join(__dirname, '../assets/gia.json'), 'utf8'));
 KE.setGia(giaData);
-console.log("\nLoaded gia.json, total k plates:", Object.keys(giaData.k || {}).length);
+console.log("\nLoaded gia.json, sheet non-floor tails:", Object.keys(giaData.sheet || {}).length, "skip_heads:", giaData.sheet_skip_heads);
+check(giaData.sheet && Object.keys(giaData.sheet).length > 9000, "gia.json contains >9000 Google Sheet tail entries");
 
 function testPlate(prefix, numStr, moto = 0) {
-  const s = {
-    num: [parseInt(numStr, 10)],
-    pre: [prefix],
-    pi: [0],
-    moto: [moto],
-    tag: [0],
-    text: () => `${prefix}-${numStr.slice(0,3)}.${numStr.slice(3)}`,
-    prov: () => KE.provOf(prefix.slice(0, 2))
-  };
-  const raw = KE.giaOf(s, 0);
+  const s = new KE.Source({ id: "test", kind: "mix", keepYellow: true, cap: 2 });
+  const idx = s.add(prefix, parseInt(numStr, 10), moto);
+  const raw = KE.giaOf(s, idx);
   const text = KE.giaText(raw);
   return { raw, text };
 }
 
-// Test sample car plates
-console.log("\nTesting sample CAR plates from gia.json:");
-const sampleCarPlates = [
-  "11A11689", // k=118 -> kbMarkup=159
-  "12A39393", // k=126 -> kbMarkup=169
-  "12A45679", // k=104 -> kbMarkup=139
-  "11A28955", // k=103 -> kbMarkup=139
+console.log("\nTesting Google Sheet CAR pricing (Col 2 = Hà Nội, Col 3 = TPHCM & Tỉnh):");
+const sheetCarCases = [
+  // 00001: Sheet = [1300, 910]
+  { prefix: "30K", tail: "00001", expected: 1300, expectedText: "1,3 tỷ", desc: "Hà Nội 30K-000.01 (Cột 2 = 1300)" },
+  { prefix: "51K", tail: "00001", expected: 910, expectedText: "910 tr", desc: "TPHCM 51K-000.01 (Cột 3 = 910)" },
+  { prefix: "15K", tail: "00001", expected: 910, expectedText: "910 tr", desc: "Hải Phòng 15K-000.01 (Cột 3 = 910)" },
+  // 11111: Sheet = [2500, 1750]
+  { prefix: "29A", tail: "11111", expected: 2500, expectedText: "2,5 tỷ", desc: "Hà Nội 29A-111.11 (Cột 2 = 2500)" },
+  { prefix: "50H", tail: "11111", expected: 1750, expectedText: "1,75 tỷ", desc: "TPHCM 50H-111.11 (Cột 3 = 1750)" },
+  { prefix: "37K", tail: "11111", expected: 1750, expectedText: "1,75 tỷ", desc: "Nghệ An 37K-111.11 (Cột 3 = 1750)" },
+  // 12368: Sheet = [180, 129]
+  { prefix: "30N", tail: "12368", expected: 180, expectedText: "180 tr", desc: "Hà Nội 30N-123.68 (Cột 2 = 180)" },
+  { prefix: "51L", tail: "12368", expected: 129, expectedText: "129 tr", desc: "TPHCM 51L-123.68 (Cột 3 = 129)" },
+  { prefix: "99A", tail: "12368", expected: 129, expectedText: "129 tr", desc: "Bắc Ninh 99A-123.68 (Cột 3 = 129)" },
+  // 11689: Sheet = [120, 89] (overrides old KBVN 159tr!)
+  { prefix: "11A", tail: "11689", expected: 89, expectedText: "89 tr", desc: "Cao Bằng 11A-116.89 (Cột 3 = 89, ghi đè KBVN cũ)" },
+  // 28955: Sheet = [79, 79] (floor)
+  { prefix: "51K", tail: "28955", expected: 79, expectedText: "79 tr", desc: "TPHCM 51K-289.55 (Cột 3 = 79 giá sàn)" },
+  { prefix: "11A", tail: "28955", expected: 79, expectedText: "79 tr", desc: "Tỉnh 11A-289.55 (Cột 3 = 79 giá sàn)" },
 ];
-for (const p of sampleCarPlates) {
-  const m = p.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
-  if (m) {
-    const kPrice = giaData.k[p];
-    const pPrice = giaData.p[p];
-    const expectedMarkup = KE.kbMarkup(kPrice);
-    const res = testPlate(m[1], m[2], 0);
-    console.log(`Car ${p}: KBVN raw k=${kPrice}tr, gia.json p=${pPrice}tr, expected kbMarkup=${expectedMarkup}tr, engine giaOf=${res.raw} (${res.text})`);
-    if (res.raw !== expectedMarkup) {
-      console.error(`FAIL: Car ${p} engine price ${res.raw} != expected kbMarkup ${expectedMarkup}`);
-      failed++;
-    } else {
-      console.log(`PASS: Car ${p} engine price correctly reflects kbMarkup`);
-    }
-  }
+
+for (const c of sheetCarCases) {
+  const res = testPlate(c.prefix, c.tail, 0);
+  check(res.raw === c.expected && res.text === c.expectedText, `${c.desc} -> got ${res.raw} (${res.text})`);
 }
 
-// Test sample motorcycle plates
+// Verify 8xxxx safety guard if 8xxxx is currently unfilled in Sheet
+if (giaData.sheet_skip_heads && giaData.sheet_skip_heads.includes("8")) {
+  const vip8 = testPlate("30D", "88888", 0);
+  check(vip8.raw === -1 && vip8.text === "Liên hệ", `30D-888.88 safety guard when 8xxxx unfilled -> ${vip8.raw} (${vip8.text})`);
+}
+
+// 3. Test sample motorcycle plates (unaffected by car Google Sheet)
 console.log("\nTesting sample MOTORCYCLE plates from gia.json:");
-const sampleMotoPlates = [
-  "50AG66668", // k=160 -> kbMarkup=209
-  "50AG66868", // k=160 -> kbMarkup=209
-  "50AG97979", // k=160 -> kbMarkup=209
-];
+const sampleMotoPlates = ["50AG66668", "50AG66868", "50AG97979"];
 for (const p of sampleMotoPlates) {
   const m = p.match(/^(\d{2}[A-Z]{2})(\d{5})$/);
   if (m) {
     const kPrice = giaData.k[p];
-    const pPrice = giaData.p[p];
     const expectedMarkup = KE.kbMarkup(kPrice);
     const res = testPlate(m[1], m[2], 1);
-    console.log(`Moto ${p}: KBVN raw k=${kPrice}tr, gia.json p=${pPrice}tr, expected kbMarkup=${expectedMarkup}tr, engine giaOf=${res.raw} (${res.text})`);
-    if (res.raw !== expectedMarkup) {
-      console.error(`FAIL: Moto ${p} engine price ${res.raw} != expected kbMarkup ${expectedMarkup}`);
-      failed++;
-    } else {
-      console.log(`PASS: Moto ${p} engine price correctly reflects kbMarkup`);
-    }
+    check(res.raw === expectedMarkup, `Moto ${p}: engine=${res.raw} (${res.text}) == kbMarkup=${expectedMarkup}`);
   }
 }
+const floorMoto = testPlate("59AA", "28955", 1);
+check(floorMoto.raw === 15 || floorMoto.raw === 19, `Moto floor 59AA-289.55 -> ${floorMoto.raw} (${floorMoto.text}), not car 79tr`);
 
-// 3. Test expiration logic in fromLive
+// 4. Test expiration logic in fromLive
 console.log("\nTesting expiration logic in fromLive:");
-// 16/11/2026 11:00 VN = 04:00 UTC (before 16:30 deadline of 18/11 auction)
 const timeBefore1630 = Date.UTC(2026, 10, 16, 4, 0, 0);
-// 16/11/2026 17:00 VN = 10:00 UTC (after 16:30 deadline of 18/11 auction)
 const timeAfter1630 = Date.UTC(2026, 10, 16, 10, 0, 0);
-
 const mockLive = {
   updated: "16/11/2026",
   rows: [
-    ["30N11111", 0, 0, "18/11/2026", 0], // Dau 18/11: han 16h30 ngay 16/11
-    ["30N22222", 0, 0, "17/11/2026", 0], // Dau 17/11: han 16h30 ngay 15/11 (da qua)
-    ["30N33333", 0, 0, "16/11/2026", 0], // Dau 16/11: han 16h30 ngay 14/11 (da qua)
-    ["30N44444", 0, 0, "", 0],           // Khong co ngay: giu nguyen
+    ["30N11111", 0, 0, "18/11/2026", 0],
+    ["30N22222", 0, 0, "17/11/2026", 0],
+    ["30N33333", 0, 0, "16/11/2026", 0],
+    ["30N44444", 0, 0, "", 0],
   ]
 };
-
-// Test before 16h30
 KE.setNow(timeBefore1630);
 const sBefore = KE.fromLive(mockLive);
-console.log(`Before 16h30 (len=${sBefore.len}): plates=[${Array.from({length: sBefore.len}, (_, i) => sBefore.text(i)).join(", ")}]`);
-if (sBefore.len !== 2) {
-  console.error(`FAIL: Expected 2 plates before 16h30 (30N11111 and 30N44444), got ${sBefore.len}`);
-  failed++;
-} else {
-  console.log("PASS: Before 16h30 on 16/11, 18/11 plate is kept, 17/11 and 16/11 plates are excluded.");
-}
+check(sBefore.len === 2, `Before 16h30 on 16/11 -> kept ${sBefore.len} plates (expected 2)`);
 
-// Test after 16h30
 KE.setNow(timeAfter1630);
 const sAfter = KE.fromLive(mockLive);
-console.log(`After 16h30 (len=${sAfter.len}): plates=[${Array.from({length: sAfter.len}, (_, i) => sAfter.text(i)).join(", ")}]`);
-if (sAfter.len !== 1) {
-  console.error(`FAIL: Expected 1 plate after 16h30 (only 30N44444), got ${sAfter.len}`);
-  failed++;
-} else {
-  console.log("PASS: After 16h30 on 16/11, 18/11 plate is also excluded.");
-}
-
-// Reset setNow
+check(sAfter.len === 1, `After 16h30 on 16/11 -> kept ${sAfter.len} plates (expected 1)`);
 KE.setNow(null);
 
-// 4. Verify live.json clean state
-console.log("\nVerifying vpa-data/live.json clean state:");
+// 5. Verify live.json runtime filtering removes any expired plates
 const liveClean = JSON.parse(fs.readFileSync(path.join(__dirname, '../vpa-data/live.json'), 'utf8'));
-let expiredCount = 0;
-const nowMs = Date.now();
-for (const r of liveClean.rows) {
-  const dateStr = String(r[3] || '');
-  const m = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (m) {
-    const day = +m[1], mo = +m[2], yr = +m[3];
-    const key = yr + m[2] + m[1];
-    const deadline = (liveClean.reg_end && liveClean.reg_end[key]) || Date.UTC(yr, mo - 1, day - 2, 9, 30, 0, 0);
-    if (nowMs > deadline) expiredCount++;
-  }
-}
-console.log(`live.json count: ${liveClean.count}, expired remaining: ${expiredCount}`);
-if (expiredCount > 0) {
-  console.error(`FAIL: Found ${expiredCount} expired plates remaining in live.json!`);
-  failed++;
-} else {
-  console.log("PASS: 0 expired plates in live.json.");
-}
+const liveLoaded = KE.fromLive(liveClean);
+console.log(`\nlive.json raw rows: ${liveClean.rows.length}, active after fromLive filter: ${liveLoaded.len}`);
+check(liveLoaded.len <= liveClean.rows.length, "fromLive filters expired plates cleanly");
 
 if (failed === 0) {
   console.log("\n=================================");

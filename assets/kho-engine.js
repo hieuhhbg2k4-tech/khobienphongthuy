@@ -227,7 +227,7 @@ const TAM_HOA_DAU_MIN = { "1": 79, "4": 79, "7": 89, "2": 99, "3": 99, "5": 99, 
 const LAN_CAN = new Set(["Bắc Ninh","Hưng Yên","Phú Thọ","Thái Nguyên","Ninh Bình","Hải Phòng"]);   // tỉnh lân cận Hà Nội
 let GROUP_KB = new Map();
 const setGia = g => {
-  GIA = g && g.t ? g : null; GROUP_KB = new Map();
+  GIA = g && (g.t || g.sheet) ? g : null; GROUP_KB = new Map();
   if (!GIA || !GIA.k) return;
   for (const [plate, value] of Object.entries(GIA.k)) {
     const match = plate.match(/^(\d{2}[A-Z][A-Z0-9]?)(\d{5})$/);
@@ -239,7 +239,16 @@ const setGia = g => {
     GROUP_KB.set(group, old === -1 || value === -1 ? -1 : old == null ? value : Math.max(old, value));
   }
 };
-// Giá bán = giá theo lịch sử trúng đấu giá VPA (cùng 5 số cuối), nhưng KHÔNG thấp hơn giá khobienvietnam (+30% nếu <=195tr, +20% nếu >=200tr, căn lên đuôi 9).
+// Bảng giá chủ web tự định giá trên Google Sheet (ô tô): [Giá Hà Nội (cột 2), Giá TPHCM & Tỉnh (cột 3)] — nguồn chuẩn ưu tiên cao nhất
+function sheetGia(s, i) {
+  if (!GIA || !GIA.sheet || s.moto[i]) return null;
+  const n = pad5(s.num[i]);
+  if (GIA.sheet_skip_heads && GIA.sheet_skip_heads.includes(n[0])) return null;
+  const pair = GIA.sheet[n];
+  const isHN = HN_CODES.has(s.pre[s.pi[i]].slice(0, 2));
+  return pair ? pair[isHN ? 0 : 1] : (GIA.sheet_min || 79);
+}
+// Giá dự phòng (xe máy hoặc dải chưa có trong sheet) = giá theo lịch sử trúng đấu giá VPA / khobienvietnam (+30% nếu <=195tr, +20% nếu >=200tr, căn lên đuôi 9).
 // Từ 1 tỷ -> "Liên hệ" (-1). Số đẹp (sảnh, tứ quý, ngũ quý) không có dữ liệu -> "Liên hệ".
 const CONTACT_FROM = 1000;
 function kbMarkup(kb) {
@@ -252,6 +261,8 @@ function kbMarkup(kb) {
 }
 function giaRaw(s, i) {
   if (!GIA) return null;
+  const sg = sheetGia(s, i);
+  if (sg != null) return sg;
   const n = pad5(s.num[i]), key = s.pre[s.pi[i]] + n, moto = s.moto[i];
   const tbl = moto ? GIA.m : GIA; if (!tbl) return null;
   const floor = tbl.min;
@@ -320,9 +331,9 @@ function downloadCsv(name, head, rows) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-// Giá lẻ đuôi 1,2,3,4,6,7,8 -> đuôi 9 (173 -> 179); giữ đuôi 0, 5, 9
-function giaOf(s, i) { const v = giaRaw(s, i); if (v == null || v <= 0) return v; const d = v % 10; return d === 0 || d === 5 || d === 9 ? v : v - d + 9; }
+// Giá lẻ đuôi 1,2,3,4,6,7,8 -> đuôi 9 (173 -> 179); giữ đuôi 0, 5, 9; giá từ Google Sheet giữ nguyên chính xác
+function giaOf(s, i) { const sg = sheetGia(s, i); if (sg != null) return sg; const v = giaRaw(s, i); if (v == null || v <= 0) return v; const d = v % 10; return d === 0 || d === 5 || d === 9 ? v : v - d + 9; }
 
 G.KE = { FMT_ORDER, B, MENH, ELEM, NEWPROV, provOf, classify, mainOf, tagsOf, scoreOf, nutOf, pad5, Source, fromExcel, fromLive, fromKho,
-  markDups, filter, unpack, sortRes, heads, letters, provs, fmtDate, copyText, downloadCsv, setGia, giaOf, giaText, kbMarkup, setNow };
+  markDups, filter, unpack, sortRes, heads, letters, provs, fmtDate, copyText, downloadCsv, setGia, giaOf, giaText, kbMarkup, sheetGia, setNow };
 })(window);
