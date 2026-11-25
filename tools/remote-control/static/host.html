@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PC Remote Control — Host Info</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      text-align: center;
+    }
+    h1 { font-size: 22px; margin-bottom: 8px; color: #38bdf8; }
+    p.sub { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+    .box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 6px; }
+    .url { font-size: 20px; font-weight: 700; color: #38bdf8; word-break: break-all; }
+    .pin { font-size: 38px; font-weight: 800; letter-spacing: 0.25em; color: #22c55e; font-variant-numeric: tabular-nums; }
+    button {
+      margin-top: 10px;
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #0369a1; }
+    .note { font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-top: 16px; text-align: left; }
+    .note li { margin-left: 18px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Điều Khiển Máy Tính Qua Chrome</h1>
+    <p class="sub">Trang này chỉ mở được trên máy tính (localhost) để bảo mật mã PIN.</p>
+
+    <div class="box">
+      <div class="label">Mở link này trên Chrome điện thoại</div>
+      <div class="url" id="lanUrl">__LAN_URL__</div>
+      <button onclick="navigator.clipboard.writeText('__LAN_URL__')">Sao chép Link</button>
+    </div>
+
+    <div class="box">
+      <div class="label">Mã PIN kết nối</div>
+      <div class="pin">__PIN_CODE__</div>
+    </div>
+
+    <ul class="note">
+      <li>Đảm bảo điện thoại và máy tính đang dùng <b>cùng mạng Wi-Fi</b>.</li>
+      <li>Nếu điện thoại không vào được, hãy cho phép cổng trong Windows Firewall.</li>
+      <li>Trên Chrome điện thoại có thể chọn <b>Thêm vào màn hình chính</b> để dùng như app.</li>
+    </ul>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Điều Khiển Máy Tính</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --surface: #111827;
+      --surface-2: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-dark: #0284c7;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      user-select: none;
+    }
+
+    /* Auth Screen */
+    #authScreen {
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 20px;
+    }
+    .auth-title { font-size: 22px; font-weight: 700; color: var(--primary); }
+    .auth-sub { font-size: 14px; color: var(--muted); text-align: center; }
+    .pin-dots {
+      display: flex;
+      gap: 12px;
+      margin: 8px 0;
+    }
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      transition: all 0.15s;
+    }
+    .pin-dot.filled { background: var(--primary); border-color: var(--primary); transform: scale(1.1); }
+    .auth-err { color: var(--danger); font-size: 13px; min-height: 18px; }
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 76px);
+      gap: 12px;
+    }
+    .num-btn {
+      height: 64px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .num-btn:active { background: var(--primary-dark); }
+    .num-btn.action { font-size: 16px; color: var(--muted); }
+
+    /* Main App Layout */
+    #appScreen {
+      display: none;
+      flex-direction: column;
+      height: 100dvh;
+      width: 100%;
+    }
+    .topbar {
+      height: 46px;
+      padding: 0 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); }
+    .dot.ok { background: var(--success); }
+    .top-actions { display: flex; gap: 8px; }
+    .mini-btn {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .tab-pane {
+      display: none;
+      height: 100%;
+      width: 100%;
+      flex-direction: column;
+    }
+    .tab-pane.active { display: flex; }
+
+    /* Trackpad Tab */
+    .trackpad-bar {
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .trackpad-bar input[type="range"] { flex: 1; accent-color: var(--primary); }
+    #trackpadArea {
+      flex: 1;
+      margin: 10px;
+      border-radius: 18px;
+      background: radial-gradient(circle at center, #162238 0%, #0f172a 100%);
+      border: 1px solid var(--border);
+      touch-action: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      text-align: center;
+      padding: 16px;
+      position: relative;
+    }
+    #trackpadArea .hint { font-size: 13px; line-height: 1.6; pointer-events: none; }
+    .mouse-btns {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      padding: 0 10px 10px;
+    }
+    .m-btn {
+      height: 50px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .m-btn:active, .m-btn.active { background: var(--primary-dark); border-color: var(--primary); }
+    .m-btn.drag-lock { padding: 0 14px; font-size: 12px; }
+
+    /* Screen Tab */
+    .screen-toolbar {
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .seg-group { display: flex; gap: 4px; }
+    .seg-btn {
+      padding: 5px 9px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .seg-btn.active { background: var(--primary-dark); color: #fff; border-color: var(--primary); }
+    #screenViewport {
+      flex: 1;
+      overflow: auto;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      touch-action: none;
+    }
+    #screenViewport.pan-mode { touch-action: pan-x pan-y pinch-zoom; }
+    #screenImg {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    #screenViewport.zoomed #screenImg {
+      max-width: none;
+      max-height: none;
+      width: 180%;
+    }
+    .screen-placeholder {
+      color: var(--muted);
+      font-size: 13px;
+      position: absolute;
+      pointer-events: none;
+    }
+
+    /* Keyboard Tab */
+    .scroll-pane {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+    textarea, input[type="text"], input[type="url"] {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-family: inherit;
+      user-select: text;
+    }
+    .row { display: flex; gap: 8px; }
+    .btn {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--primary-dark); border-color: var(--primary); }
+    .btn.danger { background: #7f1d1d; border-color: var(--danger); }
+    .btn:active { opacity: 0.8; }
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .k-btn {
+      height: 42px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .k-btn:active { background: var(--primary-dark); }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      height: 58px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      flex-shrink: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .nav-btn.active { color: var(--primary); }
+    .nav-icon { font-size: 18px; line-height: 1; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      top: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--primary);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      display: none;
+      z-index: 999;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PIN Auth Screen -->
+  <div id="authScreen">
+    <div class="auth-title">Điều Khiển Máy Tính</div>
+    <div class="auth-sub">Nhập mã PIN 6 số hiển thị trên máy tính</div>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="auth-err" id="authErr"></div>
+    <div class="numpad">
+      <button class="num-btn" onclick="pressPin('1')">1</button>
+      <button class="num-btn" onclick="pressPin('2')">2</button>
+      <button class="num-btn" onclick="pressPin('3')">3</button>
+      <button class="num-btn" onclick="pressPin('4')">4</button>
+      <button class="num-btn" onclick="pressPin('5')">5</button>
+      <button class="num-btn" onclick="pressPin('6')">6</button>
+      <button class="num-btn" onclick="pressPin('7')">7</button>
+      <button class="num-btn" onclick="pressPin('8')">8</button>
+      <button class="num-btn" onclick="pressPin('9')">9</button>
+      <button class="num-btn action" onclick="clearPin()">Xóa</button>
+      <button class="num-btn" onclick="pressPin('0')">0</button>
+      <button class="num-btn action" onclick="backPin()">⌫</button>
+    </div>
+  </div>
+
+  <!-- Main Control Screen -->
+  <div id="appScreen">
+    <div class="topbar">
+      <div class="status-pill">
+        <span class="dot" id="wsDot"></span>
+        <span id="wsText">Đang kết nối...</span>
+      </div>
+      <div class="top-actions">
+        <button class="mini-btn" onclick="reconnectWs()">Kết nối lại</button>
+        <button class="mini-btn" onclick="logout()">Thoát</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Tab 1: Trackpad -->
+      <div class="tab-pane active" id="tab-trackpad">
+        <div class="trackpad-bar">
+          <span>Độ nhạy</span>
+          <input type="range" id="sensRange" min="0.8" max="4.0" step="0.2" value="1.8" />
+          <span id="sensVal">1.8x</span>
+        </div>
+        <div id="trackpadArea">
+          <div class="hint">
+            <b>1 ngón:</b> Di chuột / Chạm để Click<br />
+            <b>Chạm đúp:</b> Double Click<br />
+            <b>2 ngón chạm:</b> Chuột phải<br />
+            <b>2 ngón vuốt:</b> Cuộn trang
+          </div>
+        </div>
+        <div class="mouse-btns">
+          <button class="m-btn" id="btnLeft">Chuột Trái</button>
+          <button class="m-btn drag-lock" id="btnDragLock">Giữ Kéo</button>
+          <button class="m-btn" id="btnRight">Chuột Phải</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Live Screen -->
+      <div class="tab-pane" id="tab-screen">
+        <div class="screen-toolbar">
+          <div class="seg-group">
+            <button class="seg-btn" onclick="setStreamPreset('fast', this)">Nhanh</button>
+            <button class="seg-btn active" onclick="setStreamPreset('balanced', this)">Cân bằng</button>
+            <button class="seg-btn" onclick="setStreamPreset('hd', this)">Nét</button>
+          </div>
+          <div class="seg-group">
+            <button class="seg-btn" id="btnZoom" onclick="toggleZoom()">Phóng 1.8x</button>
+            <button class="seg-btn" id="btnPanMode" onclick="togglePanMode()">Chạm Click</button>
+          </div>
+        </div>
+        <div id="screenViewport">
+          <div class="screen-placeholder" id="screenHint">Đang tải màn hình máy tính...</div>
+          <img id="screenImg" alt="PC Screen" />
+        </div>
+      </div>
+
+      <!-- Tab 3: Keyboard -->
+      <div class="tab-pane" id="tab-keyboard">
+        <div class="scroll-pane">
+          <div class="card">
+            <div class="card-title">Gõ chữ từ điện thoại (Hỗ trợ Tiếng Việt)</div>
+            <textarea id="textInput" rows="3" placeholder="Nhập nội dung cần gõ lên máy tính..."></textarea>
+            <div class="row">
+              <button class="btn primary" onclick="sendTypedText()">Gửi lên PC</button>
+              <button class="btn" onclick="sendKey('enter')">Enter</button>
+              <button class="btn" onclick="sendKey('backspace')">⌫ Xóa</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Gõ trực tiếp (từng ký tự)</div>
+            <input type="text" id="liveInput" placeholder="Chạm vào đây để gõ trực tiếp..." autocomplete="off" />
+          </div>
+
+          <div class="card">
+            <div class="card-title">Phím tắt nhanh</div>
+            <div class="key-grid">
+              <button class="k-btn" onclick="sendKey('esc')">Esc</button>
+              <button class="k-btn" onclick="sendKey('tab')">Tab</button>
+              <button class="k-btn" onclick="sendKey('win')">Win</button>
+              <button class="k-btn" onclick="sendKey('delete')">Del</button>
+              <button class="k-btn" onclick="sendKey('left')">←</button>
+              <button class="k-btn" onclick="sendKey('up')">↑</button>
+              <button class="k-btn" onclick="sendKey('down')">↓</button>
+              <button class="k-btn" onclick="sendKey('right')">→</button>
+              <button class="k-btn" onclick="sendHotkey(['alt','tab'])">Alt+Tab</button>
+              <button class="k-btn" onclick="sendHotkey(['ctrl','c'])">Ctrl+C</button>
+              <button class="k-btn" onclick="sendHotkey(['ctrl','v'])">Ctrl+V</button>
+              <button class="k-btn" onclick="sendHotkey(['ctrl','z'])">Ctrl+Z</button>
+              <button class="k-btn" onclick="sendHotkey(['ctrl','a'])">Ctrl+A</button>
+              <button class="k-btn" onclick="sendHotkey(['ctrl','w'])">Ctrl+W</button>
+              <button class="k-btn" onclick="sendKey('f5')">F5</button>
+              <button class="k-btn" onclick="sendKey('space')">Space</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Đồng bộ Clipboard</div>
+            <div class="row">
+              <button class="btn" onclick="sendMsg({type:'clipboard_get'})">Lấy từ PC</button>
+              <button class="btn" onclick="pushClipboard()">Gửi sang PC</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: System & Media -->
+      <div class="tab-pane" id="tab-system">
+        <div class="scroll-pane">
+          <div class="card">
+            <div class="card-title">Âm lượng & Media</div>
+            <div class="row">
+              <button class="btn" onclick="sendKey('vol_down')">🔉 Giảm</button>
+              <button class="btn" onclick="sendKey('vol_mute')">🔇 Tắt tiếng</button>
+              <button class="btn" onclick="sendKey('vol_up')">🔊 Tăng</button>
+            </div>
+            <div class="row">
+              <button class="btn" onclick="sendKey('media_prev')">⏮ Trước</button>
+              <button class="btn primary" onclick="sendKey('media_play')">⏯ Phát / Dừng</button>
+              <button class="btn" onclick="sendKey('media_next')">⏭ Tiếp</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Mở Link trên Chrome máy tính</div>
+            <input type="url" id="urlInput" placeholder="https://youtube.com" />
+            <button class="btn primary" onclick="openUrlOnPc()">Mở Link trên PC</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Thao tác nhanh</div>
+            <div class="row">
+              <button class="btn" onclick="sendSys('minimize_all')">Hiện Desktop</button>
+              <button class="btn" onclick="sendSys('task_mgr')">Task Manager</button>
+            </div>
+            <div class="row">
+              <button class="btn" onclick="downloadScreenshot()">📸 Tải ảnh màn hình</button>
+              <button class="btn" onclick="sendSys('lock')">🔒 Khóa máy</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Nguồn máy tính</div>
+            <div class="row">
+              <button class="btn" onclick="confirmSys('sleep', 'Đưa máy tính vào chế độ Sleep?')">Ngủ (Sleep)</button>
+              <button class="btn danger" onclick="confirmSys('restart', 'Khởi động lại máy tính sau 5 giây?')">Khởi động lại</button>
+            </div>
+            <div class="row">
+              <button class="btn danger" onclick="confirmSys('shutdown', 'Tắt máy tính sau 5 giây?')">Tắt máy</button>
+              <button class="btn" onclick="sendSys('cancel_shutdown')">Hủy tắt máy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="switchTab('trackpad', this)">
+        <span class="nav-icon">🖱️</span><span>Chuột</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('screen', this)">
+        <span class="nav-icon">🖥️</span><span>Màn hình</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('keyboard', this)">
+        <span class="nav-icon">⌨️</span><span>Bàn phím</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('system', this)">
+        <span class="nav-icon">⚙️</span><span>Hệ thống</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    let pin = "";
+    let token = localStorage.getItem("rc_token") || "";
+    let ws = null;
+    let currentTab = "trackpad";
+    let lastBlobUrl = null;
+    let streamPreset = { fps: 12, quality: 60, max_width: 1024 };
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => (t.style.display = "none"), 2200);
+    }
+
+    // --- PIN Auth ---
+    function updatePinDots() {
+      const dots = document.querySelectorAll("#pinDots .pin-dot");
+      dots.forEach((d, i) => d.classList.toggle("filled", i < pin.length));
+    }
+    function pressPin(d) {
+      if (pin.length >= 6) return;
+      pin += d;
+      updatePinDots();
+      if (pin.length === 6) submitPin();
+    }
+    function backPin() {
+      pin = pin.slice(0, -1);
+      updatePinDots();
+    }
+    function clearPin() {
+      pin = "";
+      document.getElementById("authErr").textContent = "";
+      updatePinDots();
+    }
+    async function submitPin() {
+      const errEl = document.getElementById("authErr");
+      errEl.textContent = "";
+      try {
+        const res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.detail || "Mã PIN sai";
+          pin = "";
+          updatePinDots();
+          return;
+        }
+        token = data.token;
+        localStorage.setItem("rc_token", token);
+        enterApp();
+      } catch {
+        errEl.textContent = "Không kết nối được máy chủ";
+        pin = "";
+        updatePinDots();
+      }
+    }
+
+    async function boot() {
+      if (token) {
+        try {
+          const res = await fetch("/api/check", { headers: { "X-Auth-Token": token } });
+          if (res.ok) {
+            enterApp();
+            return;
+          }
+        } catch {}
+        localStorage.removeItem("rc_token");
+        token = "";
+      }
+    }
+
+    function enterApp() {
+      document.getElementById("authScreen").style.display = "none";
+      document.getElementById("appScreen").style.display = "flex";
+      connectWs();
+    }
+
+    function logout() {
+      localStorage.removeItem("rc_token");
+      token = "";
+      if (ws) ws.close();
+      location.reload();
+    }
+
+    // --- WebSocket ---
+    function connectWs() {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${proto}//${location.host}/ws?token=${encodeURIComponent(token)}`);
+      ws.binaryType = "blob";
+
+      ws.onopen = () => {
+        document.getElementById("wsDot").classList.add("ok");
+        document.getElementById("wsText").textContent = "Đã kết nối PC";
+        syncStreamState();
+      };
+      ws.onclose = (ev) => {
+        document.getElementById("wsDot").classList.remove("ok");
+        document.getElementById("wsText").textContent = "Mất kết nối";
+        if (ev.code === 4401) {
+          logout();
+        }
+      };
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === "string") {
+          try {
+            const msg = JSON.parse(ev.data);
+            if (msg.type === "clipboard") {
+              document.getElementById("textInput").value = msg.text || "";
+              if (navigator.clipboard && msg.text) {
+                navigator.clipboard.writeText(msg.text).catch(() => {});
+              }
+              showToast("Đã lấy Clipboard từ PC");
+            } else if (msg.type === "toast") {
+              showToast(msg.message);
+            }
+          } catch {}
+        } else {
+          const url = URL.createObjectURL(ev.data);
+          const img = document.getElementById("screenImg");
+          img.src = url;
+          document.getElementById("screenHint").style.display = "none";
+          if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+          lastBlobUrl = url;
+        }
+      };
+    }
+
+    function reconnectWs() {
+      if (ws) ws.close();
+      connectWs();
+    }
+
+    function sendMsg(obj) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(obj));
+      }
+    }
+
+    function syncStreamState() {
+      sendMsg({
+        type: "stream_cfg",
+        enabled: currentTab === "screen",
+        ...streamPreset,
+      });
+    }
+
+    // --- Tabs ---
+    function switchTab(name, btn) {
+      currentTab = name;
+      document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
+      document.getElementById(`tab-${name}`).classList.add("active");
+      document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      syncStreamState();
+    }
+
+    // --- Trackpad ---
+    const sensRange = document.getElementById("sensRange");
+    const sensVal = document.getElementById("sensVal");
+    let sensitivity = parseFloat(localStorage.getItem("rc_sens") || "1.8");
+    sensRange.value = sensitivity;
+    sensVal.textContent = `${sensitivity.toFixed(1)}x`;
+    sensRange.oninput = () => {
+      sensitivity = parseFloat(sensRange.value);
+      sensVal.textContent = `${sensitivity.toFixed(1)}x`;
+      localStorage.setItem("rc_sens", sensitivity);
+    };
+
+    const tp = document.getElementById("trackpadArea");
+    let tpState = {
+      active: false,
+      fingers: 0,
+      moved: false,
+      startX: 0,
+      startY: 0,
+      lastX: 0,
+      lastY: 0,
+      startTime: 0,
+      lastTapTime: 0,
+      scrollAcc: 0,
+    };
+
+    tp.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      tpState.active = true;
+      tpState.fingers = e.touches.length;
+      tpState.moved = false;
+      tpState.startTime = performance.now();
+      const t = e.touches[0];
+      tpState.startX = tpState.lastX = t.clientX;
+      tpState.startY = tpState.lastY = t.clientY;
+    }, { passive: false });
+
+    tp.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      if (!tpState.active) return;
+      const t = e.touches[0];
+      const dx = t.clientX - tpState.lastX;
+      const dy = t.clientY - tpState.lastY;
+      tpState.lastX = t.clientX;
+      tpState.lastY = t.clientY;
+
+      if (Math.hypot(t.clientX - tpState.startX, t.clientY - tpState.startY) > 6) {
+        tpState.moved = true;
+      }
+
+      if (e.touches.length === 1 && tpState.fingers === 1) {
+        const speed = Math.hypot(dx, dy);
+        const accel = speed > 12 ? 1.45 : speed > 5 ? 1.15 : 1.0;
+        sendMsg({
+          type: "mouse_rel",
+          dx: dx * sensitivity * accel,
+          dy: dy * sensitivity * accel,
+        });
+      } else if (e.touches.length >= 2) {
+        tpState.fingers = 2;
+        tpState.scrollAcc += dy * 6;
+        if (Math.abs(tpState.scrollAcc) >= 30) {
+          const wheel = Math.trunc(tpState.scrollAcc);
+          tpState.scrollAcc -= wheel;
+          sendMsg({ type: "scroll", dy: wheel, dx: 0 });
+        }
+      }
+    }, { passive: false });
+
+    tp.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      if (!tpState.active || e.touches.length > 0) return;
+      const dt = performance.now() - tpState.startTime;
+      if (!tpState.moved && dt < 280) {
+        if (tpState.fingers >= 2) {
+          sendMsg({ type: "mouse_btn", button: "right", action: "click" });
+        } else {
+          const now = performance.now();
+          if (now - tpState.lastTapTime < 260) {
+            sendMsg({ type: "mouse_btn", button: "left", action: "click" });
+            tpState.lastTapTime = 0;
+          } else {
+            sendMsg({ type: "mouse_btn", button: "left", action: "click" });
+            tpState.lastTapTime = now;
+          }
+        }
+      }
+      tpState.active = false;
+    }, { passive: false });
+
+    // Mouse buttons
+    let dragLocked = false;
+    document.getElementById("btnLeft").onclick = () => sendMsg({ type: "mouse_btn", button: "left", action: "click" });
+    document.getElementById("btnRight").onclick = () => sendMsg({ type: "mouse_btn", button: "right", action: "click" });
+    document.getElementById("btnDragLock").onclick = function () {
+      dragLocked = !dragLocked;
+      this.classList.toggle("active", dragLocked);
+      sendMsg({ type: "mouse_btn", button: "left", action: dragLocked ? "down" : "up" });
+    };
+
+    // --- Live Screen Touch ---
+    const viewport = document.getElementById("screenViewport");
+    const screenImg = document.getElementById("screenImg");
+    let panMode = false;
+    let isZoomed = false;
+
+    function setStreamPreset(mode, btn) {
+      document.querySelectorAll("#tab-screen .seg-group:first-child .seg-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (mode === "fast") streamPreset = { fps: 16, quality: 45, max_width: 800 };
+      else if (mode === "balanced") streamPreset = { fps: 12, quality: 60, max_width: 1024 };
+      else streamPreset = { fps: 8, quality: 80, max_width: 1440 };
+      syncStreamState();
+    }
+
+    function toggleZoom() {
+      isZoomed = !isZoomed;
+      viewport.classList.toggle("zoomed", isZoomed);
+      document.getElementById("btnZoom").classList.toggle("active", isZoomed);
+    }
+
+    function togglePanMode() {
+      panMode = !panMode;
+      viewport.classList.toggle("pan-mode", panMode);
+      const btn = document.getElementById("btnPanMode");
+      btn.textContent = panMode ? "Cuộn/Zoom" : "Chạm Click";
+      btn.classList.toggle("active", panMode);
+    }
+
+    function getImgNormCoords(clientX, clientY) {
+      const rect = screenImg.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      const x = (clientX - rect.left) / rect.width;
+      const y = (clientY - rect.top) / rect.height;
+      if (x < 0 || x > 1 || y < 0 || y > 1) return null;
+      return { x, y };
+    }
+
+    let scrTouch = { down: false, dragging: false, longPressed: false, timer: null, startX: 0, startY: 0 };
+    screenImg.addEventListener("touchstart", (e) => {
+      if (panMode || e.touches.length !== 1) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      const pos = getImgNormCoords(t.clientX, t.clientY);
+      if (!pos) return;
+      scrTouch.down = true;
+      scrTouch.dragging = false;
+      scrTouch.longPressed = false;
+      scrTouch.startX = t.clientX;
+      scrTouch.startY = t.clientY;
+      sendMsg({ type: "mouse_abs", x: pos.x, y: pos.y });
+
+      clearTimeout(scrTouch.timer);
+      scrTouch.timer = setTimeout(() => {
+        if (scrTouch.down && !scrTouch.dragging) {
+          scrTouch.longPressed = true;
+          sendMsg({ type: "mouse_btn", button: "right", action: "click" });
+          if (navigator.vibrate) navigator.vibrate(30);
+        }
+      }, 450);
+    }, { passive: false });
+
+    screenImg.addEventListener("touchmove", (e) => {
+      if (panMode || !scrTouch.down || e.touches.length !== 1) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      if (!scrTouch.dragging && Math.hypot(t.clientX - scrTouch.startX, t.clientY - scrTouch.startY) > 10) {
+        scrTouch.dragging = true;
+        clearTimeout(scrTouch.timer);
+        sendMsg({ type: "mouse_btn", button: "left", action: "down" });
+      }
+      const pos = getImgNormCoords(t.clientX, t.clientY);
+      if (pos) sendMsg({ type: "mouse_abs", x: pos.x, y: pos.y });
+    }, { passive: false });
+
+    screenImg.addEventListener("touchend", (e) => {
+      if (panMode || !scrTouch.down) return;
+      e.preventDefault();
+      clearTimeout(scrTouch.timer);
+      if (scrTouch.dragging) {
+        sendMsg({ type: "mouse_btn", button: "left", action: "up" });
+      } else if (!scrTouch.longPressed) {
+        sendMsg({ type: "mouse_btn", button: "left", action: "click" });
+      }
+      scrTouch.down = false;
+    }, { passive: false });
+
+    // --- Keyboard ---
+    function sendKey(key) { sendMsg({ type: "key", key }); }
+    function sendHotkey(keys) { sendMsg({ type: "hotkey", keys }); }
+    function sendTypedText() {
+      const el = document.getElementById("textInput");
+      const val = el.value;
+      if (!val) return;
+      sendMsg({ type: "type", text: val });
+      el.value = "";
+    }
+
+    const liveInput = document.getElementById("liveInput");
+    let prevLive = "";
+    liveInput.addEventListener("input", () => {
+      const cur = liveInput.value;
+      if (cur.length > prevLive.length && cur.startsWith(prevLive)) {
+        const added = cur.slice(prevLive.length);
+        sendMsg({ type: "type", text: added });
+      } else if (cur.length < prevLive.length) {
+        const diff = prevLive.length - cur.length;
+        for (let i = 0; i < diff; i++) sendKey("backspace");
+      } else if (cur !== prevLive) {
+        // Handle IME composition replacement (e.g., Telex Vietnamese)
+        for (let i = 0; i < prevLive.length; i++) sendKey("backspace");
+        if (cur) sendMsg({ type: "type", text: cur });
+      }
+      prevLive = cur;
+    });
+    liveInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendKey("enter");
+        liveInput.value = "";
+        prevLive = "";
+      } else if (e.key === "Backspace" && liveInput.value === "") {
+        sendKey("backspace");
+      }
+    });
+
+    function pushClipboard() {
+      const val = document.getElementById("textInput").value;
+      if (!val) {
+        showToast("Nhập chữ vào ô trên để gửi sang Clipboard PC");
+        return;
+      }
+      sendMsg({ type: "clipboard_set", text: val });
+      showToast("Đã chép vào Clipboard PC");
+    }
+
+    // --- System ---
+    function sendSys(action) { sendMsg({ type: "system", action }); }
+    function confirmSys(action, msg) {
+      if (confirm(msg)) sendSys(action);
+    }
+    function openUrlOnPc() {
+      const el = document.getElementById("urlInput");
+      let url = el.value.trim();
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      sendMsg({ type: "open_url", url });
+      el.value = "";
+    }
+    function downloadScreenshot() {
+      window.open(`/api/screenshot?token=${encodeURIComponent(token)}`, "_blank");
+    }
+
+    boot();
+  </script>
+</body>
+</html>
+
