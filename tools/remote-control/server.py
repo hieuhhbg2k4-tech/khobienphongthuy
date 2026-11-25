@@ -67,7 +67,7 @@ def _verify_password(password: str, salt: str, digest: str) -> bool:
 
 
 def _load_auth_state() -> None:
-    global MACHINE_ID, USERS, ACCOUNT_TOKENS, PAIRED_DEVICES
+    global MACHINE_ID, PIN_CODE, USERS, ACCOUNT_TOKENS, PAIRED_DEVICES
     data = {}
     if AUTH_STATE_FILE.exists():
         try:
@@ -76,6 +76,8 @@ def _load_auth_state() -> None:
             data = {}
 
     MACHINE_ID = data.get("machine_id") or f"PC-{secrets.randbelow(900000) + 100000}"
+    if not PIN_CODE:
+        PIN_CODE = data.get("pin_code") or f"{secrets.randbelow(900000) + 100000}"
     USERS = data.get("users", {})
     ACCOUNT_TOKENS = data.get("account_tokens", {})
     PAIRED_DEVICES = data.get("paired_devices", {})
@@ -88,7 +90,7 @@ def _load_auth_state() -> None:
             "created_at": int(time.time()),
         }
         _save_auth_state()
-    elif not data.get("machine_id"):
+    elif not data.get("machine_id") or not data.get("pin_code"):
         _save_auth_state()
 
 
@@ -99,6 +101,7 @@ def _save_auth_state() -> None:
             {
                 "machine_id": MACHINE_ID,
                 "machine_name": MACHINE_NAME,
+                "pin_code": PIN_CODE,
                 "users": USERS,
                 "account_tokens": ACCOUNT_TOKENS,
                 "paired_devices": PAIRED_DEVICES,
@@ -288,17 +291,25 @@ async def pair_pc(
 
 @app.get("/api/session")
 async def check_session(
+    request: Request,
     x_account_token: str | None = Header(default=None),
     x_device_token: str | None = Header(default=None),
 ):
     acct_ok = _verify_account_token(x_account_token)
     paired_ok = _verify_device_token(x_device_token)
     w, h = input_win.get_screen_size()
+    client_host = request.client.host if request.client else ""
+    is_proxied = any(
+        request.headers.get(h)
+        for h in ("cf-connecting-ip", "cf-ray", "x-forwarded-for", "x-forwarded-host")
+    )
+    is_local_pc = client_host in ("127.0.0.1", "::1", "localhost") and not is_proxied
     return {
         "account_ok": acct_ok,
         "paired_ok": paired_ok,
         "username": ACCOUNT_TOKENS[x_account_token]["username"] if acct_ok else None,
         "machine": {"id": MACHINE_ID, "name": MACHINE_NAME},
+        "local_pin": PIN_CODE if (acct_ok and is_local_pc) else None,
         "screen": {"width": w, "height": h},
     }
 
@@ -538,7 +549,12 @@ def main():
     parser.add_argument("--open-host", action="store_true", help="Open localhost dashboard in PC browser")
     args = parser.parse_args()
 
-    PIN_CODE = args.pin.strip() if args.pin.strip() else f"{secrets.randbelow(900000) + 100000}"
+    if args.pin.strip():
+        PIN_CODE = args.pin.strip()
+        _save_auth_state()
+    elif not PIN_CODE:
+        PIN_CODE = f"{secrets.randbelow(900000) + 100000}"
+        _save_auth_state()
     SERVER_PORT = args.port
     LAN_IP = detect_lan_ip()
     PUBLIC_DOMAIN = args.domain.strip().removeprefix("https://").removeprefix("http://").rstrip("/")

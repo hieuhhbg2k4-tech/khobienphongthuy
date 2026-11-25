@@ -30,3 +30,4 @@ if (-not $listening) {
 Write-Host "`n=== HOAN TAT! ===" -ForegroundColor Green
 Write-Host "Tu gio moi lan bat may tinh, he thong se TU DONG CHAY NGAM." -ForegroundColor Cyan
 Write-Host "Ban khong can mo PowerShell nua, chi can mo https://thehieu04.top tren dien thoai!" -ForegroundColor Cyan
+
