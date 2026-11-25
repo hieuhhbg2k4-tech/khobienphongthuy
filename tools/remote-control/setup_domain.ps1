@@ -19,13 +19,15 @@ if (-not (Test-Path (Join-Path $CfDir "cert.pem"))) {
 }
 
 Write-Host "`n[2/4] Kiem tra / tao tunnel '$TunnelName'..." -ForegroundColor Yellow
-$existing = cloudflared tunnel list --output json | ConvertFrom-Json | Where-Object { $_.name -eq $TunnelName }
+$tunnels = @(cloudflared tunnel list --output json | ConvertFrom-Json)
+$existing = $tunnels | Where-Object { $_.name -eq $TunnelName } | Select-Object -First 1
 if (-not $existing) {
     cloudflared tunnel create $TunnelName
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    $existing = cloudflared tunnel list --output json | ConvertFrom-Json | Where-Object { $_.name -eq $TunnelName }
+    $tunnels = @(cloudflared tunnel list --output json | ConvertFrom-Json)
+    $existing = $tunnels | Where-Object { $_.name -eq $TunnelName } | Select-Object -First 1
 }
-$TunnelId = $existing.id
+$TunnelId = "$($existing.id)".Trim()
 $CredFile = Join-Path $CfDir "$TunnelId.json"
 Write-Host "Tunnel ID: $TunnelId" -ForegroundColor Green
 

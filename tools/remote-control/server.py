@@ -3,13 +3,16 @@
 import argparse
 import asyncio
 from collections import defaultdict
+import hashlib
 import hmac
 import io
+import json
 import os
 from pathlib import Path
 import secrets
 import socket
 import subprocess
+import sys
 import time
 import webbrowser
 
@@ -24,6 +27,16 @@ import input_win
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+DATA_DIR = BASE_DIR / "data"
+AUTH_STATE_FILE = DATA_DIR / "auth_state.json"
+
+if sys.stdout is None or sys.stderr is None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    _log_file = open(DATA_DIR / "server.log", "a", encoding="utf-8", buffering=1)
+    if sys.stdout is None:
+        sys.stdout = _log_file
+    if sys.stderr is None:
+        sys.stderr = _log_file
 
 app = FastAPI(title="PC Remote Control")
 
@@ -32,8 +45,72 @@ PIN_CODE: str = ""
 SERVER_PORT: int = 8765
 LAN_IP: str = "127.0.0.1"
 PUBLIC_DOMAIN: str = ""
-VALID_TOKENS: set[str] = set()
+DEFAULT_USER: str = os.environ.get("REMOTE_USER", "admin")
+DEFAULT_PASS: str = os.environ.get("REMOTE_PASS", "hieuhhbg2k")
+MACHINE_ID: str = ""
+MACHINE_NAME: str = socket.gethostname()
+USERS: dict[str, dict] = {}
+ACCOUNT_TOKENS: dict[str, dict] = {}
+PAIRED_DEVICES: dict[str, dict] = {}
 FAILED_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
+
+
+def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
+    s = salt or secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), s.encode("utf-8"), 100_000)
+    return s, dk.hex()
+
+
+def _verify_password(password: str, salt: str, digest: str) -> bool:
+    _, calc = _hash_password(password, salt)
+    return hmac.compare_digest(calc, digest)
+
+
+def _load_auth_state() -> None:
+    global MACHINE_ID, USERS, ACCOUNT_TOKENS, PAIRED_DEVICES
+    data = {}
+    if AUTH_STATE_FILE.exists():
+        try:
+            data = json.loads(AUTH_STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            data = {}
+
+    MACHINE_ID = data.get("machine_id") or f"PC-{secrets.randbelow(900000) + 100000}"
+    USERS = data.get("users", {})
+    ACCOUNT_TOKENS = data.get("account_tokens", {})
+    PAIRED_DEVICES = data.get("paired_devices", {})
+
+    if DEFAULT_USER not in USERS:
+        salt, digest = _hash_password(DEFAULT_PASS)
+        USERS[DEFAULT_USER] = {
+            "salt": salt,
+            "hash": digest,
+            "created_at": int(time.time()),
+        }
+        _save_auth_state()
+    elif not data.get("machine_id"):
+        _save_auth_state()
+
+
+def _save_auth_state() -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    AUTH_STATE_FILE.write_text(
+        json.dumps(
+            {
+                "machine_id": MACHINE_ID,
+                "machine_name": MACHINE_NAME,
+                "users": USERS,
+                "account_tokens": ACCOUNT_TOKENS,
+                "paired_devices": PAIRED_DEVICES,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+_load_auth_state()
 
 
 def detect_lan_ip() -> str:
@@ -72,14 +149,30 @@ def _record_failure(ip: str) -> None:
     FAILED_ATTEMPTS[ip].append(time.time())
 
 
-def _verify_token(token: str | None) -> bool:
-    if not token:
-        return False
-    return token in VALID_TOKENS
+def _verify_account_token(token: str | None) -> bool:
+    return bool(token and token in ACCOUNT_TOKENS)
 
 
-class AuthRequest(BaseModel):
+def _verify_device_token(token: str | None) -> bool:
+    return bool(token and token in PAIRED_DEVICES)
+
+
+def _verify_full_access(acct_token: str | None, dev_token: str | None) -> bool:
+    return _verify_account_token(acct_token) and _verify_device_token(dev_token)
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class PairRequest(BaseModel):
     pin: str
+    remember: bool = True
+
+
+class LogoutRequest(BaseModel):
+    forget_device: bool = False
 
 
 @app.get("/")
@@ -98,32 +191,134 @@ async def host_dashboard(request: Request):
         raise HTTPException(status_code=403, detail="Host dashboard is localhost-only")
     html = (STATIC_DIR / "host.html").read_text(encoding="utf-8")
     url = f"https://{PUBLIC_DOMAIN}" if PUBLIC_DOMAIN else f"http://{LAN_IP}:{SERVER_PORT}"
-    html = html.replace("__LAN_URL__", url).replace("__PIN_CODE__", PIN_CODE)
+    html = (
+        html.replace("__LAN_URL__", url)
+        .replace("__PIN_CODE__", PIN_CODE)
+        .replace("__MACHINE_ID__", MACHINE_ID)
+        .replace("__MACHINE_NAME__", MACHINE_NAME)
+    )
     return HTMLResponse(html)
 
 
-@app.post("/api/auth")
-async def authenticate(body: AuthRequest, request: Request):
+@app.post("/api/register")
+async def register(body: LoginRequest, request: Request):
+    ip = _get_client_ip(request)
+    if _is_rate_limited(ip):
+        raise HTTPException(status_code=429, detail="Quá nhiều lần thử. Vui lòng đợi 5 phút.")
+
+    uname = body.username.strip()
+    if len(uname) < 3 or len(uname) > 32 or not uname.isalnum():
+        raise HTTPException(status_code=400, detail="Tài khoản phải từ 3–32 ký tự chữ/số.")
+    if len(body.password) < 6:
+        raise HTTPException(status_code=400, detail="Mật khẩu phải từ 6 ký tự trở lên.")
+    if uname in USERS:
+        raise HTTPException(status_code=409, detail="Tài khoản này đã tồn tại.")
+
+    salt, digest = _hash_password(body.password)
+    USERS[uname] = {
+        "salt": salt,
+        "hash": digest,
+        "created_at": int(time.time()),
+    }
+    account_token = secrets.token_hex(24)
+    ACCOUNT_TOKENS[account_token] = {
+        "username": uname,
+        "created_at": int(time.time()),
+    }
+    _save_auth_state()
+    return {"account_token": account_token, "username": uname}
+
+
+@app.post("/api/login")
+async def login(body: LoginRequest, request: Request):
+    ip = _get_client_ip(request)
+    if _is_rate_limited(ip):
+        raise HTTPException(status_code=429, detail="Quá nhiều lần thử sai. Vui lòng đợi 5 phút.")
+
+    uname = body.username.strip()
+    user_rec = USERS.get(uname)
+    if not user_rec or not _verify_password(body.password, user_rec["salt"], user_rec["hash"]):
+        _record_failure(ip)
+        raise HTTPException(status_code=401, detail="Sai tài khoản hoặc mật khẩu.")
+
+    account_token = secrets.token_hex(24)
+    ACCOUNT_TOKENS[account_token] = {
+        "username": uname,
+        "created_at": int(time.time()),
+    }
+    _save_auth_state()
+    return {"account_token": account_token, "username": uname}
+
+
+@app.post("/api/pair")
+async def pair_pc(
+    body: PairRequest,
+    request: Request,
+    x_account_token: str | None = Header(default=None),
+):
+    if not _verify_account_token(x_account_token):
+        raise HTTPException(status_code=401, detail="Phiên tài khoản hết hạn, vui lòng đăng nhập lại.")
+
     ip = _get_client_ip(request)
     if _is_rate_limited(ip):
         raise HTTPException(status_code=429, detail="Quá nhiều lần thử sai. Vui lòng đợi 5 phút.")
 
     if not hmac.compare_digest(body.pin.strip(), PIN_CODE):
         _record_failure(ip)
-        raise HTTPException(status_code=401, detail="Mã PIN không đúng.")
+        raise HTTPException(status_code=401, detail="Mã PIN máy tính không đúng.")
 
-    token = secrets.token_hex(24)
-    VALID_TOKENS.add(token)
+    device_token = secrets.token_hex(24)
+    ua = request.headers.get("user-agent", "Unknown")[:80]
+    PAIRED_DEVICES[device_token] = {
+        "username": ACCOUNT_TOKENS[x_account_token]["username"],
+        "machine_id": MACHINE_ID,
+        "machine_name": MACHINE_NAME,
+        "label": ua,
+        "paired_at": int(time.time()),
+        "persistent": bool(body.remember),
+    }
+    _save_auth_state()
     w, h = input_win.get_screen_size()
-    return {"token": token, "screen": {"width": w, "height": h}}
+    return {
+        "device_token": device_token,
+        "machine": {"id": MACHINE_ID, "name": MACHINE_NAME},
+        "screen": {"width": w, "height": h},
+    }
 
 
-@app.get("/api/check")
-async def check_auth(x_auth_token: str | None = Header(default=None)):
-    if not _verify_token(x_auth_token):
-        raise HTTPException(status_code=401, detail="Unauthorized")
+@app.get("/api/session")
+async def check_session(
+    x_account_token: str | None = Header(default=None),
+    x_device_token: str | None = Header(default=None),
+):
+    acct_ok = _verify_account_token(x_account_token)
+    paired_ok = _verify_device_token(x_device_token)
     w, h = input_win.get_screen_size()
-    return {"ok": True, "screen": {"width": w, "height": h}}
+    return {
+        "account_ok": acct_ok,
+        "paired_ok": paired_ok,
+        "username": ACCOUNT_TOKENS[x_account_token]["username"] if acct_ok else None,
+        "machine": {"id": MACHINE_ID, "name": MACHINE_NAME},
+        "screen": {"width": w, "height": h},
+    }
+
+
+@app.post("/api/logout")
+async def logout(
+    body: LogoutRequest,
+    x_account_token: str | None = Header(default=None),
+    x_device_token: str | None = Header(default=None),
+):
+    changed = False
+    if x_account_token and x_account_token in ACCOUNT_TOKENS:
+        del ACCOUNT_TOKENS[x_account_token]
+        changed = True
+    if body.forget_device and x_device_token and x_device_token in PAIRED_DEVICES:
+        del PAIRED_DEVICES[x_device_token]
+        changed = True
+    if changed:
+        _save_auth_state()
+    return {"ok": True}
 
 
 def _placeholder_jpeg(message: str = "Screen locked or unavailable") -> bytes:
@@ -165,10 +360,13 @@ def _capture_jpeg(max_width: int = 1024, quality: int = 60, draw_cursor: bool = 
 @app.get("/api/screenshot")
 async def download_screenshot(
     token: str | None = Query(default=None),
-    x_auth_token: str | None = Header(default=None),
+    acct: str | None = Query(default=None),
+    x_device_token: str | None = Header(default=None),
+    x_account_token: str | None = Header(default=None),
 ):
-    tok = token or x_auth_token
-    if not _verify_token(tok):
+    dev_tok = token or x_device_token
+    acct_tok = acct or x_account_token
+    if not _verify_full_access(acct_tok, dev_tok):
         raise HTTPException(status_code=401, detail="Unauthorized")
     data = await asyncio.to_thread(_capture_jpeg, 0, 90, False)
     return Response(
@@ -262,8 +460,12 @@ def _handle_control_message(msg: dict) -> dict | None:
 
 
 @app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket, token: str | None = Query(default=None)):
-    if not _verify_token(token):
+async def websocket_endpoint(
+    ws: WebSocket,
+    token: str | None = Query(default=None),
+    acct: str | None = Query(default=None),
+):
+    if not _verify_full_access(acct, token):
         await ws.close(code=4401)
         return
 

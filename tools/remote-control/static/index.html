@@ -334,10 +334,26 @@
 </head>
 <body>
 
-  <!-- PIN Auth Screen -->
-  <div id="authScreen">
-    <div class="auth-title">Điều Khiển Máy Tính</div>
-    <div class="auth-sub">Nhập mã PIN 6 số hiển thị trên máy tính</div>
+  <!-- Step 1: Account Login / Register Screen -->
+  <div id="loginScreen" style="height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px;">
+    <div class="card" style="width:100%; max-width:340px; padding:20px; gap:14px;">
+      <div class="auth-title" style="text-align:center;" id="authHeading">Đăng Nhập Hệ Thống</div>
+      <div class="seg-group" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <button class="seg-btn active" id="tabLoginBtn" onclick="setAuthMode('login')">Đăng nhập</button>
+        <button class="seg-btn" id="tabRegBtn" onclick="setAuthMode('register')">Tạo tài khoản</button>
+      </div>
+      <input type="text" id="loginUser" placeholder="Tài khoản (từ 3 ký tự)" autocomplete="username" />
+      <input type="password" id="loginPass" placeholder="Mật khẩu (từ 6 ký tự)" autocomplete="current-password" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:15px;" />
+      <div class="auth-err" id="loginErr" style="text-align:center;"></div>
+      <button class="btn primary" id="authSubmitBtn" onclick="submitLogin()">Đăng nhập</button>
+    </div>
+  </div>
+
+  <!-- Step 2: 1-Time PC Pairing PIN Screen -->
+  <div id="authScreen" style="display:none;">
+    <div class="auth-title">Ghép Đôi Máy Tính</div>
+    <div id="pairMachineBadge" style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:6px 14px; font-size:13px; color:var(--primary); font-weight:700;">Máy tính: ...</div>
+    <div class="auth-sub">Nhập mã PIN 6 số trên máy tính (chỉ cần nhập 1 lần, thiết bị sẽ được lưu lại)</div>
     <div class="pin-dots" id="pinDots">
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
@@ -357,6 +373,7 @@
       <button class="num-btn" onclick="pressPin('0')">0</button>
       <button class="num-btn action" onclick="backPin()">⌫</button>
     </div>
+    <button class="mini-btn" style="margin-top:8px;" onclick="logout(false)">Đăng xuất tài khoản</button>
   </div>
 
   <!-- Main Control Screen -->
@@ -368,7 +385,8 @@
       </div>
       <div class="top-actions">
         <button class="mini-btn" onclick="reconnectWs()">Kết nối lại</button>
-        <button class="mini-btn" onclick="logout()">Thoát</button>
+        <button class="mini-btn" onclick="logout(false)">Đăng xuất</button>
+        <button class="mini-btn" onclick="if(confirm('Ngắt ghép đôi với máy tính này? Lần sau sẽ phải nhập lại PIN.')) logout(true)">Hủy ghép đôi</button>
       </div>
     </div>
 
@@ -404,9 +422,15 @@
             <button class="seg-btn" onclick="setStreamPreset('hd', this)">Nét</button>
           </div>
           <div class="seg-group">
+            <button class="seg-btn" id="btnQuickType" onclick="toggleQuickType()">⌨️ Gõ</button>
             <button class="seg-btn" id="btnZoom" onclick="toggleZoom()">Phóng 1.8x</button>
             <button class="seg-btn" id="btnPanMode" onclick="togglePanMode()">Chạm Click</button>
           </div>
+        </div>
+        <div id="quickTypeBar" style="display:none; padding:8px 10px; background:var(--surface); border-bottom:1px solid var(--border); gap:6px; align-items:center;">
+          <input type="text" id="quickTypeInput" placeholder="Gõ chữ lên PC (hỗ trợ Tiếng Việt)..." style="flex:1; padding:8px 10px; font-size:14px;" />
+          <button class="seg-btn active" style="padding:8px 12px;" onclick="sendQuickType()">Gửi</button>
+          <button class="seg-btn" style="padding:8px 10px;" onclick="sendKey('enter')">Enter</button>
         </div>
         <div id="screenViewport">
           <div class="screen-placeholder" id="screenHint">Đang tải màn hình máy tính...</div>
@@ -430,6 +454,21 @@
           <div class="card">
             <div class="card-title">Gõ trực tiếp (từng ký tự)</div>
             <input type="text" id="liveInput" placeholder="Chạm vào đây để gõ trực tiếp..." autocomplete="off" />
+          </div>
+
+          <div class="card">
+            <div class="card-title">Điều khiển YouTube</div>
+            <div class="key-grid" style="grid-template-columns: repeat(3, 1fr);">
+              <button class="k-btn" onclick="sendKey('j')">⏪ -10s</button>
+              <button class="k-btn" onclick="sendKey('k')">⏯ Phát/Dừng</button>
+              <button class="k-btn" onclick="sendKey('l')">⏩ +10s</button>
+              <button class="k-btn" onclick="sendHotkey(['shift','p'])">⏮ Video trước</button>
+              <button class="k-btn" onclick="sendKey('f')">⛶ Toàn MH</button>
+              <button class="k-btn" onclick="sendHotkey(['shift','n'])">⏭ Video sau</button>
+              <button class="k-btn" onclick="sendKey('m')">🔇 Tắt tiếng</button>
+              <button class="k-btn" onclick="sendKey('c')">💬 Phụ đề</button>
+              <button class="k-btn" onclick="sendKey('t')">🎬 Rạp phim</button>
+            </div>
           </div>
 
           <div class="card">
@@ -535,7 +574,8 @@
 
   <script>
     let pin = "";
-    let token = localStorage.getItem("rc_token") || "";
+    let accountToken = localStorage.getItem("rc_account_token") || "";
+    let deviceToken = localStorage.getItem("rc_device_token") || "";
     let ws = null;
     let currentTab = "trackpad";
     let lastBlobUrl = null;
@@ -549,7 +589,58 @@
       t._timer = setTimeout(() => (t.style.display = "none"), 2200);
     }
 
-    // --- PIN Auth ---
+    function showScreen(name) {
+      document.getElementById("loginScreen").style.display = name === "login" ? "flex" : "none";
+      document.getElementById("authScreen").style.display = name === "pair" ? "flex" : "none";
+      document.getElementById("appScreen").style.display = name === "app" ? "flex" : "none";
+    }
+
+    // --- Step 1: Account Login / Register ---
+    let authMode = "login";
+    let currentMachine = null;
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      document.getElementById("tabLoginBtn").classList.toggle("active", mode === "login");
+      document.getElementById("tabRegBtn").classList.toggle("active", mode === "register");
+      document.getElementById("authHeading").textContent = mode === "login" ? "Đăng Nhập Hệ Thống" : "Tạo Tài Khoản Mới";
+      document.getElementById("authSubmitBtn").textContent = mode === "login" ? "Đăng nhập" : "Tạo tài khoản";
+      document.getElementById("loginErr").textContent = "";
+    }
+
+    async function submitLogin() {
+      const errEl = document.getElementById("loginErr");
+      errEl.textContent = "";
+      const username = document.getElementById("loginUser").value.trim();
+      const password = document.getElementById("loginPass").value;
+      if (!username || !password) {
+        errEl.textContent = "Vui lòng nhập tài khoản và mật khẩu";
+        return;
+      }
+      const endpoint = authMode === "register" ? "/api/register" : "/api/login";
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.detail || "Thất bại";
+          return;
+        }
+        accountToken = data.account_token;
+        localStorage.setItem("rc_account_token", accountToken);
+        await boot();
+      } catch {
+        errEl.textContent = "Không kết nối được máy chủ";
+      }
+    }
+    document.getElementById("loginPass").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitLogin();
+    });
+
+    // --- Step 2: 1-Time PC Pairing PIN ---
     function updatePinDots() {
       const dots = document.querySelectorAll("#pinDots .pin-dot");
       dots.forEach((d, i) => d.classList.toggle("filled", i < pin.length));
@@ -573,20 +664,29 @@
       const errEl = document.getElementById("authErr");
       errEl.textContent = "";
       try {
-        const res = await fetch("/api/auth", {
+        const res = await fetch("/api/pair", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pin }),
+          headers: {
+            "Content-Type": "application/json",
+            "X-Account-Token": accountToken,
+          },
+          body: JSON.stringify({ pin, remember: true }),
         });
         const data = await res.json();
         if (!res.ok) {
+          if (res.status === 401 && data.detail && data.detail.includes("tài khoản")) {
+            localStorage.removeItem("rc_account_token");
+            accountToken = "";
+            showScreen("login");
+            return;
+          }
           errEl.textContent = data.detail || "Mã PIN sai";
           pin = "";
           updatePinDots();
           return;
         }
-        token = data.token;
-        localStorage.setItem("rc_token", token);
+        deviceToken = data.device_token;
+        localStorage.setItem("rc_device_token", deviceToken);
         enterApp();
       } catch {
         errEl.textContent = "Không kết nối được máy chủ";
@@ -596,28 +696,65 @@
     }
 
     async function boot() {
-      if (token) {
-        try {
-          const res = await fetch("/api/check", { headers: { "X-Auth-Token": token } });
-          if (res.ok) {
-            enterApp();
-            return;
-          }
-        } catch {}
-        localStorage.removeItem("rc_token");
-        token = "";
+      if (!accountToken) {
+        showScreen("login");
+        return;
+      }
+      try {
+        const res = await fetch("/api/session", {
+          headers: {
+            "X-Account-Token": accountToken,
+            "X-Device-Token": deviceToken,
+          },
+        });
+        const data = await res.json();
+        if (data.machine) {
+          currentMachine = data.machine;
+          document.getElementById("pairMachineBadge").textContent = `Mã máy: ${data.machine.id} (${data.machine.name})`;
+        }
+        if (!data.account_ok) {
+          localStorage.removeItem("rc_account_token");
+          accountToken = "";
+          showScreen("login");
+          return;
+        }
+        if (!data.paired_ok) {
+          localStorage.removeItem("rc_device_token");
+          deviceToken = "";
+          pin = "";
+          updatePinDots();
+          showScreen("pair");
+          return;
+        }
+        enterApp();
+      } catch {
+        showScreen("login");
       }
     }
 
     function enterApp() {
-      document.getElementById("authScreen").style.display = "none";
-      document.getElementById("appScreen").style.display = "flex";
+      showScreen("app");
       connectWs();
     }
 
-    function logout() {
-      localStorage.removeItem("rc_token");
-      token = "";
+    async function logout(forgetDevice = false) {
+      try {
+        await fetch("/api/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Account-Token": accountToken,
+            "X-Device-Token": deviceToken,
+          },
+          body: JSON.stringify({ forget_device: forgetDevice }),
+        });
+      } catch {}
+      localStorage.removeItem("rc_account_token");
+      accountToken = "";
+      if (forgetDevice) {
+        localStorage.removeItem("rc_device_token");
+        deviceToken = "";
+      }
       if (ws) ws.close();
       location.reload();
     }
@@ -626,12 +763,12 @@
     function connectWs() {
       if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      ws = new WebSocket(`${proto}//${location.host}/ws?token=${encodeURIComponent(token)}`);
+      ws = new WebSocket(`${proto}//${location.host}/ws?token=${encodeURIComponent(deviceToken)}&acct=${encodeURIComponent(accountToken)}`);
       ws.binaryType = "blob";
 
       ws.onopen = () => {
         document.getElementById("wsDot").classList.add("ok");
-        document.getElementById("wsText").textContent = "Đã kết nối PC";
+        document.getElementById("wsText").textContent = currentMachine ? `Đã kết nối ${currentMachine.id}` : "Đã kết nối PC";
         syncStreamState();
       };
       ws.onclose = (ev) => {
@@ -824,6 +961,30 @@
       btn.classList.toggle("active", panMode);
     }
 
+    let quickTypeOpen = false;
+    function toggleQuickType() {
+      quickTypeOpen = !quickTypeOpen;
+      const bar = document.getElementById("quickTypeBar");
+      bar.style.display = quickTypeOpen ? "flex" : "none";
+      document.getElementById("btnQuickType").classList.toggle("active", quickTypeOpen);
+      if (quickTypeOpen) document.getElementById("quickTypeInput").focus();
+    }
+
+    function sendQuickType() {
+      const el = document.getElementById("quickTypeInput");
+      const val = el.value;
+      if (!val) return;
+      sendMsg({ type: "type", text: val });
+      el.value = "";
+    }
+    document.getElementById("quickTypeInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendQuickType();
+        sendKey("enter");
+      }
+    });
+
     function getImgNormCoords(clientX, clientY) {
       const rect = screenImg.getBoundingClientRect();
       if (!rect.width || !rect.height) return null;
@@ -944,7 +1105,7 @@
       el.value = "";
     }
     function downloadScreenshot() {
-      window.open(`/api/screenshot?token=${encodeURIComponent(token)}`, "_blank");
+      window.open(`/api/screenshot?token=${encodeURIComponent(deviceToken)}&acct=${encodeURIComponent(accountToken)}`, "_blank");
     }
 
     boot();
